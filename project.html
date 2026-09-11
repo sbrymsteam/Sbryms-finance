@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBRYMS Finance - Project</title>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f3f4f6; color: #1f2937; }
+        .page-header { background: #df146e; color: white; padding: 22px 20px; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+        .page-header a { color: white; text-decoration: none; font-size: 22px; }
+        .page-title { margin: 0; font-size: 20px; font-weight: 700; }
+        .subtitle { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+        .content { padding: 20px; }
+        .summary-card { background: white; border-radius: 18px; padding: 18px 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); margin-bottom: 18px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .stat-box { background: #f8fafc; border-radius: 15px; padding: 16px; }
+        .stat-title { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+        .stat-value { font-size: 20px; font-weight: 700; color: #111827; }
+        .action-bar { display: flex; justify-content: space-between; gap: 10px; align-items: center; margin-bottom: 16px; }
+        .action-bar button { border: none; border-radius: 14px; padding: 12px 16px; font-weight: 700; cursor: pointer; }
+        .btn-add { background: #10b981; color: white; }
+        .btn-refresh { background: #3b82f6; color: white; }
+        .table-card { background: white; border-radius: 18px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 10px; text-align: left; }
+        th { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: .1em; border-bottom: 1px solid #e5e7eb; background: #f8fafc; position: sticky; top: 0; z-index: 1; }
+        tbody tr:nth-child(even) { background: #fafafa; }
+        tbody tr:hover { background: #f3f4f6; }
+        td { border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+        .tag { display: inline-flex; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+        .tag-active { background: #d1fae5; color: #065f46; }
+        .tag-completed { background: #e0f2fe; color: #0c4a6e; }
+        .row-action button { margin-right: 6px; padding: 7px 10px; border: none; border-radius: 12px; cursor: pointer; font-size: 12px; }
+        .btn-edit { background: #f59e0b; color: white; }
+        .btn-save { background: #10b981; color: white; }
+        .btn-cancel { background: #9ca3af; color: white; }
+        .btn-delete { background: #ef4444; color: white; }
+        input, select { width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 14px; }
+        .empty-state { text-align: center; padding: 32px 0; color: #6b7280; }
+    </style>
+<style>
+/* Global dark/translucent theme overrides applied by Copilot */
+/* Remove rounded corners and use linear borders */
+/* Remove global forced rounding; apply refined gradient borders and sensible radii */
+/* Use a transparent base border and a subtle gradient edge for better look on dark background */
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .icon-box, .profile-photo, .input-field, .btn-main {
+    border: 1px solid transparent !important;
+    background-image: linear-gradient(180deg, rgba(7,17,36,0.66), rgba(7,17,36,0.66)), linear-gradient(90deg, rgba(211,38,150,0.12), rgba(6,182,212,0.12));
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    border-radius: 10px !important;
+}
+.profile-photo { border-radius: 50% !important; }
+.menu-icon, .header-action { border-radius: 12px !important; }
+.btn-main { border-radius: 999px !important; }
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .icon-box, .profile-photo, .input-field, .btn-main { border: 1px solid rgba(255,255,255,0.06) !important; }
+body { background-color: #071124 !important; background-image: radial-gradient(1200px 600px at 10% 20%, rgba(207,44,149,0.08), transparent 20%), radial-gradient(900px 500px at 80% 70%, rgba(4,188,212,0.06), transparent 18%), linear-gradient(180deg,#040714 0%, #071124 40%, #071726 100%); color: #e6eef6 !important; }
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu { background: rgba(7,17,36,0.56) !important; color: #e6eef6 !important; border-color: rgba(255,255,255,0.04) !important; box-shadow: 0 12px 30px rgba(2,6,23,0.6) !important; }
+.card h3, .container h2, .app-header h1, .app-header h2 { color: #e6eef6 !important; }
+.input-field { background: rgba(255,255,255,0.02) !important; color: #e6eef6 !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+.link, a { color: rgba(255,255,255,0.95) !important; }
+.btn-main { background: linear-gradient(135deg, rgba(211,38,150,0.95) 0%, rgba(6,182,212,0.95) 100%) !important; color: #021724 !important; }
+/* small helpers */
+.auth-box { backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%); }
+#toast { background: rgba(20,22,26,0.9) !important; color: #fff !important; }
+</style>
+<style>
+/* Remove page chrome borders; keep only .icon-box borders */
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .profile-photo, .input-field, .btn-main {
+  border: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+.icon-box { border: 1px solid rgba(255,255,255,0.08) !important; background: transparent !important; box-shadow: none !important; }
+body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
+</style>
+<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
+<link rel="stylesheet" href="assets/bg.css">
+</head>
+<body>
+    <div class="page-header">
+        <div>
+            <a href="FACE APP.html">←</a>
+            <div style="display:inline-block; vertical-align: middle; margin-left: 12px;">
+                <h1 class="page-title">Project</h1>
+                <p class="subtitle">প্রজেক্টের তথ্য এডিট এবং দেখুন</p>
+            </div>
+        </div>
+        <button class="btn-add" onclick="addRow()">নতুন প্রজেক্ট যোগ করুন</button>
+    </div>
+
+    <div class="content">
+        <div class="summary-card">
+            <div class="summary-grid">
+                <div class="stat-box">
+                    <div class="stat-title">মোট প্রজেক্ট</div>
+                    <div class="stat-value" id="totalProjects">৩</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">চলমান</div>
+                    <div class="stat-value" id="activeProjects">২</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">সম্পন্ন</div>
+                    <div class="stat-value" id="completedProjects">১</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">মোট বাজেট</div>
+                    <div class="stat-value" id="totalBudget">৳ ৫০০০০</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-card">
+            <div class="action-bar">
+                <span>প্রজেক্টের তথ্য</span>
+                <button class="btn-refresh" onclick="renderTable()">রিফ্রেশ</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>নাম</th>
+                        <th>বর্ণনা</th>
+                        <th>বাজেট</th>
+                        <th>স্ট্যাটাস</th>
+                        <th>শুরু তারিখ</th>
+                        <th>শেষ তারিখ</th>
+                        <th>অ্যাকশন</th>
+                    </tr>
+                </thead>
+                <tbody id="projectBody"></tbody>
+            </table>
+            <div class="empty-state" id="emptyState" style="display:none;">কোনো প্রজেক্টের তথ্য নেই, নতুন যোগ করুন।</div>
+        </div>
+    </div>
+
+    <script>
+        const projectData = [
+            { name: 'Website Development', description: 'Build a new website', budget: 20000, status: 'Active', startDate: '2024-01-01', endDate: '2024-06-01' },
+            { name: 'Mobile App', description: 'Develop mobile application', budget: 15000, status: 'Active', startDate: '2024-02-01', endDate: '2024-08-01' },
+            { name: 'Marketing Campaign', description: 'Social media campaign', budget: 15000, status: 'Completed', startDate: '2024-01-15', endDate: '2024-03-15' }
+        ];
+        let editIndex = null;
+
+        function renderTable() {
+            const tbody = document.getElementById('projectBody');
+            const emptyState = document.getElementById('emptyState');
+            tbody.innerHTML = '';
+
+            if (projectData.length === 0) {
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
+            }
+
+            projectData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+
+                if (editIndex === index) {
+                    tr.innerHTML = `
+                        <td><input type="text" value="${row.name}" id="name-${index}"></td>
+                        <td><input type="text" value="${row.description}" id="description-${index}"></td>
+                        <td><input type="number" min="0" value="${row.budget}" id="budget-${index}"></td>
+                        <td>
+                            <select id="status-${index}">
+                                <option value="Active" ${row.status === 'Active' ? 'selected' : ''}>Active</option>
+                                <option value="Completed" ${row.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                <option value="On Hold" ${row.status === 'On Hold' ? 'selected' : ''}>On Hold</option>
+                            </select>
+                        </td>
+                        <td><input type="date" value="${row.startDate}" id="startDate-${index}"></td>
+                        <td><input type="date" value="${row.endDate}" id="endDate-${index}"></td>
+                        <td class="row-action">
+                            <button class="btn-save" onclick="saveRow(${index})">Save</button>
+                            <button class="btn-cancel" onclick="cancelEdit()">Cancel</button>
+                        </td>
+                    `;
+                } else {
+                    tr.innerHTML = `
+                        <td>${row.name}</td>
+                        <td>${row.description}</td>
+                        <td>৳ ${row.budget}</td>
+                        <td><span class="tag ${row.status === 'Completed' ? 'tag-completed' : 'tag-active'}">${row.status}</span></td>
+                        <td>${row.startDate}</td>
+                        <td>${row.endDate}</td>
+                        <td class="row-action">
+                            <button class="btn-edit" onclick="editRow(${index})">Edit</button>
+                            <button class="btn-delete" onclick="deleteRow(${index})">Delete</button>
+                        </td>
+                    `;
+                }
+
+                tbody.appendChild(tr);
+            });
+
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const totalProjects = projectData.length;
+            const activeProjects = projectData.filter(row => row.status === 'Active').length;
+            const completedProjects = projectData.filter(row => row.status === 'Completed').length;
+            const totalBudget = projectData.reduce((sum, row) => sum + row.budget, 0);
+
+            document.getElementById('totalProjects').innerText = totalProjects;
+            document.getElementById('activeProjects').innerText = activeProjects;
+            document.getElementById('completedProjects').innerText = completedProjects;
+            document.getElementById('totalBudget').innerText = `৳ ${totalBudget}`;
+        }
+
+        function editRow(index) {
+            editIndex = index;
+            renderTable();
+        }
+
+        function cancelEdit() {
+            editIndex = null;
+            renderTable();
+        }
+
+        function saveRow(index) {
+            const name = document.getElementById(`name-${index}`).value.trim();
+            const description = document.getElementById(`description-${index}`).value.trim();
+            const budget = Number(document.getElementById(`budget-${index}`).value);
+            const status = document.getElementById(`status-${index}`).value;
+            const startDate = document.getElementById(`startDate-${index}`).value;
+            const endDate = document.getElementById(`endDate-${index}`).value;
+
+            if (!name || !description || budget <= 0 || !startDate) {
+                alert('সব ফিল্ড পূরণ করুন এবং বাজেট ০-এর বেশি হতে হবে।');
+                return;
+            }
+
+            projectData[index] = { name, description, budget, status, startDate, endDate };
+            editIndex = null;
+            renderTable();
+        }
+
+        function deleteRow(index) {
+            if (!confirm('এই প্রজেক্টের তথ্য মুছে ফেলতে চান?')) return;
+            projectData.splice(index, 1);
+            if (editIndex === index) editIndex = null;
+            renderTable();
+        }
+
+        function addRow() {
+            projectData.push({ name: 'New Project', description: 'Project description', budget: 0, status: 'Active', startDate: new Date().toISOString().split('T')[0], endDate: '' });
+            editIndex = projectData.length - 1;
+            renderTable();
+        }
+
+        renderTable();
+    </script>
+<script src="assets/background-settings.js"></script>
+</body>
+</html>

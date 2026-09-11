@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
+<meta name="theme-color" content="#071124">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SBRYMS">
+<meta name="description" content="SBRYMS Finance - Secure Financial Management App">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23071224' width='192' height='192'/></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23071224' width='180' height='180'/></svg>">
+
+<style>
+* {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+body {
+    /* layered animated background to mimic wavy colorful backdrop */
+    background-color: #071124;
+    background-image:
+      radial-gradient(1200px 600px at 10% 20%, rgba(207,44,149,0.12), transparent 20%),
+      radial-gradient(900px 500px at 80% 70%, rgba(4,188,212,0.08), transparent 18%),
+      linear-gradient(180deg,#040714 0%, #071124 40%, #071726 100%);
+    background-blend-mode: screen, screen, normal;
+    color: #e6eef6;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    padding-top: max(0px, env(safe-area-inset-top));
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+    overflow: hidden;
+    animation: bgShift 20s linear infinite;
+}
+
+@keyframes bgShift {
+  0% { background-position: 0% 0%, 0% 0%, 0% 0%; }
+  50% { background-position: 10% 10%, -10% -10%, 0% 0%; }
+  100% { background-position: 0% 0%, 0% 0%, 0% 0%; }
+}
+
+.auth-box {
+    position: relative;
+    text-align: center;
+    width: 85%;
+    width: min(90%, 360px);
+    background: rgba(7,17,36,0.48); /* translucent so background shows through */
+    padding: 28px;
+    border-radius: 16px;
+    color: #e6eef6;
+    box-shadow: 0 12px 40px rgba(2,6,23,0.7);
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid rgba(255,255,255,0.04);
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+
+/* subtle decorative wave inside the box (shows background through with blend) */
+.auth-box::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    background: radial-gradient(400px 200px at 20% 10%, rgba(211,38,150,0.12), transparent 20%),
+                radial-gradient(300px 180px at 85% 80%, rgba(6,182,212,0.06), transparent 14%);
+    mix-blend-mode: screen;
+    pointer-events: none;
+}
+
+.input-field {
+    width: 100%;
+    padding: 12px;
+    padding-right: 44px; /* room for visibility toggle */
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 12px;
+    outline: none;
+    font-size: 16px;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
+    background: rgba(255,255,255,0.02);
+    color: #e6eef6;
+}
+
+.input-field::placeholder { color: rgba(255,255,255,0.45); }
+
+.input-field:focus {
+    border-color: rgba(6,182,212,0.9);
+    box-shadow: 0 0 12px rgba(6,182,212,0.12);
+}
+
+.password-wrapper { position: relative; }
+
+.toggle-pass-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.65);
+    z-index: 10;
+}
+
+.toggle-pass-btn:hover {
+    color: rgba(255,255,255,0.9);
+}
+
+.toggle-pass-btn svg { 
+    fill: rgba(255,255,255,0.65);
+    width: 20px;
+    height: 20px;
+}
+
+.btn-main {
+    background: linear-gradient(135deg, rgba(211,38,150,0.95) 0%, rgba(6,182,212,0.95) 100%);
+    color: #021724;
+    padding: 12px;
+    border: none;
+    border-radius: 25px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    font-size: 16px;
+    margin-top: 10px;
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
+    transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+/* Outlined pill button with gradient border (for Sign in / Sign up) */
+.btn-outline {
+    position: relative;
+    display: inline-block;
+    padding: 10px 14px;
+    width: 100%;
+    border-radius: 28px;
+    background: transparent;
+    color: #e6eef6;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 16px;
+    box-sizing: border-box;
+    border: 2px solid transparent;
+    /* two-layer background: transparent inner, gradient border */
+    background-image: linear-gradient(transparent, transparent), linear-gradient(135deg, rgba(211,38,150,0.95), rgba(6,182,212,0.95));
+    background-origin: padding-box, border-box;
+    background-clip: padding-box, border-box;
+}
+
+.btn-outline:hover { filter: brightness(1.03); }
+
+.btn-main:active { transform: scale(0.98); }
+.btn-main:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.options-container { margin-top: 14px; font-size: 13px; color: rgba(255,255,255,0.6); }
+
+.link { color: rgba(255,255,255,0.95); font-weight: 700; cursor: pointer; text-decoration: none; margin: 6px 0; display: block; padding: 5px; }
+
+.form-section { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+
+.form-section p { margin: 0 0 12px 0; color: #e6eef6; font-size: 14px; font-weight: 600; }
+
+.btn-secondary { background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.8); padding: 10px; border: none; border-radius: 20px; font-weight: 700; cursor: pointer; width: 100%; font-size: 14px; margin-top: 10px; transition: background-color 0.2s ease; }
+.btn-secondary:hover { background: rgba(255,255,255,0.04); }
+
+.btn-main:hover { filter: brightness(0.98); }
+
+@media (max-width: 360px) { .auth-box { padding: 18px; } .input-field { font-size: 14px; padding: 10px; } .btn-main, .btn-secondary { font-size: 14px; padding: 10px; } }
+
+input, select, textarea { font-size: 16px; }
+
+.auth-box::-webkit-scrollbar { width: 6px; }
+.auth-box::-webkit-scrollbar-track { background: transparent; }
+.auth-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.03); border-radius: 6px; }
+
+.auth-message { margin-top: 8px; color: #ff7b7b; font-size: 13px; display: none; text-align: left; }
+
+#toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20,22,26,0.9); color: #fff; padding: 10px 14px; border-radius: 8px; display: none; z-index: 9999; font-size: 14px; opacity: 0; transition: opacity 0.25s ease; pointer-events: none; }
+
+.access-heading { margin: 4px 0 12px; color: rgba(255,255,255,0.68); font-size: 12px; letter-spacing: 0.04em; }
+.access-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 18px; }
+.access-card {
+    position: relative; min-height: 112px; padding: 15px 12px; border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 16px; color: #f7fbff; text-align: left; cursor: pointer; overflow: hidden;
+    background: linear-gradient(145deg, rgba(31,48,85,0.86), rgba(9,21,43,0.8));
+    box-shadow: 0 10px 24px rgba(0,0,0,0.2); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.access-card::after { content: ''; position: absolute; width: 80px; height: 80px; right: -22px; bottom: -30px; border-radius: 50%; background: rgba(44,201,245,0.16); }
+.access-card:hover { transform: translateY(-2px); border-color: rgba(94,213,191,0.8); box-shadow: 0 14px 30px rgba(0,0,0,0.3); }
+.access-card.apk { background: linear-gradient(145deg, rgba(104,42,117,0.9), rgba(24,22,62,0.86)); }
+.access-card.apk::after { background: rgba(255,77,184,0.2); }
+.access-icon { display: grid; place-items: center; width: 34px; height: 34px; margin-bottom: 10px; border-radius: 11px; background: rgba(255,255,255,0.13); font-size: 18px; }
+.access-card strong { display: block; font-size: 13px; }
+.access-card small { display: block; margin-top: 5px; color: rgba(255,255,255,0.62); font-size: 10px; line-height: 1.35; }
+.access-card .access-badge { position: absolute; top: 10px; right: 9px; z-index: 1; padding: 3px 6px; border-radius: 999px; background: rgba(94,213,191,0.16); color: #80f1d8; font-size: 9px; font-weight: 700; }
+.access-card.apk .access-badge { background: rgba(255,119,199,0.16); color: #ff9ed8; }
+@media (max-width: 360px) { .access-options { grid-template-columns: 1fr; } .access-card { min-height: 96px; } }
+
+</style>
+<link rel="stylesheet" href="assets/bg.css">
+</head>
+<body>
+
+<div class="auth-box">
+<h2 id="auth-title" style="color: #5ed5bf;">SBRYMS Login</h2>
+<p class="access-heading">Choose how you want to use SBRYMS Finance</p>
+<div class="access-options" aria-label="SBRYMS access options">
+    <button class="access-card" id="openWebOption" type="button">
+        <span class="access-badge">ONLINE</span>
+        <span class="access-icon" aria-hidden="true">🌐</span>
+        <strong>SBRYMS Finance Web</strong>
+        <small>Use the secure web dashboard</small>
+    </button>
+    <button class="access-card apk" id="downloadApkOption" type="button">
+        <span class="access-badge">FREE APP</span>
+        <span class="access-icon" aria-hidden="true">📱</span>
+        <strong>Download Mobile APK</strong>
+        <small>Install on your Android phone</small>
+    </button>
+</div>
+
+    <div id="registration-form">
+        <select id="email" class="input-field" autocomplete="username" aria-label="Email Address">
+            <option value="" selected disabled>Email Address নির্বাচন করুন</option>
+            <option value="ahmedmshakil4@gmail.com">ahmedmshakil4@gmail.com</option>
+            <option value="arafathusainkamil@gmail.com">arafathusainkamil@gmail.com</option>
+            <option value="rifathusain498@gmail.com">rifathusain498@gmail.com</option>
+            <option value="yeahyaahmed86@gmail.com">yeahyaahmed86@gmail.com</option>
+            <option value="mdmahdihasanoj@gmail.com">mdmahdihasanoj@gmail.com</option>
+            <option value="mh0392723@gmail.com">mh0392723@gmail.com</option>
+            <option value="husainmddelowar498@gmail.com">husainmddelowar498@gmail.com</option>
+            <option value="sbrymsteam@gmail.com">sbrymsteam@gmail.com</option>
+        </select>
+        <div class="password-wrapper">
+            <input type="password" id="password" class="input-field" placeholder="Password" autocomplete="current-password">
+            <button type="button" id="toggle-password-visibility" class="toggle-pass-btn" aria-label="Show password">
+                <!-- eye icon (visible) -->
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
+                    <circle cx="12" cy="12" r="2.5" />
+                </svg>
+            </button>
+        </div>
+        <div id="confirm-password-wrapper" class="password-wrapper" style="display:none;">
+            <input type="password" id="confirm-password" class="input-field" placeholder="Re-enter password" autocomplete="new-password">
+        </div>
+        <div id="password-error" class="auth-message" aria-live="polite"></div>
+        <button class="btn-outline" id="auth-btn">Login</button>
+    </div>
+
+    <div id="code-verification" style="display: none;" class="form-section">
+        <p>A 6-digit code has been sent to your email.</p>
+        <input type="text" id="verification-code" class="input-field" placeholder="Enter 6-digit code" maxlength="6" inputmode="numeric" pattern="[0-9]*">
+        <p id="code-hint" style="margin:8px 0 12px; color:#666; font-size:13px;">Enter the 6-digit code. It will be verified automatically when complete.</p>
+        <button class="btn-outline" id="verify-btn">Verify Code</button>
+        <button class="btn-secondary" id="resend-code">Resend Code</button>
+    </div>
+
+    <div id="password-reset-form" style="display: none;" class="form-section">
+        <p>পাসওয়ার্ড রিসেটের জন্য ইমেইল দিন</p>
+        <select id="reset-email" class="input-field" autocomplete="username" aria-label="রিসেট ইমেইল নির্বাচন করুন">
+            <option value="" selected disabled>রিসেট ইমেইল নির্বাচন করুন</option>
+            <option value="ahmedmshakil4@gmail.com">ahmedmshakil4@gmail.com</option>
+            <option value="arafathusainkamil@gmail.com">arafathusainkamil@gmail.com</option>
+            <option value="rifathusain498@gmail.com">rifathusain498@gmail.com</option>
+            <option value="yeahyaahmed86@gmail.com">yeahyaahmed86@gmail.com</option>
+            <option value="mdmahdihasanoj@gmail.com">mdmahdihasanoj@gmail.com</option>
+            <option value="mh0392723@gmail.com">mh0392723@gmail.com</option>
+            <option value="husainmddelowar498@gmail.com">husainmddelowar498@gmail.com</option>
+            <option value="sbrymsteam@gmail.com">sbrymsteam@gmail.com</option>
+        </select>
+        <button class="btn-outline" id="send-reset-code">রিসেট লিংক পাঠান</button>
+    </div>
+
+    <div id="new-password-form" style="display: none;" class="form-section">
+        <p>আপনার ইমেইলে Firebase-এর নিরাপদ পাসওয়ার্ড রিসেট লিংক পাঠানো হয়েছে।</p>
+    </div>
+
+    <div class="options-container">
+        <span class="link" id="toggle-link">Need an account? Sign up</span>
+        <span class="link" id="forgot-btn">Forgot password?</span>
+        <span class="link" id="back-to-main" style="display:none;">← Back</span>
+        <p style="color:#f5f5f5; font-size:12px; margin-top: 12px; line-height:1.4;">
+            <strong>Only these 8 emails are allowed:</strong><br>
+            ahmedmshakil4@gmail.com<br>
+            arafathusainkamil@gmail.com<br>
+            rifathusain498@gmail.com<br>
+            yeahyaahmed86@gmail.com<br>
+            mdmahdihasanoj@gmail.com<br>
+            mh0392723@gmail.com<br>
+            husainmddelowar498@gmail.com<br>
+            sbrymsteam@gmail.com
+        </p>
+    </div>
+</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+    getAuth,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// 🔐 Firebase Config
+const firebaseConfig = {
+    apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
+    authDomain: "sbryms-finance.firebaseapp.com",
+    projectId: "sbryms-finance",
+    storageBucket: "sbryms-finance.appspot.com",
+    messagingSenderId: "1087018056369",
+    appId: "1:1087018056369:web:81bc39017385a649500090"
+};
+
+const app = initializeApp(firebaseConfig);
+console.log('Firebase initialized for authDomain:', firebaseConfig.authDomain);
+const auth = getAuth(app);
+
+// Log unhandled rejections to help debug runtime issues in browsers
+window.addEventListener('unhandledrejection', e => {
+    console.error('Unhandled promise rejection:', e.reason);
+});
+
+// অনুমোদিত ইমেইল তালিকা
+const allowedEmails = [
+    'ahmedmshakil4@gmail.com',
+    'arafathusainkamil@gmail.com',
+    'rifathusain498@gmail.com',
+    'yeahyaahmed86@gmail.com',
+    'mdmahdihasanoj@gmail.com',
+    'mh0392723@gmail.com',
+    'husainmddelowar498@gmail.com',
+    'sbrymsteam@gmail.com'
+];
+
+let isLoginMode = true;
+let currentEmail = '';
+let currentCode = '';
+let resetEmail = '';
+
+const title = document.getElementById("auth-title");
+const registrationForm = document.getElementById("registration-form");
+const codeVerification = document.getElementById("code-verification");
+const passwordResetForm = document.getElementById("password-reset-form");
+const newPasswordForm = document.getElementById("new-password-form");
+const toggleLink = document.getElementById("toggle-link");
+const forgotBtn = document.getElementById("forgot-btn");
+const backToMain = document.getElementById("back-to-main");
+const openWebOption = document.getElementById('openWebOption');
+const downloadApkOption = document.getElementById('downloadApkOption');
+
+openWebOption?.addEventListener('click', () => {
+    document.getElementById('email')?.focus();
+    showToast('Web version selected. Please sign in below.');
+});
+
+downloadApkOption?.addEventListener('click', () => {
+    showToast('Free Android APK download will be available here soon.');
+});
+
+// Small non-blocking toast and inline error helpers
+function ensureToast() {
+    let t = document.getElementById('toast');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'toast';
+        document.body.appendChild(t);
+    }
+    return t;
+}
+
+function showToast(msg, timeout = 3500) {
+    const t = ensureToast();
+    t.textContent = msg;
+    t.style.display = 'block';
+    t.style.opacity = '1';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => {
+        t.style.opacity = '0';
+        setTimeout(() => { t.style.display = 'none'; }, 250);
+    }, timeout);
+}
+
+// Override window.alert to prevent blocking popups and route messages to non-blocking toast
+window.alert = (message) => {
+    try { showToast(String(message)); } catch (e) { console.log('Toast failed', e); }
+};
+
+function setPasswordError(msg) {
+    const el = document.getElementById('password-error');
+    if (!el) return;
+    el.textContent = msg || '';
+    el.style.display = msg ? 'block' : 'none';
+}
+
+function clearPasswordError() { setPasswordError(''); }
+
+// Password visibility toggle (shows an eye icon beside the password input)
+(function(){
+    const pwdInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('toggle-password-visibility');
+    if (!pwdInput || !toggleBtn) return;
+
+    const eyeOpen = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/><circle cx="12" cy="12" r="2.5"/></svg>';
+    const eyeClosed = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 6a9.77 9.77 0 0 1 7.44 3.37L21 8l1 1-2.2 2.2A9.77 9.77 0 0 1 12 18a9.77 9.77 0 0 1-7.44-3.37L3 16l-1-1 2.2-2.2A9.77 9.77 0 0 1 12 6m0 2a7.77 7.77 0 0 0-5.9 2.5L6.7 12l-.6.5A7.77 7.77 0 0 0 12 16a7.77 7.77 0 0 0 5.9-2.5L17.3 12l.6-.5A7.77 7.77 0 0 0 12 8z"/></svg>';
+
+    // initialize state (password hidden)
+    toggleBtn.innerHTML = eyeOpen;
+
+    toggleBtn.addEventListener('click', () => {
+        if (pwdInput.type === 'password') {
+            pwdInput.type = 'text';
+            toggleBtn.innerHTML = eyeClosed;
+            toggleBtn.setAttribute('aria-label', 'Hide password');
+        } else {
+            pwdInput.type = 'password';
+            toggleBtn.innerHTML = eyeOpen;
+            toggleBtn.setAttribute('aria-label', 'Show password');
+        }
+    });
+})();
+
+const pwdField = document.getElementById('password');
+if (pwdField) { pwdField.addEventListener('input', clearPasswordError); }
+
+// 🔄 UI আপডেট ফাংশন
+function updateAuthUI() {
+    if (isLoginMode) {
+    title.innerText = "SBRYMS Login";
+        registrationForm.style.display = 'block';
+        document.getElementById('confirm-password-wrapper').style.display = 'none';
+        codeVerification.style.display = 'none';
+        passwordResetForm.style.display = 'none';
+        newPasswordForm.style.display = 'none';
+    document.getElementById("auth-btn").innerText = "Login";
+    toggleLink.innerText = "Need an account? Sign up";
+        backToMain.style.display = 'none';
+    } else {
+    title.innerText = "Create Account";
+        registrationForm.style.display = 'block';
+        document.getElementById('confirm-password-wrapper').style.display = 'block';
+        codeVerification.style.display = 'none';
+        passwordResetForm.style.display = 'none';
+        newPasswordForm.style.display = 'none';
+    document.getElementById("auth-btn").innerText = "Send Registration Code";
+    toggleLink.innerText = "Already have an account? Login";
+        backToMain.style.display = 'none';
+    }
+}
+
+function showCodeVerification() {
+    registrationForm.style.display = 'none';
+    codeVerification.style.display = 'block';
+    passwordResetForm.style.display = 'none';
+    newPasswordForm.style.display = 'none';
+    backToMain.style.display = 'block';
+}
+
+function showPasswordReset() {
+    registrationForm.style.display = 'none';
+    codeVerification.style.display = 'none';
+    passwordResetForm.style.display = 'block';
+    newPasswordForm.style.display = 'none';
+    backToMain.style.display = 'block';
+}
+
+function showNewPasswordForm() {
+    registrationForm.style.display = 'none';
+    codeVerification.style.display = 'none';
+    passwordResetForm.style.display = 'none';
+    newPasswordForm.style.display = 'block';
+    backToMain.style.display = 'block';
+}
+
+// কোড জেনারেট ফাংশন
+function generateCode() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+function extractNameFromEmail(email) {
+    const localPart = email.split('@')[0];
+    const parts = localPart.split(/[._-]/).filter(Boolean);
+    return parts.map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(' ') || 'Member';
+}
+
+// ইমেইল সিমুলেশন (প্রোডাকশনে EmailJS বা অন্য ইমেইল সার্ভিস ব্যবহার করুন)
+async function sendEmailCode(email, code, type) {
+    try {
+        // EmailJS ইনিশিয়ালাইজ
+        emailjs.init("y4SYEc1gDyANLijnW");
+
+        const templateParams = {
+            email: email,
+            to_email: email,
+            to: email,
+            to_name: email,
+            recipient: email,
+            passcode: code,
+            code: code,
+            verification_code: code,
+            type: type,
+            time: '15 minutes',
+            subject: type === 'রেজিস্ট্রেশন' ? 'SBRYMS - Registration verification code' : 'SBRYMS - Password reset code'
+        };
+
+        await emailjs.send("service_gd9fm64", "template_xrkflt2", templateParams);
+
+        alert(`${type} কোড ${email} ইমেইলে পাঠানো হয়েছে। Inbox/Spam ফোল্ডার দেখুন।`);
+        return true;
+    } catch (error) {
+        console.error('ইমেইল পাঠানো ব্যর্থ:', error);
+        const errorMessage = error && error.text ? ` (${error.text})` : '';
+        alert(`ইমেইলে কোড পাঠানো যায়নি${errorMessage}। EmailJS Template-এর To Email-এ {{to_email}} সেট আছে কি না যাচাই করুন।`);
+        return false;
+    }
+}
+
+toggleLink.addEventListener("click", () => {
+    isLoginMode = !isLoginMode;
+    updateAuthUI();
+});
+
+backToMain.addEventListener("click", () => {
+    updateAuthUI();
+});
+
+// 🔑 রেজিস্ট্রেশন/লগইন বোতাম
+document.getElementById("auth-btn").addEventListener("click", async () => {
+    const email = document.getElementById("email").value.trim().toLowerCase();
+    const password = document.getElementById("password").value.trim();
+    const confirmPassword = document.getElementById("confirm-password").value.trim();
+
+    if (!email) {
+        alert("ইমেইল দিন।");
+        return;
+    }
+
+    // অনুমোদিত ইমেইল চেক
+    if (!allowedEmails.includes(email)) {
+        alert("এই ইমেইলটি অনুমোদিত নয়। তালিকা থেকে একটি ইমেইল বেছে নিন।");
+        return;
+    }
+
+    if (isLoginMode) {
+        // লগইন
+        if (password.length < 6) {
+            alert("পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।");
+            return;
+        }
+
+        document.getElementById("auth-btn").disabled = true;
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            localStorage.setItem('currentUserEmail', userCredential.user.email);
+            localStorage.setItem('currentUserUid', userCredential.user.uid);
+            localStorage.removeItem('selectedProfileName');
+            localStorage.removeItem('selectedProfileEmail');
+            localStorage.removeItem('selectedProfilePhoto');
+            localStorage.removeItem('selectedProfileDesignation');
+            localStorage.removeItem('selectedProfileCurrent');
+            localStorage.setItem(`user_${userCredential.user.uid}_profile_name`, extractNameFromEmail(userCredential.user.email));
+            showToast("Login successful!");
+            setTimeout(()=>{ window.location.replace("FACE APP.html"); }, 700);
+        } catch (error) {
+            if (error.code === "auth/user-not-found") {
+                        showToast("No account found for this email. Please register first.");
+            } else if (error.code === "auth/wrong-password") {
+                setPasswordError("Incorrect password. Please try again.");
+                        const pwd = document.getElementById('password'); if (pwd) { pwd.focus(); }
+                    } else {
+                        showToast("Error: " + error.message);
+                    }
+                } finally {
+            document.getElementById("auth-btn").disabled = false;
+        }
+    } else {
+        // রেজিস্ট্রেশন কোড পাঠান
+        if (password.length < 6) {
+            alert("পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।");
+            return;
+        }
+        if (password !== confirmPassword) {
+            alert("দুইটি পাসওয়ার্ড এক নয়।");
+            return;
+        }
+
+        currentEmail = email;
+        currentCode = generateCode();
+
+        // কোড লোকাল স্টোরেজে সেভ (প্রোডাকশনে ডাটাবেসে সেভ করুন)
+        localStorage.setItem('registration_code', currentCode);
+        localStorage.setItem('registration_email', email);
+        localStorage.setItem('registration_password', password);
+
+        if (await sendEmailCode(email, currentCode, 'রেজিস্ট্রেশন')) {
+            showCodeVerification();
+        }
+    }
+});
+
+// কোড ভেরিফাই
+document.getElementById("verify-btn").addEventListener("click", async () => {
+    const enteredCode = document.getElementById("verification-code").value.trim();
+    const storedCode = localStorage.getItem('registration_code');
+
+    if (enteredCode !== storedCode) {
+        alert("কোড ভুল হয়েছে।");
+        return;
+    }
+
+    const email = localStorage.getItem('registration_email');
+    const password = localStorage.getItem('registration_password');
+
+    document.getElementById("verify-btn").disabled = true;
+
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        localStorage.setItem('currentUserEmail', userCredential.user.email);
+        localStorage.setItem('currentUserUid', userCredential.user.uid);
+        localStorage.removeItem('selectedProfileName');
+        localStorage.removeItem('selectedProfileEmail');
+        localStorage.removeItem('selectedProfilePhoto');
+        localStorage.removeItem('selectedProfileDesignation');
+        localStorage.removeItem('selectedProfileCurrent');
+        localStorage.setItem(`user_${userCredential.user.uid}_profile_name`, extractNameFromEmail(userCredential.user.email));
+        alert("রেজিস্ট্রেশন সফল হয়েছে! প্রোফাইল সেটআপ করুন।");
+
+        // ক্লিনআপ
+        localStorage.removeItem('registration_code');
+        localStorage.removeItem('registration_email');
+        localStorage.removeItem('registration_password');
+
+        // প্রোফাইল সেটআপ পেজে যান
+        window.location.replace("profile.html");
+    } catch (error) {
+        if (error.code === "auth/email-already-in-use") {
+            alert("এই ইমেইল দিয়ে ইতিমধ্যে একাউন্ট আছে। লগইন করুন।");
+            isLoginMode = true;
+            updateAuthUI();
+        } else {
+            alert("ত্রুটি: " + error.message);
+        }
+    } finally {
+        document.getElementById("verify-btn").disabled = false;
+    }
+});
+
+// কোড রি-সেন্ড
+document.getElementById("resend-code").addEventListener("click", () => {
+    const storedCode = localStorage.getItem('registration_code');
+    const email = localStorage.getItem('registration_email');
+
+    if (storedCode && email) {
+        sendEmailCode(email, storedCode, 'রেজিস্ট্রেশন');
+    } else {
+        alert("কোড পাওয়া যায়নি। আবার চেষ্টা করুন।");
+    }
+});
+
+// পাসওয়ার্ড রিসেট
+forgotBtn.addEventListener("click", () => {
+    showPasswordReset();
+});
+
+// রিসেট কোড পাঠান
+document.getElementById("send-reset-code").addEventListener("click", async () => {
+    const email = document.getElementById("reset-email").value.trim().toLowerCase();
+
+    if (!email) {
+        alert("ইমেইল দিন।");
+        return;
+    }
+
+    if (!allowedEmails.includes(email)) {
+        alert("এই ইমেইলটি অনুমোদিত নয়।");
+        return;
+    }
+
+    const resetButton = document.getElementById("send-reset-code");
+    resetButton.disabled = true;
+    try {
+        await sendPasswordResetEmail(auth, email);
+        resetEmail = email;
+        alert(`Firebase পাসওয়ার্ড রিসেট লিংক ${email} ইমেইলে পাঠানো হয়েছে। Inbox/Spam ফোল্ডার দেখুন।`);
+        showNewPasswordForm();
+    } catch (error) {
+        console.error('Firebase reset link পাঠানো ব্যর্থ:', error);
+        alert(error.code === 'auth/user-not-found'
+            ? 'এই ইমেইলে কোনো Firebase account পাওয়া যায়নি।'
+            : `রিসেট লিংক পাঠানো যায়নি: ${error.message}`);
+    } finally {
+        resetButton.disabled = false;
+    }
+});
+
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .then(registration => {
+                console.log('✅ Service Worker registered:', registration);
+            })
+            .catch(error => {
+                console.log('⚠️ Service Worker registration failed:', error);
+            });
+    });
+}
+
+// App Version & Cache Management
+const APP_VERSION = '1.0.0';
+localStorage.setItem('app_version', APP_VERSION);
+
+// Prevent Double-tap Zoom on Mobile
+document.addEventListener('touchmove', function(event) {
+    if (event.touches.length > 1) {
+        event.preventDefault();
+    }
+}, false);
+
+// Handle Mobile Back Button
+window.addEventListener('popstate', function() {
+    if (document.getElementById("code-verification").style.display === 'block' ||
+        document.getElementById("password-reset-form").style.display === 'block' ||
+        document.getElementById("new-password-form").style.display === 'block') {
+        updateAuthUI();
+    }
+});
+
+// Auto-verify: when user types all 6 digits, trigger verification automatically
+(function() {
+    const verificationInput = document.getElementById('verification-code');
+    const verifyBtn = document.getElementById('verify-btn');
+    const codeHint = document.getElementById('code-hint');
+
+    if (verificationInput) {
+        verificationInput.addEventListener('input', () => {
+            // keep only digits and limit to 6
+            verificationInput.value = verificationInput.value.replace(/\D/g, '').slice(0,6);
+            const val = verificationInput.value.trim();
+            if (codeHint) {
+                if (val.length === 6) {
+                    codeHint.innerText = 'Complete — verifying...';
+                } else {
+                    codeHint.innerText = 'Enter the 6-digit code. It will be verified automatically when complete.';
+                }
+            }
+            if (val.length === 6 && verifyBtn && !verifyBtn.disabled) {
+                // small debounce to allow UI update
+                setTimeout(() => { verifyBtn.click(); }, 200);
+            }
+        });
+    }
+
+    // Also auto-submit reset verification input
+    const verificationReset = document.getElementById('verification-code-reset');
+    const setNewPwdBtn = document.getElementById('set-new-password');
+    if (verificationReset) {
+        verificationReset.addEventListener('input', () => {
+            verificationReset.value = verificationReset.value.replace(/\D/g, '').slice(0,6);
+            const newPassword = document.getElementById('new-password');
+            const confirmNewPassword = document.getElementById('confirm-new-password');
+            if (verificationReset.value.trim().length === 6
+                && newPassword && confirmNewPassword
+                && newPassword.value.length >= 6
+                && confirmNewPassword.value
+                && setNewPwdBtn && !setNewPwdBtn.disabled) {
+                setTimeout(() => { setNewPwdBtn.click(); }, 200);
+            }
+        });
+    }
+})();
+
+updateAuthUI();
+</script>
+
+<script src="assets/background-settings.js"></script>
+</body>
+</html>

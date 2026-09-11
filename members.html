@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBRYMS - Members</title>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f5f5f8; color: #1f2937; }
+        .page-header { background: linear-gradient(180deg, #df146e 0%, #e84d8f 100%); color: white; padding: 28px 20px; text-align: center; position: sticky; top: 0; z-index: 100; }
+        .page-header h1 { margin: 0 0 8px; font-size: 28px; }
+        .page-header p { margin: 0; opacity: 0.92; line-height: 1.6; font-size: 14px; }
+        .back-btn { position: absolute; left: 18px; top: 24px; color: white; text-decoration: none; font-size: 24px; }
+        .content { max-width: 1120px; margin: 0 auto; padding: 20px; }
+        .members-grid { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+        .member-card { background: white; border-radius: 22px; padding: 18px; box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .member-card:hover { transform: translateY(-2px); box-shadow: 0 22px 60px rgba(15, 23, 42, 0.12); }
+        .member-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+        .member-avatar { width: 60px; min-width: 60px; height: 60px; min-height: 60px; flex: 0 0 60px; aspect-ratio: 1; border-radius: 50%; background: #fde8f6; color: #df146e; font-size: 24px; display: grid; place-items: center; overflow: hidden; }
+        .avatar-container { position: relative; width: 60px; height: 60px; flex: 0 0 60px; }
+        .member-avatar img, .avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .status-badge { position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #ffffff; }
+        .status-badge.online { background-color: #4CAF50; }
+        .status-badge.away, .status-badge.offline { background-color: #FFC107; }
+        .member-info h3 { margin: 0 0 4px; font-size: 18px; }
+        .member-info p { margin: 0; font-size: 13px; color: #6b7280; }
+        .tag { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; background: #fce7f3; color: #b91c6b; border-radius: 999px; font-size: 12px; margin-top: 10px; }
+        .member-actions { display: grid; gap: 10px; margin-top: 18px; }
+        .member-actions button { border: none; border-radius: 14px; padding: 12px 14px; font-weight: 700; cursor: pointer; transition: transform 0.2s ease; }
+        .member-actions button:hover { transform: translateY(-1px); }
+        .btn-profile { background: #eff6ff; color: #2563eb; }
+        .btn-chat { background: #df146e; color: white; }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; justify-content: space-around; align-items: center; padding: 12px 0; box-shadow: 0 -1px 20px rgba(15,23,42,0.08); z-index: 1000; }
+        .nav-item { text-align: center; color: #667085; cursor: pointer; flex: 1; font-size: 12px; }
+        .nav-item.active { color: #df146e; font-weight: 700; }
+        .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+        .loading, .empty-message { text-align: center; color: #6b7280; margin-top: 30px; }
+        .logout-btn { position: fixed; right: 20px; top: 24px; padding: 8px 14px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35); color: white; border-radius: 999px; text-decoration: none; font-size: 14px; }
+
+        /* Keep member page components free from decorative pink/white borders. */
+        .member-card, .member-avatar, .member-actions button, .logout-btn, .bottom-nav {
+            border: none !important;
+        }
+    </style>
+<style>
+/* Global dark/translucent theme overrides applied by Copilot */
+/* Remove rounded corners and use linear borders */
+/* Remove site borders — keep only icon-box bordered icons */
+/* Disable borders and gradient borders for page chrome; preserve border on .icon-box only */
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .profile-photo, .input-field, .btn-main {
+    border: none !important;
+    background-image: none !important;
+    box-shadow: none !important;
+}
+/* Keep profile photo and buttons radii */
+.profile-photo { border-radius: 50% !important; }
+.menu-icon, .header-action { border-radius: 12px !important; }
+.btn-main { border-radius: 999px !important; }
+/* Ensure only category icon boxes keep the bordered style */
+.icon-box { border: 1px solid rgba(255,255,255,0.08) !important; background: transparent !important; box-shadow: none !important; }
+body { background-color: #071124 !important; background-image: radial-gradient(1200px 600px at 10% 20%, rgba(207,44,149,0.08), transparent 20%), radial-gradient(900px 500px at 80% 70%, rgba(4,188,212,0.06), transparent 18%), linear-gradient(180deg,#040714 0%, #071124 40%, #071726 100%); color: #e6eef6 !important; }
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu { background: rgba(7,17,36,0.56) !important; color: #e6eef6 !important; border-color: rgba(255,255,255,0.04) !important; box-shadow: 0 12px 30px rgba(2,6,23,0.6) !important; }
+.card h3, .container h2, .app-header h1, .app-header h2 { color: #e6eef6 !important; }
+.input-field { background: rgba(255,255,255,0.02) !important; color: #e6eef6 !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+.link, a { color: rgba(255,255,255,0.95) !important; }
+.btn-main { background: linear-gradient(135deg, rgba(211,38,150,0.95) 0%, rgba(6,182,212,0.95) 100%) !important; color: #021724 !important; }
+/* small helpers */
+.auth-box { backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%); }
+#toast { background: rgba(20,22,26,0.9) !important; color: #fff !important; }
+</style>
+<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
+<link rel="stylesheet" href="assets/bg.css">
+</head>
+<body>
+    <div class="page-header">
+        <a href="FACE APP.html" class="back-btn">←</a>
+        <a href="#" class="logout-btn" onclick="logout()">Logout</a>
+        <h1>Registered Members</h1>
+        <p>সব রেজিস্টার্ড সদস্যদের প্রোফাইল দেখুন। কারো সাথে সরাসরি চ্যাট শুরু করতে "Chat" চাপুন।</p>
+    </div>
+
+    <div class="content">
+        <div id="loading" class="loading">লোড হচ্ছে...</div>
+        <div id="membersGrid" class="members-grid"></div>
+        <div id="emptyMessage" class="empty-message" style="display:none;">কোনো সদস্য পাওয়া যায়নি।</div>
+    </div>
+
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
+            authDomain: "sbryms-finance.firebaseapp.com",
+            projectId: "sbryms-finance",
+            storageBucket: "sbryms-finance.appspot.com",
+            messagingSenderId: "1087018056369",
+            appId: "1:1087018056369:web:81bc39017385a649500090"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const membersGrid = document.getElementById('membersGrid');
+        const loadingText = document.getElementById('loading');
+        const emptyMessage = document.getElementById('emptyMessage');
+
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            loadMembers();
+        });
+
+        function loadMembers() {
+            loadingText.style.display = 'block';
+            membersGrid.innerHTML = '';
+            emptyMessage.style.display = 'none';
+
+            db.collection('users').orderBy('name').get().then(snapshot => {
+                loadingText.style.display = 'none';
+                if (snapshot.empty) {
+                    emptyMessage.style.display = 'block';
+                    return;
+                }
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    renderMemberCard({
+                        uid: doc.id,
+                        email: data.email || '',
+                        name: data.name || extractNameFromEmail(data.email || ''),
+                        username: data.username || extractNameFromEmail(data.email || '').replace(/\s+/g, '').toLowerCase(),
+                        designation: data.designation || 'Not set',
+                        photo: data.photo || '',
+                        status: data.status || 'offline',
+                        location: data.location || 'Not set',
+                        bio: data.bio || ''
+                    });
+                });
+            }).catch(error => {
+                loadingText.textContent = 'দুঃখিত, সদস্য তালিকা লোড করা যায়নি।';
+                console.error(error);
+            });
+        }
+
+        function renderMemberCard(member) {
+            const card = document.createElement('div');
+            card.className = 'member-card';
+
+            const head = document.createElement('div');
+            head.className = 'member-head';
+
+            const avatarContainer = document.createElement('div');
+            avatarContainer.className = 'avatar-container';
+            const avatar = document.createElement('div');
+            avatar.className = 'member-avatar';
+            if (member.photo) {
+                const img = document.createElement('img');
+                img.className = 'avatar-img';
+                img.src = member.photo;
+                img.alt = member.name;
+                avatar.appendChild(img);
+            } else {
+                avatar.textContent = member.name.substring(0, 2).toUpperCase();
+            }
+            const status = member.status === 'online' ? 'online' : 'offline';
+            const statusBadge = document.createElement('span');
+            statusBadge.className = `status-badge ${status}`;
+            statusBadge.setAttribute('aria-label', `Status: ${status}`);
+            avatarContainer.appendChild(avatar);
+            avatarContainer.appendChild(statusBadge);
+
+            const info = document.createElement('div');
+            info.className = 'member-info';
+            const heading = document.createElement('h3');
+            heading.textContent = member.name;
+            const email = document.createElement('p');
+            email.textContent = `@${member.username}`;
+            info.appendChild(heading);
+            info.appendChild(email);
+
+            head.appendChild(avatarContainer);
+            head.appendChild(info);
+            card.appendChild(head);
+
+            const tag = document.createElement('div');
+            tag.className = 'tag';
+            tag.textContent = member.designation;
+            card.appendChild(tag);
+
+            const actions = document.createElement('div');
+            actions.className = 'member-actions';
+            const profileBtn = document.createElement('button');
+            profileBtn.className = 'btn-profile';
+            profileBtn.textContent = 'View Profile';
+            profileBtn.addEventListener('click', () => viewProfile(member));
+            const chatBtn = document.createElement('button');
+            chatBtn.className = 'btn-chat';
+            chatBtn.textContent = 'Chat';
+            chatBtn.addEventListener('click', () => chatWith(member));
+            actions.appendChild(profileBtn);
+            actions.appendChild(chatBtn);
+            card.appendChild(actions);
+
+            membersGrid.appendChild(card);
+        }
+
+        function extractNameFromEmail(email) {
+            const local = email.split('@')[0];
+            return local.split(/[._-]/).filter(Boolean).map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()).join(' ') || 'Member';
+        }
+
+        function viewProfile(member) {
+            if (!member || !member.email) return;
+            localStorage.setItem('selectedProfileName', member.name);
+            localStorage.setItem('selectedProfileEmail', member.email);
+            localStorage.setItem('selectedProfilePhoto', member.photo || '');
+            localStorage.setItem('selectedProfileAvatar', member.photo ? '' : member.name.substring(0, 2).toUpperCase());
+            localStorage.setItem('selectedProfileUsername', member.username || '');
+            localStorage.setItem('selectedProfileDesignation', member.designation || 'Not set');
+            localStorage.setItem('selectedProfileCurrent', 'false');
+            window.location.href = 'profile.html';
+        }
+
+        function chatWith(member) {
+            if (!member || !member.email) return;
+            const currentUserEmail = localStorage.getItem('currentUserEmail') || '';
+            if (member.email === currentUserEmail) {
+                alert('আপনি নিজেই। অন্য কাউকে চ্যাট করুন।');
+                return;
+            }
+            localStorage.setItem('chatWithEmail', member.email);
+            localStorage.setItem('chatWithName', member.name);
+            localStorage.setItem('chatWithPhoto', member.photo || '');
+            localStorage.setItem('chatWithAvatar', member.photo ? '' : member.name.substring(0, 2).toUpperCase());
+            window.location.href = 'team-meet.html';
+        }
+
+        function logout() {
+            auth.signOut().then(() => {
+                localStorage.removeItem('currentUserEmail');
+                localStorage.removeItem('currentUserUid');
+                window.location.href = 'index.html';
+            }).catch(error => {
+                console.error(error);
+                alert('Logout ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
+            });
+        }
+    </script>
+<script src="assets/background-settings.js"></script>
+</body>
+</html>

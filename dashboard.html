@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#081426">
+    <title>SBRYMS Finance - Company Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script>
+        document.documentElement.classList.add('auth-pending');
+        const firebaseConfig = {
+            apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
+            authDomain: "sbryms-finance.firebaseapp.com",
+            projectId: "sbryms-finance",
+            storageBucket: "sbryms-finance.appspot.com",
+            messagingSenderId: "1087018056369",
+            appId: "1:1087018056369:web:81bc39017385a649500090"
+        };
+        firebase.initializeApp(firebaseConfig);
+        firebase.auth().onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.replace('index.html');
+                return;
+            }
+            localStorage.setItem('currentUserEmail', user.email || '');
+            localStorage.setItem('currentUserUid', user.uid);
+            document.documentElement.classList.remove('auth-pending');
+        });
+    </script>
+    <style>
+        :root { --bg:#081426; --panel:#101f35; --panel-2:#142842; --text:#edf6ff; --muted:#8fa4bc; --line:rgba(255,255,255,.09); --mint:#55dfbd; --blue:#55a8ff; --orange:#ffbd65; --danger:#ff7898; }
+        * { box-sizing:border-box; }
+        html, body { margin:0; min-height:100%; }
+        html.auth-pending body { visibility:hidden; }
+        body { color:var(--text); background:radial-gradient(900px 500px at 0 -10%,rgba(67,127,255,.2),transparent 60%),radial-gradient(700px 400px at 100% 100%,rgba(38,201,166,.12),transparent 60%),var(--bg); font-family:Inter,'Segoe UI',sans-serif; }
+        button { font:inherit; }
+        .shell { display:grid; grid-template-columns:248px minmax(0,1fr); min-height:100vh; }
+        .sidebar { display:flex; flex-direction:column; padding:26px 18px; border-right:1px solid var(--line); background:rgba(7,18,34,.82); }
+        .brand { display:flex; align-items:center; gap:11px; margin:0 10px 44px; font-weight:800; letter-spacing:.02em; }
+        .brand-mark { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; background:linear-gradient(135deg,var(--mint),var(--blue)); color:#062033; font-size:20px; }
+        .nav-label { margin:0 12px 10px; color:#6e849d; font-size:10px; letter-spacing:.16em; text-transform:uppercase; }
+        .nav { display:grid; gap:6px; }
+        .nav a { display:flex; align-items:center; gap:12px; padding:13px 12px; border-radius:12px; color:var(--muted); text-decoration:none; font-size:14px; }
+        .nav a.active, .nav a:hover { color:var(--text); background:linear-gradient(90deg,rgba(85,223,189,.16),rgba(85,168,255,.06)); }
+        .nav-icon { width:20px; text-align:center; font-size:17px; }
+        .sidebar-footer { margin-top:auto; padding:16px 12px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,.035); }
+        .sidebar-footer small { display:block; margin-bottom:11px; color:var(--muted); line-height:1.5; }
+        .logout { width:100%; padding:9px; border:1px solid rgba(255,120,152,.38); border-radius:9px; background:transparent; color:#ff9ab1; cursor:pointer; }
+        .main { min-width:0; padding:28px clamp(18px,4vw,46px); }
+        .topbar { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:30px; }
+        .topbar h1 { margin:0; font-size:clamp(22px,3vw,30px); }
+        .topbar p { margin:7px 0 0; color:var(--muted); font-size:13px; }
+        .top-actions { display:flex; align-items:center; gap:12px; }
+        .icon-btn { width:40px; height:40px; border:1px solid var(--line); border-radius:12px; background:var(--panel); color:var(--text); cursor:pointer; }
+        .user-chip { display:flex; align-items:center; gap:9px; padding:6px 11px 6px 6px; border:1px solid var(--line); border-radius:99px; background:var(--panel); }
+        .avatar { display:grid; place-items:center; width:31px; height:31px; border-radius:50%; background:linear-gradient(135deg,var(--mint),var(--blue)); color:#062033; font-weight:800; }
+        .user-chip span { max-width:145px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+        .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+        .metric, .card { border:1px solid var(--line); border-radius:18px; background:linear-gradient(145deg,rgba(20,40,66,.94),rgba(12,28,49,.92)); box-shadow:0 14px 32px rgba(0,0,0,.14); }
+        .metric { padding:19px; }
+        .metric-head { display:flex; justify-content:space-between; align-items:center; color:var(--muted); font-size:12px; }
+        .metric-icon { display:grid; place-items:center; width:31px; height:31px; border-radius:10px; background:rgba(85,223,189,.12); color:var(--mint); }
+        .metric strong { display:block; margin:15px 0 8px; font-size:24px; }
+        .metric em { color:var(--mint); font-size:11px; font-style:normal; }
+        .dashboard-grid { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(280px,.8fr); gap:20px; }
+        .card { padding:22px; }
+        .card-header { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:20px; }
+        .card-header h2 { margin:0; font-size:17px; }
+        .card-header span { color:var(--muted); font-size:11px; }
+        .chart { position:relative; height:235px; padding:18px 10px 10px; overflow:hidden; border-radius:14px; background:linear-gradient(180deg,rgba(85,168,255,.1),transparent); }
+        .chart::before { content:''; position:absolute; inset:18px 10px 20px; background:repeating-linear-gradient(to bottom,transparent 0 47px,rgba(255,255,255,.07) 48px); }
+        .chart svg { position:relative; width:100%; height:100%; }
+        .chart-caption { display:flex; justify-content:space-between; margin-top:10px; color:var(--muted); font-size:10px; }
+        .actions { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+        .action { display:flex; align-items:center; gap:10px; padding:14px 11px; border:1px solid var(--line); border-radius:13px; background:rgba(255,255,255,.035); color:var(--text); cursor:pointer; text-align:left; }
+        .action:hover { border-color:rgba(85,223,189,.6); }
+        .action b { display:block; font-size:12px; }
+        .action small { color:var(--muted); font-size:10px; }
+        .activity-card { margin-top:20px; }
+        .activity { display:grid; gap:12px; }
+        .activity-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 0; border-bottom:1px solid var(--line); }
+        .activity-row:last-child { border-bottom:0; padding-bottom:0; }
+        .activity-info { display:flex; align-items:center; gap:11px; min-width:0; }
+        .activity-icon { display:grid; place-items:center; width:35px; height:35px; border-radius:11px; background:rgba(85,168,255,.13); }
+        .activity-info b { display:block; font-size:12px; }
+        .activity-info small { color:var(--muted); font-size:10px; }
+        .amount { color:var(--mint); font-size:12px; font-weight:700; white-space:nowrap; }
+        @media(max-width:980px) { .metrics{grid-template-columns:repeat(2,1fr)} .shell{grid-template-columns:80px minmax(0,1fr)} .sidebar{padding:22px 12px}.brand{margin:0 0 38px;justify-content:center}.brand span:not(.brand-mark),.nav-label,.nav a span:not(.nav-icon),.sidebar-footer{display:none}.nav a{justify-content:center} }
+        @media(max-width:700px) { .shell{display:block}.sidebar{position:sticky;top:0;z-index:5;display:flex;flex-direction:row;align-items:center;padding:10px 14px;border-right:0;border-bottom:1px solid var(--line)}.brand{margin:0 auto 0 0}.nav-label,.sidebar-footer{display:none}.nav{display:flex}.nav a{padding:9px}.main{padding:22px 14px}.topbar{align-items:flex-start}.top-actions .icon-btn{display:none}.user-chip span{max-width:90px}.dashboard-grid{grid-template-columns:1fr}.activity-card{margin-top:20px} }
+        @media(max-width:430px) { .metrics{grid-template-columns:1fr 1fr;gap:9px}.metric{padding:14px}.metric strong{font-size:19px}.topbar h1{font-size:21px}.user-chip{padding-right:7px}.user-chip span{display:none} }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <aside class="sidebar">
+            <div class="brand"><span class="brand-mark">S</span><span>SBRYMS Finance</span></div>
+            <div class="nav-label">Workspace</div>
+            <nav class="nav">
+                <a class="active" href="dashboard.html"><span class="nav-icon">▦</span><span>Overview</span></a>
+                <a href="income.html"><span class="nav-icon">↗</span><span>Income</span></a>
+                <a href="expense.html"><span class="nav-icon">↘</span><span>Expenses</span></a>
+                <a href="deposit.html"><span class="nav-icon">◈</span><span>Deposits</span></a>
+                <a href="team-meet.html"><span class="nav-icon">♧</span><span>Team Meet</span></a>
+            </nav>
+            <div class="sidebar-footer"><small>Manage your finance and team activity from one place.</small><button class="logout" id="sideLogout">Logout</button></div>
+        </aside>
+        <main class="main">
+            <header class="topbar">
+                <div><h1>Good morning, <span id="userName">Member</span> 👋</h1><p>Here is your company financial overview.</p></div>
+                <div class="top-actions"><button class="icon-btn" type="button">⌕</button><button class="icon-btn" type="button">♢</button><div class="user-chip"><span class="avatar" id="userInitial">S</span><span id="userEmail">Member</span></div></div>
+            </header>
+            <section class="metrics">
+                <article class="metric"><div class="metric-head"><span>Total Balance</span><span class="metric-icon">৳</span></div><strong>৳ 8,42,500</strong><em>↗ 12.8% this month</em></article>
+                <article class="metric"><div class="metric-head"><span>Total Income</span><span class="metric-icon">↗</span></div><strong>৳ 12,40,000</strong><em>↗ 8.4% this month</em></article>
+                <article class="metric"><div class="metric-head"><span>Total Expense</span><span class="metric-icon" style="color:var(--orange);background:rgba(255,189,101,.12)">↘</span></div><strong>৳ 4,87,800</strong><em style="color:var(--orange)">4.1% under budget</em></article>
+                <article class="metric"><div class="metric-head"><span>Team Members</span><span class="metric-icon" style="color:var(--blue);background:rgba(85,168,255,.12)">♧</span></div><strong>128</strong><em style="color:var(--blue)">+8 this month</em></article>
+            </section>
+            <section class="dashboard-grid">
+                <article class="card"><div class="card-header"><h2>Financial performance</h2><span>Last 6 months ▾</span></div><div class="chart"><svg viewBox="0 0 700 200" preserveAspectRatio="none" aria-label="Financial performance chart"><defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#55dfbd" stop-opacity=".35"/><stop offset="1" stop-color="#55dfbd" stop-opacity="0"/></linearGradient></defs><path d="M0 166 C70 150 75 118 140 133 S210 95 275 112 S340 48 405 78 S480 70 535 89 S620 28 700 48 L700 200 L0 200Z" fill="url(#area)"/><path d="M0 166 C70 150 75 118 140 133 S210 95 275 112 S340 48 405 78 S480 70 535 89 S620 28 700 48" fill="none" stroke="#55dfbd" stroke-width="4"/></svg></div><div class="chart-caption"><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span></div></article>
+                <article class="card"><div class="card-header"><h2>Quick actions</h2><span>Manage</span></div><div class="actions"><button class="action" onclick="location.href='income.html'"><span>📥</span><span><b>Add income</b><small>Record funds</small></span></button><button class="action" onclick="location.href='expense.html'"><span>💸</span><span><b>Add expense</b><small>Track costs</small></span></button><button class="action" onclick="location.href='deposit.html'"><span>◈</span><span><b>New deposit</b><small>Review deposits</small></span></button><button class="action" onclick="location.href='team-meet.html'"><span>♧</span><span><b>Team Meet</b><small>Open workspace</small></span></button></div></article>
+            </section>
+            <article class="card activity-card"><div class="card-header"><h2>Recent activity</h2><span>View all →</span></div><div class="activity"><div class="activity-row"><div class="activity-info"><span class="activity-icon">📥</span><span><b>Monthly deposit received</b><small>Today, 10:42 AM</small></span></div><span class="amount">+ ৳65,000</span></div><div class="activity-row"><div class="activity-info"><span class="activity-icon">💸</span><span><b>Office expense recorded</b><small>Yesterday, 4:18 PM</small></span></div><span class="amount" style="color:var(--danger)">- ৳18,500</span></div><div class="activity-row"><div class="activity-info"><span class="activity-icon">♧</span><span><b>New team member joined</b><small>Yesterday, 1:30 PM</small></span></div><span class="amount" style="color:var(--blue)">New</span></div></div></article>
+        </main>
+    </div>
+    <script>
+        const email = localStorage.getItem('currentUserEmail') || 'SBRYMS Member';
+        const shortName = email.includes('@') ? email.split('@')[0].replace(/[._-]+/g, ' ') : email;
+        const name = shortName.replace(/\b\w/g, c => c.toUpperCase());
+        document.getElementById('userName').textContent = name;
+        document.getElementById('userEmail').textContent = email;
+        document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
+        async function logout() {
+            await firebase.auth().signOut();
+            localStorage.removeItem('currentUserEmail');
+            localStorage.removeItem('currentUserUid');
+            window.location.replace('index.html');
+        }
+        document.getElementById('sideLogout').addEventListener('click', logout);
+    </script>
+</body>
+</html>

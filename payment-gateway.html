@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBRYMS Finance - Payment Gateway</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .page-header {
+            background: #df146e;
+            color: white;
+            padding: 22px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 100;
+        }
+
+        .page-header a {
+            color: white;
+            text-decoration: none;
+            font-size: 22px;
+        }
+
+        .page-title {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            opacity: 0.85;
+            margin-top: 4px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 32px;
+            max-width: 600px;
+            width: 100%;
+            margin-top: 80px;
+        }
+
+        .form-section {
+            margin-bottom: 28px;
+        }
+
+        .form-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 16px;
+            border-bottom: 2px solid #df146e;
+            padding-bottom: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #df146e;
+            box-shadow: 0 0 0 3px rgba(223, 20, 110, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .payment-method {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .payment-method:hover {
+            border-color: #df146e;
+            background: #fde8f6;
+        }
+
+        .payment-method.active {
+            border-color: #df146e;
+            background: #fde8f6;
+        }
+
+        .payment-method-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .payment-method-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .transaction-id {
+            background: #f3f4f6;
+            padding: 12px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #6b7280;
+            word-break: break-all;
+        }
+
+        .summary-box {
+            background: #f8fafc;
+            border-left: 4px solid #df146e;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .summary-row:last-child {
+            margin-bottom: 0;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 10px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .summary-row span:last-child {
+            font-weight: 600;
+            color: #df146e;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 18px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #df146e 0%, #e84d8f 100%);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(223, 20, 110, 0.3);
+        }
+
+        .btn-reset {
+            background: #f3f4f6;
+            color: #111827;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-reset:hover {
+            background: #e5e7eb;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            border: 1px solid #6ee7b7;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+            color: #065f46;
+            display: none;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+            color: #b91c1c;
+            display: none;
+        }
+
+        .profile-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .profile-option {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .profile-option:hover {
+            border-color: #df146e;
+            background: #fde8f6;
+        }
+
+        .profile-option.selected {
+            border-color: #df146e;
+            background: #fde8f6;
+        }
+
+        .profile-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: white;
+            font-size: 18px;
+            overflow: hidden;
+        }
+
+        .profile-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #111827;
+            margin-top: 8px;
+        }
+
+        .timeline {
+            margin-top: 28px;
+            padding-top: 28px;
+            border-top: 2px solid #e5e7eb;
+        }
+
+        .transaction-history {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .transaction-item {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .transaction-item-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .transaction-item-meta {
+            color: #6b7280;
+            font-size: 11px;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px;
+                margin-top: 70px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .page-header {
+                padding: 16px 12px;
+            }
+
+            .page-title {
+                font-size: 18px;
+            }
+
+            button {
+                padding: 12px 14px;
+                font-size: 13px;
+            }
+        }
+    </style>
+<style>
+/* Global dark/translucent theme overrides applied by Copilot */
+/* Remove rounded corners and use linear borders */
+/* Remove global forced rounding; apply refined gradient borders and sensible radii */
+/* Use a transparent base border and a subtle gradient edge for better look on dark background */
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .icon-box, .profile-photo, .input-field, .btn-main {
+    border: 1px solid transparent !important;
+    background-image: linear-gradient(180deg, rgba(7,17,36,0.66), rgba(7,17,36,0.66)), linear-gradient(90deg, rgba(211,38,150,0.12), rgba(6,182,212,0.12));
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    border-radius: 10px !important;
+}
+.profile-photo { border-radius: 50% !important; }
+.menu-icon, .header-action { border-radius: 12px !important; }
+.btn-main { border-radius: 999px !important; }
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .icon-box, .profile-photo, .input-field, .btn-main { border: 1px solid rgba(255,255,255,0.06) !important; }
+body { background-color: #071124 !important; background-image: radial-gradient(1200px 600px at 10% 20%, rgba(207,44,149,0.08), transparent 20%), radial-gradient(900px 500px at 80% 70%, rgba(4,188,212,0.06), transparent 18%), linear-gradient(180deg,#040714 0%, #071124 40%, #071726 100%); color: #e6eef6 !important; }
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu { background: rgba(7,17,36,0.56) !important; color: #e6eef6 !important; border-color: rgba(255,255,255,0.04) !important; box-shadow: 0 12px 30px rgba(2,6,23,0.6) !important; }
+.card h3, .container h2, .app-header h1, .app-header h2 { color: #e6eef6 !important; }
+.input-field { background: rgba(255,255,255,0.02) !important; color: #e6eef6 !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+.link, a { color: rgba(255,255,255,0.95) !important; }
+.btn-main { background: linear-gradient(135deg, rgba(211,38,150,0.95) 0%, rgba(6,182,212,0.95) 100%) !important; color: #021724 !important; }
+/* small helpers */
+.auth-box { backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%); }
+#toast { background: rgba(20,22,26,0.9) !important; color: #fff !important; }
+</style>
+<style>
+/* Remove page chrome borders; keep only .icon-box borders */
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .profile-photo, .input-field, .btn-main {
+  border: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+.icon-box { border: 1px solid rgba(255,255,255,0.08) !important; background: transparent !important; box-shadow: none !important; }
+body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
+</style>
+<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
+<link rel="stylesheet" href="assets/bg.css">
+</head>
+<body>
+    <div class="page-header">
+        <div>
+            <a href="deposit.html">←</a>
+            <div style="display:inline-block; vertical-align: middle; margin-left: 12px;">
+                <h1 class="page-title">Payment Gateway</h1>
+                <p class="subtitle">সরাসরি পেমেন্ট এন্ট্রি করুন</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="successMessage" class="success-message">✓ পেমেন্ট সফলভাবে রেকর্ড করা হয়েছে!</div>
+        <div id="errorMessage" class="error-message">✗ কোন ত্রুটি হয়েছে। অনুগ্রহ করে পুনরায় চেষ্টা করুন।</div>
+
+        <form id="paymentForm" onsubmit="submitPayment(event)">
+            <!-- Member Selection -->
+            <div class="form-section">
+                <div class="form-title">মেম্বার নির্বাচন করুন</div>
+                <div class="profile-selector" id="profileSelector"></div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div class="form-section">
+                <div class="form-title">পেমেন্ট পদ্ধতি</div>
+                <div class="payment-methods" id="paymentMethods"></div>
+            </div>
+
+            <!-- Payment Details -->
+            <div class="form-section">
+                <div class="form-title">পেমেন্ট বিবরণ</div>
+
+                <div class="form-group">
+                    <label>মাস এবং তারিখ পরিসীমা *</label>
+                    <select id="dateRange" required>
+                        <option value="">নির্বাচন করুন...</option>
+                        <option value="1-15">মাসের ১-১৫ তারিখ</option>
+                        <option value="16-end">মাসের ১৬-শেষ তারিখ</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>বছর *</label>
+                        <select id="year" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>মাস *</label>
+                        <select id="month" required></select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Fee পরিমাণ *</label>
+                        <input type="number" id="fee" min="0" required placeholder="০">
+                    </div>
+                    <div class="form-group">
+                        <label>জরিমানা (Fine)</label>
+                        <input type="number" id="fine" min="0" value="0" placeholder="০">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>লেনদেন আইডি / রেফারেন্স নম্বর</label>
+                    <input type="text" id="transactionId" placeholder="যেমন: STR123456 অথবা MobileNumber">
+                </div>
+
+                <div class="form-group">
+                    <label>মন্তব্য (ঐচ্ছিক)</label>
+                    <textarea id="notes" rows="3" placeholder="যেকোনো অতিরিক্ত তথ্য..."></textarea>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label>
+                        <input type="checkbox" id="applyStar" checked> স্টার চিহ্নিত করুন
+                    </label>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="summary-box">
+                <div class="summary-row">
+                    <span>Fee:</span>
+                    <span id="summaryFee">০</span>
+                </div>
+                <div class="summary-row">
+                    <span>Fine:</span>
+                    <span id="summaryFine">০</span>
+                </div>
+                <div class="summary-row">
+                    <span>মোট পেমেন্ট:</span>
+                    <span id="summaryTotal">০</span>
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="button-group">
+                <button type="reset" class="btn-reset" onclick="resetForm()">রিসেট করুন</button>
+                <button type="submit" class="btn-submit">পেমেন্ট সংরক্ষণ করুন</button>
+            </div>
+        </form>
+
+        <!-- Transaction History -->
+        <div class="timeline">
+            <div class="form-title">সাম্প্রতিক লেনদেন</div>
+            <div class="transaction-history" id="transactionHistory">
+                <div style="text-align: center; color: #9ca3af; padding: 20px;">কোনো লেনদেন নেই</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script>
+        // Initialize Firebase (matches other pages)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
+            authDomain: "sbryms-finance.firebaseapp.com",
+            projectId: "sbryms-finance",
+            storageBucket: "sbryms-finance.appspot.com",
+            messagingSenderId: "1087018056369",
+            appId: "1:1087018056369:web:81bc39017385a649500090"
+        };
+        if (typeof firebase !== 'undefined' && (!firebase.apps || !firebase.apps.length)) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const db = (typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null;
+
+        // Centralized UI helpers: toast, confirm, and modal-management
+        // showToast(message): non-blocking toast
+        function showToast(message) {
+            try {
+                let container = document.getElementById('toastContainer');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'toastContainer';
+                    container.style.position = 'fixed';
+                    container.style.right = '16px';
+                    container.style.bottom = '16px';
+                    container.style.zIndex = '110000';
+                    document.body.appendChild(container);
+                }
+                const t = document.createElement('div');
+                t.className = 'toast-item';
+                t.innerText = message;
+                t.style.background = 'rgba(20,22,26,0.95)';
+                t.style.color = '#fff';
+                t.style.padding = '10px 14px';
+                t.style.borderRadius = '8px';
+                t.style.marginTop = '8px';
+                t.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+                t.style.opacity = '0';
+                t.style.transition = 'opacity 220ms ease, transform 220ms ease';
+                t.style.transform = 'translateY(6px)';
+                container.appendChild(t);
+                requestAnimationFrame(() => {
+                    t.style.opacity = '1';
+                    t.style.transform = 'translateY(0)';
+                });
+                setTimeout(() => {
+                    t.style.opacity = '0';
+                    t.style.transform = 'translateY(6px)';
+                    setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 300);
+                }, 3000);
+            } catch (e) { console.error('showToast error', e); }
+        }
+
+        // showConfirm(message, onConfirm, onCancel): non-blocking confirm modal
+        function showConfirm(message, onConfirm, onCancel) {
+            try {
+                let modal = document.getElementById('globalConfirmModal');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'globalConfirmModal';
+                    modal.style.position = 'fixed';
+                    modal.style.left = '0';
+                    modal.style.top = '0';
+                    modal.style.width = '100%';
+                    modal.style.height = '100%';
+                    modal.style.background = 'rgba(0,0,0,0.45)';
+                    modal.style.zIndex = '120000';
+                    modal.innerHTML = `
+                        <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;color:#000;padding:16px;border-radius:8px;min-width:300px;box-shadow:0 8px 24px rgba(0,0,0,0.2);">
+                            <div id="globalConfirmMessage" style="margin-bottom:12px;font-size:15px;color:#111827"></div>
+                            <div style="display:flex;justify-content:flex-end;gap:8px;">
+                                <button id="globalConfirmNo" style="padding:6px 10px;border-radius:6px;border:1px solid #ccc;background:#fff;">No</button>
+                                <button id="globalConfirmYes" style="padding:6px 10px;border-radius:6px;border:none;background:#10b981;color:#fff;">Yes</button>
+                            </div>
+                        </div>`;
+                    document.body.appendChild(modal);
+                }
+                const msgEl = modal.querySelector('#globalConfirmMessage');
+                const okBtn = modal.querySelector('#globalConfirmYes');
+                const cancelBtn = modal.querySelector('#globalConfirmNo');
+                msgEl.innerText = message || '';
+                function cleanup() {
+                    okBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                    modal.style.display = 'none';
+                    document.body.style.overflow = '';
+                }
+                okBtn.onclick = function () { cleanup(); if (typeof onConfirm === 'function') onConfirm(); };
+                cancelBtn.onclick = function () { cleanup(); if (typeof onCancel === 'function') onCancel(); };
+                // show modal and disable background scroll
+                modal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            } catch (e) {
+                console.error('showConfirm error', e);
+                const ok = confirm(message);
+                if (ok) { if (typeof onConfirm === 'function') onConfirm(); } else { if (typeof onCancel === 'function') onCancel(); }
+            }
+        }
+
+        // Close any known modal-like widgets (EPS, global confirm, others with data-modal)
+        function closeAllModals() {
+            try {
+                const eps = document.getElementById('epsWidget'); if (eps) { eps.style.display = 'none'; }
+                const geom = document.getElementById('feeModal'); if (geom) geom.style.display = 'none';
+                const globalConfirm = document.getElementById('globalConfirmModal'); if (globalConfirm) globalConfirm.style.display = 'none';
+                const globalOverlay = document.getElementById('epsOverlay'); if (globalOverlay) globalOverlay.style.display = 'none';
+                // reset body scroll
+                document.body.style.overflow = '';
+            } catch (e) { console.error('closeAllModals error', e); }
+        }
+
+        const PAYMENT_HISTORY_KEY = 'payment_gateway_history';
+        const SELECTED_PROFILE_KEY = 'payment_selected_profile';
+        const PAYMENT_METHOD_KEY = 'payment_selected_method';
+
+        const paymentMethods = [
+            { id: 'bkash', name: 'bKash', icon: '📱' },
+            { id: 'nagad', name: 'Nagad', icon: '💳' },
+            { id: 'rocket', name: 'Rocket', icon: '🚀' },
+            { id: 'upay', name: 'Upay', icon: '💰' },
+            { id: 'bank', name: 'Bank Transfer', icon: '🏦' },
+            { id: 'cash', name: 'Cash', icon: '💵' }
+        ];
+
+        const profiles = [
+            { email: 'shakil@gmail.com', name: 'Shakil' },
+            { email: 'bushra@gmail.com', name: 'Bushra' },
+            { email: 'rifat@gmail.com', name: 'Rifat' },
+            { email: 'yahya@gmail.com', name: 'Yahya' },
+            { email: 'mahdi@gmail.com', name: 'Mahdi' },
+            { email: 'sobuj@gmail.com', name: 'Sobuj' }
+        ];
+
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const years = [2022, 2023, 2024, 2025, 2026];
+
+        let selectedProfile = localStorage.getItem(SELECTED_PROFILE_KEY) || '';
+        let selectedPaymentMethod = localStorage.getItem(PAYMENT_METHOD_KEY) || '';
+
+        function initializeForm() {
+            // Check URL parameters for pre-selected profile
+            const urlParams = new URLSearchParams(window.location.search);
+            const profileParam = urlParams.get('profile');
+            if (profileParam) {
+                selectedProfile = decodeURIComponent(profileParam);
+                localStorage.setItem(SELECTED_PROFILE_KEY, selectedProfile);
+            }
+
+            // Prefill fee/fine if provided in URL (from deposit quick-pay)
+            const feeParam = urlParams.get('fee');
+            const fineParam = urlParams.get('fine');
+            if (feeParam !== null) {
+                const feeInput = document.getElementById('fee');
+                if (feeInput) feeInput.value = Number(feeParam) || 0;
+            }
+            if (fineParam !== null) {
+                const fineInput = document.getElementById('fine');
+                if (fineInput) fineInput.value = Number(fineParam) || 0;
+            }
+            // Update summary after prefilling
+            setTimeout(updateSummary, 0);
+
+            // Initialize payment methods
+            const paymentMethodsContainer = document.getElementById('paymentMethods');
+            paymentMethodsContainer.innerHTML = paymentMethods.map(method => `
+                <div class="payment-method ${selectedPaymentMethod === method.id ? 'active' : ''}" onclick="selectPaymentMethod('${method.id}')">
+                    <div class="payment-method-icon">${method.icon}</div>
+                    <div class="payment-method-name">${method.name}</div>
+                </div>
+            `).join('');
+
+            // Initialize profile selector
+            const profileSelectorContainer = document.getElementById('profileSelector');
+            profileSelectorContainer.innerHTML = profiles.map(profile => `
+                <div class="profile-option ${selectedProfile === profile.email ? 'selected' : ''}" data-email="${profile.email}" onclick="selectProfile('${profile.email}')">
+                    <div class="profile-avatar" style="background: #df146e;">${profile.name.charAt(0).toUpperCase()}</div>
+                    <div class="profile-name">${profile.name}</div>
+                </div>
+            `).join('');
+            // If a profile was preselected via URL or storage, mark it as selected in the UI
+            if (selectedProfile) selectProfile(selectedProfile);
+
+            // Initialize year dropdown
+            const yearSelect = document.getElementById('year');
+            yearSelect.innerHTML = years.map(year => `<option value="${year}">${year}</option>`).join('');
+            yearSelect.value = new Date().getFullYear();
+
+            // Initialize month dropdown
+            const monthSelect = document.getElementById('month');
+            monthSelect.innerHTML = months.map((month, index) => `<option value="${index + 1}">${month}</option>`).join('');
+            monthSelect.value = new Date().getMonth() + 1;
+
+            // Setup event listeners for summary update
+            document.getElementById('fee').addEventListener('input', updateSummary);
+            document.getElementById('fine').addEventListener('input', updateSummary);
+
+            loadTransactionHistory();
+        }
+
+        function selectProfile(email) {
+            selectedProfile = email;
+            localStorage.setItem(SELECTED_PROFILE_KEY, email);
+            document.querySelectorAll('.profile-option').forEach(el => el.classList.remove('selected'));
+            const profileOption = document.querySelector(`.profile-option[data-email="${email}"]`);
+            if (profileOption) {
+                profileOption.classList.add('selected');
+            }
+        }
+
+        function selectPaymentMethod(methodId) {
+            selectedPaymentMethod = methodId;
+            localStorage.setItem(PAYMENT_METHOD_KEY, methodId);
+            document.querySelectorAll('.payment-method').forEach(el => el.classList.remove('active'));
+            event.target.closest('.payment-method').classList.add('active');
+        }
+
+        function updateSummary() {
+            const fee = Number(document.getElementById('fee').value) || 0;
+            const fine = Number(document.getElementById('fine').value) || 0;
+            const total = fee + fine;
+
+            document.getElementById('summaryFee').textContent = fee;
+            document.getElementById('summaryFine').textContent = fine;
+            document.getElementById('summaryTotal').textContent = total;
+        }
+
+        function resetForm() {
+            document.getElementById('paymentForm').reset();
+            updateSummary();
+        }
+
+        function submitPayment(event) {
+            event.preventDefault();
+
+            if (!selectedProfile) {
+                showError('অনুগ্রহ করে একজন মেম্বার নির্বাচন করুন');
+                return;
+            }
+
+            if (!selectedPaymentMethod) {
+                showError('অনুগ্রহ করে একটি পেমেন্ট পদ্ধতি নির্বাচন করুন');
+                return;
+            }
+
+            const fee = Number(document.getElementById('fee').value) || 0;
+            if (fee <= 0) {
+                showError('Fee পরিমাণ অবশ্যই ০ এর চেয়ে বেশি হতে হবে');
+                return;
+            }
+
+            const payment = {
+                id: `PAY-${Date.now()}`,
+                timestamp: new Date().toLocaleString('bn-BD'),
+                profile: selectedProfile,
+                profileName: profiles.find(p => p.email === selectedProfile)?.name || 'Unknown',
+                paymentMethod: selectedPaymentMethod,
+                dateRange: document.getElementById('dateRange').value,
+                year: Number(document.getElementById('year').value),
+                month: Number(document.getElementById('month').value),
+                fee: fee,
+                fine: Number(document.getElementById('fine').value) || 0,
+                total: fee + (Number(document.getElementById('fine').value) || 0),
+                transactionId: document.getElementById('transactionId').value || 'N/A',
+                notes: document.getElementById('notes').value,
+                star: document.getElementById('applyStar').checked
+            };
+
+            savePaymentToHistory(payment);
+            // If there is a pending_payment from deposit page, mark it completed so deposit page can update
+            try {
+                const pendingRaw = localStorage.getItem('pending_payment');
+                if (pendingRaw) {
+                    const pending = JSON.parse(pendingRaw);
+                    const completed = {
+                        ...pending,
+                        status: 'Paid',
+                        paidAt: new Date().toISOString(),
+                        fee: payment.fee,
+                        fine: payment.fine,
+                        transactionId: payment.transactionId,
+                        paymentRecordId: payment.id,
+                        star: payment.star ? 1 : 0
+                    };
+                    localStorage.setItem('last_completed_payment', JSON.stringify(completed));
+                    // remove pending to avoid double-applying
+                    localStorage.removeItem('pending_payment');
+
+                    // Also write to Firestore payments and notifications (queue emails)
+                    try {
+                        if (db) {
+                            // Save payment record to 'payments' collection
+                            db.collection('payments').add({
+                                paymentRecordId: payment.id,
+                                profileEmail: pending.profileEmail || pending.profile || payment.profile,
+                                profileName: payment.profileName,
+                                fee: payment.fee,
+                                fine: payment.fine,
+                                total: payment.total,
+                                transactionId: payment.transactionId,
+                                dateRange: payment.dateRange,
+                                month: payment.month,
+                                year: payment.year,
+                                notes: payment.notes,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }).catch(e => console.error('firestore payments add error', e));
+
+                            // Create admin notification to sbrymsteam@gmail.com
+                            db.collection('notifications').add({
+                                to: 'sbrymsteam@gmail.com',
+                                subject: `Payment received: ${payment.profileName} ৳${payment.total}`,
+                                message: `Payment ${payment.id} received from ${payment.profileName} (${pending.profileEmail || payment.profile}). Amount: ৳${payment.total}. Transaction: ${payment.transactionId}`,
+                                paymentId: payment.id,
+                                read: false,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            }).catch(e => console.error('firestore notifications add error', e));
+
+                            // Create user notification (queued) for the payer
+                            const payerEmail = pending.profileEmail || payment.profile;
+                            if (payerEmail) {
+                                db.collection('notifications').add({
+                                    to: payerEmail,
+                                    subject: 'Payment confirmation',
+                                    message: `Dear ${payment.profileName}, your payment of ৳${payment.total} has been received. Transaction ID: ${payment.transactionId}`,
+                                    paymentId: payment.id,
+                                    read: false,
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                                }).catch(e => console.error('firestore user notification add error', e));
+                            }
+                        }
+                    } catch (e) {
+                        console.error('firestore write error', e);
+                    }
+                }
+            } catch (e) {
+                console.error('error saving completed payment', e);
+            }
+
+            showSuccess('পেমেন্ট সফলভাবে রেকর্ড করা হয়েছে!');
+            resetForm();
+            loadTransactionHistory();
+            // redirect back to deposit page so UI updates there
+            setTimeout(() => { window.location.href = 'deposit.html'; }, 1200);
+        }
+
+        function savePaymentToHistory(payment) {
+            let history = [];
+            try {
+                const stored = localStorage.getItem(PAYMENT_HISTORY_KEY);
+                history = stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                history = [];
+            }
+
+            history.unshift(payment);
+            const maxHistory = 100;
+            history = history.slice(0, maxHistory);
+
+            try {
+                localStorage.setItem(PAYMENT_HISTORY_KEY, JSON.stringify(history));
+            } catch (e) {
+                showError('স্টোরেজ সীমা অতিক্রম করেছে। পুরাতন ডাটা সাফ করছি...');
+                history = history.slice(0, Math.floor(maxHistory / 2));
+                localStorage.setItem(PAYMENT_HISTORY_KEY, JSON.stringify(history));
+            }
+        }
+
+        function loadTransactionHistory() {
+            let history = [];
+            try {
+                const stored = localStorage.getItem(PAYMENT_HISTORY_KEY);
+                history = stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                history = [];
+            }
+
+            const historyContainer = document.getElementById('transactionHistory');
+            if (history.length === 0) {
+                historyContainer.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 20px;">কোনো লেনদেন নেই</div>';
+                return;
+            }
+
+            historyContainer.innerHTML = history.slice(0, 20).map(payment => {
+                const methodName = paymentMethods.find(m => m.id === payment.paymentMethod)?.name || 'Unknown';
+                const monthName = months[payment.month - 1];
+                return `
+                    <div class="transaction-item">
+                        <div class="transaction-item-header">
+                            <span>${payment.profileName} - ৳${payment.total}</span>
+                            <span>${payment.star ? '⭐' : ''}</span>
+                        </div>
+                        <div class="transaction-item-meta">
+                            ${methodName} • ${monthName} ${payment.year} (${payment.dateRange}) • ${payment.timestamp}
+                        </div>
+                        <div class="transaction-item-meta" style="margin-top: 4px;">
+                            ID: ${payment.id}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showSuccess(message) {
+            const successMessage = document.getElementById('successMessage');
+            successMessage.textContent = '✓ ' + message;
+            successMessage.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 4000);
+        }
+
+        function showError(message) {
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = '✗ ' + message;
+            errorMessage.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 4000);
+        }
+
+        // EPS-style widget: builds a centered payment UI resembling the provided screenshot
+        function ensureEPSWidgetExists() {
+            if (document.getElementById('epsWidget')) return;
+            const widget = document.createElement('div');
+            widget.id = 'epsWidget';
+            widget.innerHTML = `
+                <div class="eps-overlay" id="epsOverlay"></div>
+                <div class="eps-panel">
+                    <div class="eps-header">
+                        <div class="eps-logo">EPS</div>
+                        <button class="eps-close" onclick="hideEPSWidget()">✕</button>
+                    </div>
+                    <div class="eps-tabs">
+                        <button class="eps-tab active" data-mode="card">CARD</button>
+                        <button class="eps-tab" data-mode="mobile">MOBILE BANKING</button>
+                        <button class="eps-tab" data-mode="netbank">NET BANKING</button>
+                    </div>
+                    <div class="eps-body">
+                        <div class="eps-card-form eps-mode" data-mode="card">
+                            <input id="epsCardNumber" placeholder="Enter Card Number" />
+                            <div style="display:flex;gap:8px;margin-top:8px;">
+                                <input id="epsExpiry" placeholder="MM/YY" style="flex:1;" />
+                                <input id="epsCvv" placeholder="CVV" style="width:90px;" />
+                            </div>
+                            <label style="margin-top:8px;font-size:12px;"><input id="epsSaveCard" type="checkbox" /> Save card & remember me</label>
+                        </div>
+                        <div class="eps-mobile-form eps-mode" data-mode="mobile" style="display:none;">
+                            <select id="epsMobileMethod">
+                                <option value="bkash">bKash</option>
+                                <option value="nagad">Nagad</option>
+                                <option value="rocket">Rocket</option>
+                            </select>
+                            <input id="epsMobileNumber" placeholder="Mobile Number" style="margin-top:8px;" />
+                        </div>
+                        <div class="eps-netbank-form eps-mode" data-mode="netbank" style="display:none;">
+                            <select id="epsNetBank">
+                                <option value="dbbl">DBBL</option>
+                                <option value="brac">BRAC</option>
+                                <option value="city">City Bank</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="eps-footer">
+                        <div class="eps-amount">Amount: <span id="epsAmount">0</span></div>
+                        <div style="display:flex;gap:8px;margin-top:8px;">
+                            <button class="eps-cancel" onclick="hideEPSWidget()">Cancel</button>
+                            <button class="eps-pay" onclick="epsSubmit()">Pay</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(widget);
+            // ensure widget is hidden initially
+            widget.style.display = 'none';
+            // epsOverlay exists inside widget; hide it initially
+            const _ov = document.getElementById('epsOverlay'); if (_ov) _ov.style.display = 'none';
+
+            // inject styles
+            const style = document.createElement('style');
+            style.textContent = `
+                .eps-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998}
+                .eps-panel{position:fixed;right:20px;top:80px;width:360px;background:#fff;border-radius:10px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,0.3);z-index:9999;font-family:Segoe UI, sans-serif}
+                .eps-header{display:flex;justify-content:space-between;align-items:center}
+                .eps-logo{font-weight:800;color:#d32f7a}
+                .eps-close{border:none;background:transparent;font-size:16px;cursor:pointer}
+                .eps-tabs{display:flex;gap:6px;margin-top:8px}
+                .eps-tab{flex:1;padding:8px;border-radius:6px;border:1px solid #e5e7eb;background:#f8fafc;cursor:pointer}
+                .eps-tab.active{background:#e6f4ea;border-color:#10b981}
+                .eps-body{margin-top:10px}
+                .eps-body input, .eps-body select{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px}
+                .eps-footer{margin-top:12px;display:flex;flex-direction:column}
+                .eps-amount{font-weight:700;margin-bottom:6px}
+                .eps-cancel{background:#f3f4f6;border:1px solid #d1d5db;padding:8px;border-radius:8px;cursor:pointer}
+                .eps-pay{background:#10b981;color:#fff;padding:8px;border:none;border-radius:8px;cursor:pointer}
+                @media (max-width:420px){.eps-panel{left:10px;right:10px;top:60px;width:auto}}
+            `;
+            document.head.appendChild(style);
+
+            // tab handling
+            widget.querySelectorAll('.eps-tab').forEach(btn => btn.addEventListener('click', (e) => {
+                widget.querySelectorAll('.eps-tab').forEach(b=>b.classList.remove('active'));
+                btn.classList.add('active');
+                const mode = btn.getAttribute('data-mode');
+                widget.querySelectorAll('.eps-mode').forEach(el=>el.style.display = el.getAttribute('data-mode')===mode?'block':'none');
+            }));
+        }
+
+        function showEPSWidget(amount){
+            // Close any other modals and show EPS in a controlled way
+            closeAllModals();
+            ensureEPSWidgetExists();
+            const w = document.getElementById('epsWidget');
+            const overlay = document.getElementById('epsOverlay');
+            if (!w || !overlay) return;
+            document.getElementById('epsAmount').textContent = amount;
+            overlay.style.display = 'block';
+            w.style.display = 'block';
+            // disable background scroll while widget open
+            document.body.style.overflow = 'hidden';
+        }
+
+        function hideEPSWidget(){
+            const w = document.getElementById('epsWidget');
+            const overlay = document.getElementById('epsOverlay');
+            if (!w || !overlay) return;
+            overlay.style.display = 'none';
+            w.style.display = 'none';
+            // restore scrolling
+            document.body.style.overflow = '';
+        }
+
+        function epsSubmit(){
+            // simulate gateway success; gather selected info and call submitPayment with values
+            try {
+                const fee = Number(document.getElementById('epsAmount').textContent) || 0;
+                const fine = Number(document.getElementById('fine').value) || 0;
+                const transactionId = 'EPS-' + Date.now();
+                // if a pending_payment exists, populate form fields from it
+                const pendingRaw = localStorage.getItem('pending_payment');
+                if (pendingRaw) {
+                    const pending = JSON.parse(pendingRaw);
+                    // prefill form controls so submitPayment picks them up
+                    selectProfile(pending.profileEmail || pending.profile || '');
+                    document.getElementById('fee').value = fee;
+                    document.getElementById('fine').value = fine;
+                    document.getElementById('transactionId').value = transactionId;
+                    document.getElementById('month').value = pending.month || (new Date().getMonth()+1);
+                    document.getElementById('year').value = pending.year || (new Date().getFullYear());
+                    document.getElementById('dateRange').value = pending.date && pending.date.includes('1-15') ? '1-15' : '16-end';
+                }
+                // close widget and call submitPayment (which will save history and mark last_completed_payment)
+                hideEPSWidget();
+                // small delay so DOM updates propagate
+                setTimeout(()=>{
+                    // ensure a payment method is selected for validation; pick cash if none
+                    if (!selectedPaymentMethod) selectPaymentMethod('cash');
+                    // submit form programmatically
+                    const fakeEvent = new Event('submit', {cancelable:true});
+                    document.getElementById('paymentForm').dispatchEvent(fakeEvent);
+                },200);
+            } catch(e){
+                console.error('epsSubmit error', e);
+                showError('Payment failed. Try again.');
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', function(){
+            initializeForm();
+            // if deposit -> payment flow provided a pending_payment, open EPS widget with amount
+            try{
+                const pendingRaw = localStorage.getItem('pending_payment');
+                if (pendingRaw) {
+                    const pending = JSON.parse(pendingRaw);
+                    const amount = Number(pending.fee) + (Number(pending.fine)||0) || Number(new URLSearchParams(window.location.search).get('fee')) || 0;
+                    showEPSWidget(amount);
+                }
+            }catch(e){console.error(e)}
+        });
+    </script>
+<script src="assets/background-settings.js"></script>
+</body>
+</html>
