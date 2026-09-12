@@ -6,6 +6,9 @@
     <meta name="theme-color" content="#071124">
     <meta name="description" content="SBRYMS Finance Web - Smart financial management">
     <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firebase.googleapis.com" crossorigin>
+    <link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
     <title>SBRYMS Finance Web</title>
     <style>
         :root { color-scheme: dark; --mint: #5ed5bf; --cyan: #06b6d4; --pink: #d32696; --muted: #aab7c9; }
@@ -91,6 +94,9 @@
         </section>
     </main>
     <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+        }
         document.getElementById('apkButton').addEventListener('click', () => {
             alert('Free Android APK will be available here soon.');
         });

@@ -1,19 +1,22 @@
-const CACHE_NAME = 'sbryms-finance-v7';
+const CACHE_NAME = 'sbryms-finance-v8';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
   '/assets/bg.png',
-  '/assets/bg.css',
-  // Add other assets like CSS, JS if any
+  '/assets/bg.css'
 ];
 
 self.addEventListener('install', event => {
-  // Activate immediately and cache core assets
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+      .then(cache => Promise.all(
+        urlsToCache.map(url => fetch(url).then(response => {
+          if (response.ok) return cache.put(url, response);
+          return undefined;
+        }).catch(() => undefined))
+      ))
   );
 });
 
@@ -21,56 +24,40 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Serve cached pages immediately, then refresh the cache in the background.
-  if (request.mode === 'navigate') {
+  // Never intercept writes, Firebase calls, browser extensions, or other origins.
+  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+
+  // Show cached HTML immediately and refresh it in the background.
+  if (request.mode === 'navigate' || request.destination === 'document') {
     event.respondWith((async () => {
       const cached = await caches.match(request);
-      const refresh = fetch(request).then(response => {
+      const refresh = fetch(request).then(async response => {
         if (response.ok) {
-          caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone()));
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(request, response.clone());
         }
         return response;
       }).catch(() => cached || caches.match('/index.html'));
       if (cached) {
-        event.waitUntil(refresh.then(() => undefined));
+        event.waitUntil(refresh.catch(() => undefined));
         return cached;
       }
-      try {
-        return await refresh;
-      } catch (err) {
-        return new Response('Offline', { status: 503, statusText: 'Offline' });
-      }
+      return refresh;
     })());
     return;
   }
 
-  // HTML must be fresh so navigation never runs an outdated page script.
-  if (url.origin === location.origin && (
-    request.destination === 'document' ||
-    url.pathname.endsWith('.html')
-  )) {
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-          return response;
-        })
-        .catch(() => caches.match(request).then(cached => cached || caches.match('/index.html')))
-    );
-    return;
-  }
-
-  // For other same-origin resources, try cache first then network.
-  if (url.origin === location.origin) {
-    event.respondWith(
-      caches.match(request).then(cached => cached || fetch(request))
-    );
-    return;
-  }
-
-  // For cross-origin requests just allow network fetch
-  // let browser handle it
+  // Static assets are cache-first and are updated when a new version is fetched.
+  event.respondWith((async () => {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    const response = await fetch(request);
+    if (response.ok && response.type === 'basic') {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(request, response.clone());
+    }
+    return response;
+  })());
 });
 
 self.addEventListener('activate', event => {

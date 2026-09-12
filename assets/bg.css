@@ -2,7 +2,8 @@
 :root{--bg-url: url('bg.png');}
 html,body{
   height:100%;
-  background: var(--bg-url) center center / cover no-repeat fixed !important;
+  background: var(--bg-url) center center / cover no-repeat !important;
+  background-attachment: scroll !important;
 }
 body{
   filter: none !important;
@@ -10,6 +11,9 @@ body{
   min-height:100%;
   position: relative;
   isolation: isolate;
+  color: #e6eef6;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 /* Keep page content above the shared background. */
 body > *{
@@ -18,9 +22,7 @@ body > *{
 }
 
 /* Global background colors for all elements */
-* {
-  background-color: transparent !important;
-}
+*:focus-visible { outline: 2px solid #5ed5bf; outline-offset: 2px; }
 
 /* Specific elements get a translucent surface */
 body, html {
@@ -61,11 +63,6 @@ p, span, div, h1, h2, h3, h4, h5, h6, label, li, a, td, th {
   color: #e6eef6 !important;
 }
 
-/* Remove unnecessary borders, keep only linear/gradient borders */
-* {
-  border: none !important;
-}
-
 /* Allow specific linear gradient borders only - selective restoration */
 .icon-box {
   border: 1px solid rgba(211, 38, 150, 0.3) !important;
@@ -96,4 +93,14 @@ p, span, div, h1, h2, h3, h4, h5, h6, label, li, a, td, th {
 /* Header borders */
 .app-header {
   border-bottom: 1px solid rgba(211, 38, 150, 0.2) !important;
+}
+
+button, input, textarea, select { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+img { max-width: 100%; height: auto; }
+
+@media (max-width: 640px) {
+  body { background-attachment: scroll !important; }
+  .container { width: min(100% - 24px, 1120px); margin-inline: auto; }
+  .card, .content-card, .form-section { border-radius: 16px !important; }
 }
