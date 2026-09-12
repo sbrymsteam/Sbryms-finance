@@ -439,6 +439,7 @@
     function getLatestMessage(messages) {
       return [...(messages || [])]
         .filter(message => !message.deleted && String(message.text || '').trim())
+        .sort((a, b) => (getMessageDate(a)?.getTime() || 0) - (getMessageDate(b)?.getTime() || 0))
         .pop() || null;
     }
 
@@ -469,16 +470,10 @@
 
     function updateMemberPreview(member, messages) {
       const latestMessage = getLatestMessage(messages) || getLatestMessage(getLocalMessages(member.email));
+      member.latestActivity = latestMessage;
       member.lastMessage = latestMessage ? String(latestMessage.text).trim() : '';
       member.lastMessageAge = latestMessage ? formatMessageAge(latestMessage) : '';
-      const card = [...document.querySelectorAll('.member-card')]
-        .find(item => item.dataset.email === member.email);
-      if (card) {
-        const preview = card.querySelector('.member-role');
-        if (preview) preview.textContent = member.lastMessage || member.role;
-        const previewTime = card.querySelector('.member-preview-time');
-        if (previewTime) previewTime.textContent = member.lastMessageAge;
-      }
+      renderMembers();
     }
 
     function renderUnreadBadges() {
@@ -524,7 +519,8 @@
         status: data.status === 'online' ? 'online' : 'offline',
         photo: data.photo || data.profilePhoto || data.photoURL || data.avatar || savedAccount.photo || createAvatarDataUrl(name),
         lastMessage: '',
-        lastMessageAge: ''
+        lastMessageAge: '',
+        latestActivity: null
       };
     }
 
@@ -565,9 +561,15 @@
         return;
       }
       members.forEach(member => {
-        const latestMessage = getLatestMessage(getLocalMessages(member.email));
+        const latestMessage = member.latestActivity || getLatestMessage(getLocalMessages(member.email));
+        member.latestActivity = latestMessage;
         member.lastMessage = latestMessage ? String(latestMessage.text).trim() : '';
         member.lastMessageAge = latestMessage ? formatMessageAge(latestMessage) : '';
+      });
+      members.sort((a, b) => {
+        const aTime = getMessageDate(a.latestActivity)?.getTime() || 0;
+        const bTime = getMessageDate(b.latestActivity)?.getTime() || 0;
+        return bTime - aTime;
       });
       list.innerHTML = members.map(member => `
         <div class="member-card" data-email="${member.email}" role="button" tabindex="0" aria-label="Open chat with ${member.name}">
