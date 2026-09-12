@@ -1,0 +1,57 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /payments/{paymentId} {
+      allow create: if signedIn();
+      allow read: if signedIn()
+        && (resource.data.profileEmail == request.auth.token.email
+          || request.auth.token.email == 'sbrymsteam@gmail.com');
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if signedIn()
+        && (resource.data.to == 'all'
+          || resource.data.to == request.auth.token.email
+          || request.auth.token.email == 'sbrymsteam@gmail.com');
+      allow create: if signedIn();
+      allow update: if signedIn()
+        && (resource.data.to == 'all'
+          || resource.data.to == request.auth.token.email
+          || request.auth.token.email == 'sbrymsteam@gmail.com');
+    }
+
+    match /team_meet_messages_shared/{messageId} {
+      allow read, create, update: if signedIn();
+    }
+
+    match /calls/{callId} {
+      allow read, create, update: if signedIn();
+
+      match /{candidateCollection}/{candidateId} {
+        allow read, create: if signedIn();
+      }
+    }
+
+    match /rooms/{roomId} {
+      allow read, create, update: if signedIn();
+
+      match /{candidateCollection}/{candidateId} {
+        allow read, create: if signedIn();
+      }
+    }
+
+    match /team_meet_conversations/{conversationId} {
+      allow read, create, update: if signedIn();
+    }
+  }
+}

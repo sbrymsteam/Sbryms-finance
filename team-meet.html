@@ -1,0 +1,947 @@
+﻿<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SBRYMS Finance - Team Meet</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #121b2e;
+      --panel-soft: #1b2b45;
+      --accent: #2cc9f5;
+      --accent-2: #ff4db8;
+      --text: #edf6ff;
+      --muted: #9bb0c9;
+      --border: rgba(255,255,255,0.08);
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      background: radial-gradient(circle at top, rgba(44,201,245,0.12), transparent 30%), var(--bg);
+      color: var(--text);
+    }
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 30px 20px 60px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .page-back {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      font-size: 22px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 42px);
+    }
+    .subtitle {
+      color: var(--muted);
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    .group-chat-banner {
+      background: linear-gradient(135deg, rgba(44,201,245,0.18), rgba(255,77,184,0.12));
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .group-banner-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+    }
+    .group-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      overflow: hidden;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+      background: linear-gradient(135deg, #2cc9f5, #8b5cf6);
+      position: relative;
+    }
+    .group-avatar img,
+    .group-avatar svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .group-avatar .camera-badge {
+      position: absolute;
+      right: -4px;
+      bottom: -4px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(11, 18, 32, 0.9);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+      color: #fff;
+    }
+    .group-avatar .camera-badge svg {
+      width: 10px;
+      height: 10px;
+      stroke: currentColor;
+    }
+    .group-photo-input {
+      display: none;
+    }
+    .group-chat-banner strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 16px;
+    }
+    .group-chat-banner span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .group-last-message {
+      display: block;
+      max-width: 360px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      gap: 22px;
+    }
+    .sidebar, .panel {
+      background: rgba(18,27,46,0.9);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: 0 20px 70px var(--shadow);
+    }
+    .sidebar {
+      padding: 16px;
+    }
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .sidebar h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .sidebar-back {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      font-size: 22px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 1;
+    }
+    .member-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .member-list-state {
+      padding: 24px 12px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+    }
+    .member-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.03);
+      padding: 12px 10px;
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+      text-align: left;
+      color: var(--text);
+      position: relative;
+    }
+    .member-card:hover {
+      transform: translateY(-1px);
+      border-color: rgba(44,201,245,0.6);
+    }
+    .member-avatar {
+      width: 50px; height: 50px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; color: #fff; overflow: hidden;
+      flex-shrink: 0;
+    }
+    .member-avatar img { width:100%; height:100%; object-fit:cover; }
+    .avatar-container { position: relative; width: 50px; height: 50px; flex: 0 0 50px; }
+    .status-badge {
+      position: absolute; right: 0; bottom: 0; width: 12px; height: 12px;
+      border-radius: 50%; border: 2px solid var(--panel);
+    }
+    .status-badge.online { background-color: #4CAF50; }
+    .status-badge.offline { background-color: #FFC107; }
+    .member-meta {
+      min-width: 0;
+      flex: 1;
+    }
+    .member-name {
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .member-role {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .member-preview {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .member-preview-time {
+      flex-shrink: 0;
+      color: var(--muted);
+      font-size: 10px;
+      white-space: nowrap;
+    }
+    .unread-badge {
+      position: absolute;
+      top: -10px;
+      right: -8px;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border: 2px solid var(--panel);
+      border-radius: 999px;
+      background: #ff3f81;
+      color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      line-height: 1;
+      font-weight: 800;
+      box-shadow: 0 5px 12px rgba(255,63,129,0.35);
+      z-index: 2;
+    }
+    .unread-badge.is-visible { display: inline-flex; }
+    .panel {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .profile-box {
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: rgba(255,255,255,0.03);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+    }
+    .profile-hero {
+      width: 96px; height: 96px; border-radius: 50%;
+      background: linear-gradient(135deg, #7dd3fc, #f9a8d4);
+      font-weight: 800; color: #0f172a;
+      display: grid; place-items: center; font-size: 30px;
+      overflow: hidden;
+    }
+    .profile-hero img { width:100%; height:100%; object-fit: cover; }
+    .profile-avatar-container { position: relative; width: 96px; height: 96px; }
+    .profile-avatar-container .profile-hero { width: 100%; height: 100%; }
+    .profile-avatar-container .status-badge { right: 2px; bottom: 2px; width: 16px; height: 16px; border-color: var(--panel); }
+    .profile-name { font-size: 30px; margin: 0; }
+    .profile-role { color: var(--muted); margin: 0; }
+    .profile-email { color: var(--muted); margin-top: 4px; }
+    .large-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 18px;
+    }
+    .action-btn {
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 14px 22px;
+      cursor: pointer;
+      font-weight: 700;
+      min-width: 150px;
+    }
+    .action-btn.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border: none;
+      color: #fff;
+    }
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+      .member-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <button class="page-back" type="button" aria-label="Back" onclick="window.location.href='FACE APP.html'">←</button>
+      <div>
+        <h1>Team Meet</h1>
+        <div class="subtitle">Connect with your team through chat, profile, and call screens.</div>
+      </div>
+    </div>
+
+    <div class="group-chat-banner" role="button" tabindex="0" aria-label="Open Team Group Chat" onclick="openGroupChat()" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openGroupChat(); }">
+      <div class="group-banner-main">
+        <div class="group-avatar" id="groupBannerAvatar" aria-label="Team group profile photo" role="button" tabindex="0" onclick="event.stopPropagation(); triggerGroupPhotoUpload()" onkeydown="event.stopPropagation(); if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); triggerGroupPhotoUpload(); }">
+          <img id="groupBannerImage" src="" alt="Group photo" style="display:none;" />
+          <svg id="groupBannerSvg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="teamGroupGradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#2cc9f5"/>
+                <stop offset="100%" stop-color="#8b5cf6"/>
+              </linearGradient>
+            </defs>
+            <rect width="200" height="200" rx="32" fill="url(#teamGroupGradient)"/>
+            <circle cx="72" cy="84" r="22" fill="rgba(255,255,255,0.22)"/>
+            <circle cx="118" cy="74" r="18" fill="rgba(255,255,255,0.22)"/>
+            <circle cx="96" cy="110" r="24" fill="rgba(255,255,255,0.22)"/>
+            <path d="M50 148c11-19 27-28 46-28s35 9 46 28" fill="rgba(255,255,255,0.2)"/>
+          </svg>
+          <span class="camera-badge" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h6l2 3h3a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+          </span>
+        </div>
+        <div>
+          <strong>Team Group Chat</strong>
+          <span id="groupLastMessage" class="group-last-message">No messages yet.</span>
+        </div>
+      </div>
+    </div>
+    <input id="groupPhotoInput" class="group-photo-input" type="file" accept="image/*" />
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h2>Members</h2>
+        </div>
+        <div id="memberList" class="member-list"></div>
+      </aside>
+
+      <main class="panel">
+        <div class="profile-box" id="profileBox"></div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
+      authDomain: "sbryms-finance.firebaseapp.com",
+      projectId: "sbryms-finance",
+      storageBucket: "sbryms-finance.appspot.com",
+      messagingSenderId: "1087018056369",
+      appId: "1:1087018056369:web:81bc39017385a649500090"
+    };
+
+    if (!window.firebase?.apps?.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    const db = firebase.firestore();
+
+    function initials(name) {
+      return (name || 'U').split(/\s+/).filter(Boolean).slice(0,2).map(part => part[0]).join('').toUpperCase() || 'U';
+    }
+
+    function createAvatarDataUrl(name) {
+      const initialsText = initials(name);
+      const colors = ['#2cc9f5', '#ff4db8', '#7dd3fc', '#8b5cf6', '#22c55e', '#f59e0b'];
+      const colorA = colors[Math.abs(name.length) % colors.length];
+      const colorB = colors[(Math.abs(name.length) + 2) % colors.length];
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="${colorA}"/>
+              <stop offset="100%" stop-color="${colorB}"/>
+            </linearGradient>
+          </defs>
+          <rect width="200" height="200" rx="100" fill="url(#g)"/>
+          <circle cx="100" cy="100" r="60" fill="rgba(255,255,255,0.14)"/>
+          <text x="50%" y="52%" text-anchor="middle" dominant-baseline="middle" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="62" font-weight="700">${initialsText}</text>
+        </svg>
+      `;
+      return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+    }
+
+    function createGroupAvatarDataUrl() {
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="groupBg" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#2cc9f5"/>
+              <stop offset="100%" stop-color="#8b5cf6"/>
+            </linearGradient>
+          </defs>
+          <rect width="200" height="200" rx="30" fill="url(#groupBg)"/>
+          <circle cx="72" cy="84" r="20" fill="rgba(255,255,255,0.22)"/>
+          <circle cx="118" cy="74" r="18" fill="rgba(255,255,255,0.22)"/>
+          <circle cx="96" cy="110" r="22" fill="rgba(255,255,255,0.22)"/>
+          <path d="M50 148c11-19 27-28 46-28s35 9 46 28" fill="rgba(255,255,255,0.2)"/>
+        </svg>
+      `;
+      return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+    }
+
+    const members = [];
+    const unreadCounts = new Map();
+    const unreadListeners = new Map();
+    let currentUserEmail = (localStorage.getItem('currentUserEmail') || '').trim().toLowerCase();
+
+    function conversationIdFor(email) {
+      return [currentUserEmail, String(email || '').trim().toLowerCase()]
+        .filter(Boolean)
+        .sort()
+        .join('__');
+    }
+
+    function countUnreadMessages(messages) {
+      return messages.filter(message => {
+        const senderEmail = String(message.senderEmail || '').trim().toLowerCase();
+        const legacySelfMessage = !senderEmail
+          && (message.self === true || /^(me|self|you)$/i.test(String(message.sender || message.senderName || '').trim()));
+        return !message.deleted
+          && !legacySelfMessage
+          && (!currentUserEmail || senderEmail !== currentUserEmail)
+          && message.status !== 'seen';
+      }).length;
+    }
+
+    function getLocalUnreadCount(email) {
+      const storageKey = `team_meet_chat_${[currentUserEmail, String(email || '').trim().toLowerCase()]
+        .filter(Boolean)
+        .sort()
+        .join('__')}`;
+      try {
+        return countUnreadMessages(JSON.parse(localStorage.getItem(storageKey) || '[]'));
+      } catch (error) {
+        console.error(`Could not read local unread messages for ${email}:`, error);
+        return 0;
+      }
+    }
+
+    function getLocalMessages(email) {
+      const storageKey = `team_meet_chat_${[currentUserEmail, String(email || '').trim().toLowerCase()]
+        .filter(Boolean)
+        .sort()
+        .join('__')}`;
+      try {
+        return JSON.parse(localStorage.getItem(storageKey) || '[]');
+      } catch (error) {
+        console.error(`Could not read local messages for ${email}:`, error);
+        return [];
+      }
+    }
+
+    function getLatestMessage(messages) {
+      return [...(messages || [])]
+        .filter(message => !message.deleted && String(message.text || '').trim())
+        .pop() || null;
+    }
+
+    function getMessageDate(message) {
+      const value = message && (message.createdAt || message.timestamp || message.date);
+      if (value && typeof value.toDate === 'function') return value.toDate();
+      if (value) {
+        const parsed = new Date(value);
+        if (!Number.isNaN(parsed.getTime())) return parsed;
+      }
+      if (message && message.time) {
+        const parsed = new Date(`${new Date().toDateString()} ${message.time}`);
+        if (!Number.isNaN(parsed.getTime())) return parsed;
+      }
+      return null;
+    }
+
+    function formatMessageAge(message) {
+      const messageDate = getMessageDate(message);
+      if (!messageDate) return '';
+      const ageMinutes = Math.max(0, Math.floor((Date.now() - messageDate.getTime()) / 60000));
+      if (ageMinutes < 1) return 'now';
+      if (ageMinutes < 60) return `${ageMinutes}m`;
+      if (ageMinutes < 1440) return `${Math.floor(ageMinutes / 60)}h`;
+      if (ageMinutes < 10080) return `${Math.floor(ageMinutes / 1440)}d`;
+      return messageDate.toLocaleDateString([], { day: 'numeric', month: 'short' });
+    }
+
+    function updateMemberPreview(member, messages) {
+      const latestMessage = getLatestMessage(messages) || getLatestMessage(getLocalMessages(member.email));
+      member.lastMessage = latestMessage ? String(latestMessage.text).trim() : '';
+      member.lastMessageAge = latestMessage ? formatMessageAge(latestMessage) : '';
+      const card = [...document.querySelectorAll('.member-card')]
+        .find(item => item.dataset.email === member.email);
+      if (card) {
+        const preview = card.querySelector('.member-role');
+        if (preview) preview.textContent = member.lastMessage || member.role;
+        const previewTime = card.querySelector('.member-preview-time');
+        if (previewTime) previewTime.textContent = member.lastMessageAge;
+      }
+    }
+
+    function renderUnreadBadges() {
+      document.querySelectorAll('[data-unread-email]').forEach(badge => {
+        const email = String(badge.dataset.unreadEmail || '').trim().toLowerCase();
+        const count = unreadCounts.get(email) || 0;
+        badge.textContent = count > 99 ? '99+' : String(count);
+        badge.classList.toggle('is-visible', count > 0);
+      });
+    }
+
+    function watchUnreadMessages() {
+      members.forEach(member => {
+        const email = String(member.email || '').trim().toLowerCase();
+        if (!email || !currentUserEmail || email === currentUserEmail || unreadListeners.has(email)) return;
+        unreadCounts.set(email, getLocalUnreadCount(email));
+        renderUnreadBadges();
+        const conversationRef = db.collection('team_meet_conversations').doc(conversationIdFor(email));
+        const unsubscribe = conversationRef.onSnapshot(snapshot => {
+          const messages = snapshot.exists ? (snapshot.data().messages || []) : [];
+          updateMemberPreview(member, messages);
+          unreadCounts.set(email, countUnreadMessages(messages));
+          renderUnreadBadges();
+        }, error => {
+          console.error(`Unread message listener failed for ${email}:`, error);
+          unreadCounts.set(email, getLocalUnreadCount(email));
+          renderUnreadBadges();
+        });
+        unreadListeners.set(email, unsubscribe);
+      });
+    }
+
+    document.getElementById('memberList').innerHTML = '<div class="member-list-state">Loading members...</div>';
+
+    function normalizeMember(data) {
+      const email = (data.email || '').trim();
+      const name = data.name || (email ? email.split('@')[0].replace(/[._-]/g, ' ') : 'Member');
+      const savedAccount = getSavedProfileAccount(email);
+      return {
+        name: email.toLowerCase() === currentUserEmail ? 'You' : name,
+        email,
+        role: data.designation || data.role || 'Member',
+        status: data.status === 'online' ? 'online' : 'offline',
+        photo: data.photo || data.profilePhoto || data.photoURL || data.avatar || savedAccount.photo || createAvatarDataUrl(name),
+        lastMessage: '',
+        lastMessageAge: ''
+      };
+    }
+
+    function getSavedProfileAccount(email) {
+      const normalizedEmail = String(email || '').trim().toLowerCase();
+      try {
+        const accounts = JSON.parse(localStorage.getItem('profile_accounts') || '[]');
+        return accounts.find(account => String(account.email || '').trim().toLowerCase() === normalizedEmail) || {};
+      } catch (error) {
+        console.error(`Could not read saved profile for ${email}:`, error);
+        return {};
+      }
+    }
+
+    function loadMembersFromFirestore() {
+      db.collection('users').limit(20).onSnapshot(snapshot => {
+        const fireMembers = snapshot.docs
+          .map(doc => normalizeMember(doc.data()))
+          .filter(member => member.email);
+
+        members.splice(0, members.length, ...fireMembers);
+        renderMembers();
+        watchUnreadMessages();
+      }, error => {
+        console.error('Error loading users for Team Meet:', error);
+        members.splice(0, members.length);
+        const message = error && error.code === 'permission-denied'
+          ? 'Member access permission is not deployed yet.'
+          : 'Members could not be loaded. Please try again.';
+        document.getElementById('memberList').innerHTML = `<div class="member-list-state">${message}</div>`;
+      });
+    }
+
+    function renderMembers() {
+      const list = document.getElementById('memberList');
+      if (!members.length) {
+        list.innerHTML = '<div class="member-list-state">No members found.</div>';
+        return;
+      }
+      members.forEach(member => {
+        const latestMessage = getLatestMessage(getLocalMessages(member.email));
+        member.lastMessage = latestMessage ? String(latestMessage.text).trim() : '';
+        member.lastMessageAge = latestMessage ? formatMessageAge(latestMessage) : '';
+      });
+      list.innerHTML = members.map(member => `
+        <div class="member-card" data-email="${member.email}" role="button" tabindex="0" aria-label="Open chat with ${member.name}">
+          <div class="avatar-container">
+            <div class="member-avatar">${member.photo ? `<img src="${member.photo}" alt="${member.name}" />` : initials(member.name)}</div>
+            <span class="status-badge ${member.status === 'online' ? 'online' : 'offline'}" aria-label="${member.status === 'online' ? 'Online' : 'Offline'}"></span>
+          </div>
+          <div class="member-meta">
+            <div class="member-name">${member.name}</div>
+            <div class="member-preview">
+              <div class="member-role">${member.lastMessage || member.role}</div>
+              <span class="member-preview-time">${member.lastMessageAge}</span>
+            </div>
+          </div>
+          <span class="unread-badge" data-unread-email="${member.email}" aria-label="Unread messages"></span>
+        </div>
+      `).join('');
+
+      list.querySelectorAll('.member-card').forEach(card => {
+        const openMemberChat = () => {
+          const email = card.dataset.email;
+          const member = members.find(m => m.email === email);
+          if (member) renderProfile(member);
+          if (member) openChat(member);
+        };
+        card.addEventListener('click', openMemberChat);
+        card.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openMemberChat();
+          }
+        });
+      });
+
+      const firstMember = members[0];
+      if (firstMember) renderProfile(firstMember);
+      renderUnreadBadges();
+    }
+
+    function renderProfile(member) {
+      const box = document.getElementById('profileBox');
+      const avatar = member.photo
+        ? `<img src="${member.photo}" alt="${member.name}" />`
+        : initials(member.name);
+      box.innerHTML = `
+        <div class="profile-avatar-container">
+          <div class="profile-hero">${avatar}</div>
+          <span class="status-badge ${member.status === 'online' ? 'online' : 'offline'}" aria-label="${member.status === 'online' ? 'Online' : 'Offline'}"></span>
+        </div>
+        <div>
+          <h2 class="profile-name">${member.name}</h2>
+          <p class="profile-role">${member.role}</p>
+          <p class="profile-email">${member.email}</p>
+        </div>
+        <div class="large-actions">
+          <button class="action-btn primary" type="button" data-profile-action="chat">Open Chat</button>
+          <button class="action-btn" type="button" data-profile-action="audio">Audio Call</button>
+          <button class="action-btn" type="button" data-profile-action="video">Video Call</button>
+        </div>
+      `;
+
+      box.querySelectorAll('[data-profile-action]').forEach(button => {
+        button.addEventListener('click', () => {
+          const action = button.dataset.profileAction;
+          if (action === 'chat') openChat(member);
+          if (action === 'audio' || action === 'video') openCall(member, action);
+        });
+      });
+    }
+
+    function openChat(member) {
+      if (!member) return;
+      localStorage.setItem('selectedProfileName', member.name);
+      localStorage.setItem('selectedProfileEmail', member.email);
+      localStorage.setItem('selectedProfilePhoto', member.photo || '');
+      localStorage.setItem('selectedProfileDesignation', member.role || 'Member');
+      localStorage.setItem('selectedProfileCurrent', 'false');
+      const chatUrl = new URL('team-meet-chat.html', document.baseURI);
+      chatUrl.searchParams.set('v', '6');
+      chatUrl.hash = 'chat=' + encodeURIComponent(String(member.email || '').trim());
+      window.location.replace(chatUrl.href);
+    }
+
+    function openChatByEmail(email) {
+      const normalizedEmail = String(email || '').trim().toLowerCase();
+      const member = members.find(item => String(item.email || '').trim().toLowerCase() === normalizedEmail);
+      if (member) {
+        openChat(member);
+      } else if (normalizedEmail) {
+        const chatUrl = new URL('team-meet-chat.html', document.baseURI);
+        chatUrl.searchParams.set('v', '6');
+        chatUrl.hash = 'chat=' + encodeURIComponent(normalizedEmail);
+        window.location.replace(chatUrl.href);
+      }
+    }
+
+    function updateGroupBannerPhoto(photoDataUrl) {
+      const bannerImage = document.getElementById('groupBannerImage');
+      const bannerSvg = document.getElementById('groupBannerSvg');
+      if (!bannerImage || !bannerSvg) return;
+
+      if (photoDataUrl) {
+        bannerImage.src = photoDataUrl;
+        bannerImage.style.display = 'block';
+        bannerSvg.style.display = 'none';
+      } else {
+        bannerImage.removeAttribute('src');
+        bannerImage.style.display = 'none';
+        bannerSvg.style.display = 'block';
+      }
+    }
+
+    function updateGroupLastMessage(messages) {
+      const latest = [...(messages || [])]
+        .filter(message => !message.deleted && String(message.text || '').trim())
+        .pop();
+      const preview = document.getElementById('groupLastMessage');
+      if (!preview) return;
+      if (!latest) {
+        preview.textContent = 'No messages yet.';
+        return;
+      }
+      const sender = latest.senderName || (latest.self ? 'You' : '');
+      preview.textContent = `${sender ? `${sender}: ` : ''}${String(latest.text).trim()}`;
+    }
+
+    function loadGroupLastMessage() {
+      let localMessages = [];
+      try {
+        localMessages = JSON.parse(localStorage.getItem('team_meet_group_chat') || '[]');
+      } catch (error) {
+        console.error('Could not read group chat preview:', error);
+      }
+      updateGroupLastMessage(localMessages);
+      db.collection('team_meet_conversations').doc('team_group_chat').onSnapshot(snapshot => {
+        updateGroupLastMessage(snapshot.exists ? (snapshot.data().messages || []) : localMessages);
+      }, error => {
+        console.error('Group chat preview listener failed:', error);
+      });
+    }
+
+    function triggerGroupPhotoUpload() {
+      const input = document.getElementById('groupPhotoInput');
+      if (input) input.click();
+    }
+
+    function handleGroupPhotoUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function () {
+        const photoDataUrl = reader.result;
+        localStorage.setItem('selectedProfilePhoto', photoDataUrl);
+        localStorage.setItem('teamGroupChatPhoto', photoDataUrl);
+        updateGroupBannerPhoto(photoDataUrl);
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    }
+
+    function openGroupChat() {
+      const savedGroupPhoto = localStorage.getItem('teamGroupChatPhoto') || localStorage.getItem('selectedProfilePhoto') || createGroupAvatarDataUrl();
+      localStorage.setItem('selectedProfileName', 'Team Group Chat');
+      localStorage.setItem('selectedProfileEmail', 'team-group');
+      localStorage.setItem('selectedProfilePhoto', savedGroupPhoto);
+      localStorage.setItem('selectedProfileDesignation', 'Everyone');
+      localStorage.setItem('selectedProfileCurrent', 'false');
+      const chatUrl = new URL('team-meet-chat.html', document.baseURI);
+      chatUrl.searchParams.set('v', '6');
+      chatUrl.hash = 'chat=team-group';
+      window.location.replace(chatUrl.href);
+    }
+
+    function openGroupCall(type) {
+      const savedGroupPhoto = localStorage.getItem('teamGroupChatPhoto') || createGroupAvatarDataUrl();
+      const currentUserEmail = (localStorage.getItem('currentUserEmail') || 'currentuser@sbryms.com').trim().toLowerCase();
+      const roomId = `group-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const groupCallId = `group-call-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const conversationRef = db.collection('team_meet_conversations').doc('team_group_chat');
+      const invite = {
+        id: `call-${Date.now()}`,
+        sender: 'me',
+        senderEmail: currentUserEmail,
+        senderName: 'You',
+        self: true,
+        type: 'call-invite',
+        callType: type,
+        roomId,
+        text: `${type === 'video' ? 'Video' : 'Audio'} group call started`,
+        time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+        reactions: {}
+      };
+      db.collection('calls').doc(groupCallId).set({
+        groupId: 'team-group',
+        roomId,
+        callerId: currentUserEmail,
+        callerName: localStorage.getItem('currentUserName') || 'SBRYMS member',
+        callType: type,
+        status: 'ringing',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(error => console.error('Failed to publish group call:', error));
+      const storageKey = 'team_meet_group_chat';
+      let messages = [];
+      try {
+        messages = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      } catch (error) {
+        console.error('Could not read group chat messages:', error);
+      }
+      localStorage.setItem(storageKey, JSON.stringify([...messages, invite]));
+      conversationRef.set({ conversationId: 'team_group_chat', messages: [...messages, invite], updatedAt: new Date() }, { merge: true })
+        .catch(error => console.error('Failed to publish group call invite:', error));
+      localStorage.setItem('selectedProfileName', 'Team Group Chat');
+      localStorage.setItem('selectedProfileEmail', 'team-group');
+      localStorage.setItem('selectedProfilePhoto', savedGroupPhoto);
+      localStorage.setItem('selectedProfileDesignation', 'Everyone');
+      localStorage.setItem('selectedProfileCurrent', 'false');
+      window.location.href = 'team-meet-call.html?chat=team-group&group=true&room=' + encodeURIComponent(roomId) + '&role=caller&type=' + encodeURIComponent(type);
+    }
+
+    document.getElementById('groupPhotoInput').addEventListener('change', handleGroupPhotoUpload);
+
+    function openCall(member, type) {
+      if (!member) return;
+      localStorage.setItem('selectedProfileName', member.name);
+      localStorage.setItem('selectedProfileEmail', member.email);
+      localStorage.setItem('selectedProfilePhoto', member.photo || '');
+      localStorage.setItem('selectedProfileDesignation', member.role || 'Member');
+      localStorage.setItem('selectedProfileCurrent', 'false');
+      const callId = `call-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      window.location.href = 'team-meet-call.html?chat='
+        + encodeURIComponent(member.email)
+        + '&call=' + encodeURIComponent(callId)
+        + '&role=caller&type=' + encodeURIComponent(type);
+    }
+
+    let groupIncomingCallUnsubscribe = null;
+    let groupIncomingAudio = null;
+    const rejectedGroupCallIds = new Set();
+    function listenForTeamGroupCalls() {
+      if (!currentUserEmail || groupIncomingCallUnsubscribe) return;
+      groupIncomingCallUnsubscribe = db.collection('calls')
+        .where('groupId', '==', 'team-group')
+        .onSnapshot(snapshot => {
+          const callDoc = snapshot.docs.find(doc => {
+            const data = doc.data();
+            return data.status === 'ringing'
+              && data.callerId !== currentUserEmail
+              && !rejectedGroupCallIds.has(doc.id);
+          });
+          if (!callDoc) {
+            if (groupIncomingAudio) {
+              groupIncomingAudio.pause();
+              groupIncomingAudio.currentTime = 0;
+              groupIncomingAudio = null;
+            }
+            const existing = document.getElementById('teamGroupIncomingCall');
+            if (existing) existing.remove();
+            return;
+          }
+          const data = callDoc.data();
+          if (!groupIncomingAudio) {
+            const ringtone = localStorage.getItem('callRingtone') || 'uploaded-1';
+            const path = ringtone === 'uploaded-2'
+              ? 'assets/ringtone-upload-2.mp3'
+              : 'assets/ringtone-upload-1.mp3';
+            groupIncomingAudio = new Audio(path);
+            groupIncomingAudio.loop = true;
+            groupIncomingAudio.volume = 0.7;
+            groupIncomingAudio.play().catch(error => console.warn('Group ringtone blocked:', error));
+          }
+          let banner = document.getElementById('teamGroupIncomingCall');
+          if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'teamGroupIncomingCall';
+            banner.style.cssText = 'position:fixed;left:16px;right:16px;top:16px;z-index:9999;padding:14px 16px;border-radius:16px;background:#102b35;color:#fff;display:flex;align-items:center;gap:10px;box-shadow:0 12px 30px rgba(0,0,0,.35);font-weight:700';
+            banner.innerHTML = '<span style="flex:1">Team Group call is ringing</span><button type="button" id="acceptTeamGroupCall" style="border:0;border-radius:999px;padding:8px 13px;background:#45d6b0;color:#06251e;font-weight:700">Accept</button><button type="button" id="rejectTeamGroupCall" style="border:0;border-radius:999px;padding:8px 13px;background:#ef6b7b;color:#fff;font-weight:700">Reject</button>';
+            document.body.appendChild(banner);
+            document.getElementById('acceptTeamGroupCall').onclick = () => {
+              if (groupIncomingAudio) {
+                groupIncomingAudio.pause();
+                groupIncomingAudio = null;
+              }
+              window.location.href = `team-meet-call.html?chat=team-group&group=true&room=${encodeURIComponent(data.roomId || '')}&role=callee&type=${encodeURIComponent(data.callType || 'audio')}`;
+            };
+            document.getElementById('rejectTeamGroupCall').onclick = () => {
+              rejectedGroupCallIds.add(callDoc.id);
+              if (groupIncomingAudio) {
+                groupIncomingAudio.pause();
+                groupIncomingAudio = null;
+              }
+              banner.remove();
+            };
+          }
+        }, error => console.error('Team group call listener failed:', error));
+    }
+
+    const savedGroupPhoto = localStorage.getItem('teamGroupChatPhoto') || localStorage.getItem('selectedProfilePhoto');
+    if (savedGroupPhoto) {
+      updateGroupBannerPhoto(savedGroupPhoto);
+    }
+    loadGroupLastMessage();
+
+    firebase.auth().onAuthStateChanged(user => {
+      if (user && user.email) {
+        currentUserEmail = user.email.trim().toLowerCase();
+        localStorage.setItem('currentUserEmail', currentUserEmail);
+        loadMembersFromFirestore();
+        watchUnreadMessages();
+        listenForTeamGroupCalls();
+      } else {
+        console.warn('Team Meet requires an authenticated account for unread message counts.');
+      }
+    });
+  </script>
+</body>
+</html>

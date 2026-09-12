@@ -1,0 +1,99 @@
+/* Shared background image */
+:root{--bg-url: url('bg.png');}
+html,body{
+  height:100%;
+  background: var(--bg-url) center center / cover no-repeat fixed !important;
+}
+body{
+  filter: none !important;
+  margin:0;
+  min-height:100%;
+  position: relative;
+  isolation: isolate;
+}
+/* Keep page content above the shared background. */
+body > *{
+  position: relative;
+  z-index: 1;
+}
+
+/* Global background colors for all elements */
+* {
+  background-color: transparent !important;
+}
+
+/* Specific elements get a translucent surface */
+body, html {
+  background-color: transparent !important;
+}
+
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .form-section,
+.info-card, .profile-header, .dashboard-card, .content-card {
+  background-color: rgba(10, 15, 30, 0.8) !important;
+}
+
+/* Input fields background */
+input, textarea, .input-field {
+  background-color: rgba(30, 40, 60, 0.6) !important;
+  border: 1px solid rgba(211, 38, 150, 0.3) !important;
+}
+
+/* Convert all dark/gray text to light for dark theme */
+p, span, div, h1, h2, h3, h4, h5, h6, label, li, a, td, th {
+  color: #e6eef6 !important;
+}
+
+/* Fix specific dark gray colors in inline styles */
+[style*="color:#333"],
+[style*="color: #333"],
+[style*="color:#666"],
+[style*="color: #666"],
+[style*="color:#777"],
+[style*="color: #777"],
+[style*="color:#888"],
+[style*="color: #888"],
+[style*="color:#999"],
+[style*="color: #999"],
+[style*="color:#000"],
+[style*="color: #000"],
+[style*="color:black"],
+[style*="color: black"] {
+  color: #e6eef6 !important;
+}
+
+/* Remove unnecessary borders, keep only linear/gradient borders */
+* {
+  border: none !important;
+}
+
+/* Allow specific linear gradient borders only - selective restoration */
+.icon-box {
+  border: 1px solid rgba(211, 38, 150, 0.3) !important;
+}
+
+.btn-main, .btn-primary, button:not(.nav-item) {
+  border: 2px solid transparent !important;
+  background-image: linear-gradient(rgba(10, 15, 30, 0.8), rgba(10, 15, 30, 0.8)), 
+                    linear-gradient(135deg, rgba(211,38,150,0.8), rgba(6,182,212,0.8)) !important;
+  background-origin: border-box !important;
+  background-clip: padding-box, border-box !important;
+}
+
+/* Restore borders for specific components that need them */
+.input-field, input, textarea {
+  border: 1px solid rgba(211, 38, 150, 0.3) !important;
+}
+
+.card, .modal-content {
+  border: 1px solid rgba(211, 38, 150, 0.2) !important;
+}
+
+/* Navigation bottom bar border */
+.bottom-nav {
+  border-top: 1px solid rgba(211, 38, 150, 0.3) !important;
+}
+
+/* Header borders */
+.app-header {
+  border-bottom: 1px solid rgba(211, 38, 150, 0.2) !important;
+}

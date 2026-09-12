@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
+    <title>SBRYMS Finance - Dashboard</title>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script>
+        document.documentElement.classList.add('auth-pending');
+        const mainPageFirebaseConfig = {
+            apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
+            authDomain: "sbryms-finance.firebaseapp.com",
+            projectId: "sbryms-finance",
+            storageBucket: "sbryms-finance.appspot.com",
+            messagingSenderId: "1087018056369",
+            appId: "1:1087018056369:web:81bc39017385a649500090"
+        };
+        if (firebase.apps && !firebase.apps.length) {
+            firebase.initializeApp(mainPageFirebaseConfig);
+        }
+        firebase.auth().onAuthStateChanged((user) => {
+            if (!user) {
+                window.location.replace('index.html');
+                return;
+            }
+            localStorage.setItem('currentUserEmail', user.email || '');
+            localStorage.setItem('currentUserUid', user.uid);
+            document.documentElement.classList.remove('auth-pending');
+        });
+    </script>
+    <style>
+        html.auth-pending body { visibility: hidden; }
+            /* Remove rounded corners and use linear borders */
+            /* Remove global forced rounding; apply refined gradient borders and sensible radii */
+/* Use a transparent base border and a subtle gradient edge for better look on dark background */
+.container, .card, .app-header, .bottom-nav, .balance-container, .header-action, .icon-box, .profile-photo, .input-field, .btn-main {
+    border: 1px solid transparent !important;
+    background-image: linear-gradient(180deg, rgba(7,17,36,0.66), rgba(7,17,36,0.66)), linear-gradient(90deg, rgba(211,38,150,0.12), rgba(6,182,212,0.12));
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    border-radius: 10px !important;
+}
+.profile-photo { border-radius: 50% !important; }
+.menu-icon, .header-action { border-radius: 12px !important; }
+.btn-main { border-radius: 999px !important; }
+            .container, .card, .app-header, .bottom-nav, .balance-container, .header-action, .icon-box, .profile-photo, .input-field, .btn-main { border: 1px solid rgba(0,0,0,0.06); }
+
+            body { 
+                background-color: #071124; 
+                color: #e6eef6; 
+            font-family: 'Segoe UI', sans-serif; 
+            margin: 0; 
+            padding-bottom: 80px; 
+            overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s, filter 0.3s;
+        }
+
+        body.dark-mode {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        body.dark-mode .container,
+        body.dark-mode .bottom-nav,
+        body.dark-mode .app-header,
+        body.dark-mode .balance-container,
+        body.dark-mode .notification-bar,
+        body.dark-mode .header-action {
+            background-color: #2a2a2a !important;
+            color: #e0e0e0 !important;
+        }
+
+        body.dark-mode .card h3 {
+            color: #ccc;
+        }
+
+        /* ১. প্রিমিয়াম হেডার */
+        .app-header { 
+            background-color: #df146e; 
+            color: white; 
+            padding: 15px 20px; 
+            border-bottom-left-radius: 25px; 
+            border-bottom-right-radius: 25px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000;
+        }
+        .header-top { display: flex; justify-content: space-between; align-items: center; }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .profile-photo { width: 45px; height: 45px; border-radius: 50%; border: 2px solid #1a1a1a; object-fit: cover; }
+
+        /* ব্যালেন্স অ্যানিমেশন */
+        .balance-container { 
+            background: white; color: #df146e; padding: 4px 15px; border-radius: 20px; 
+            font-size: 11px; font-weight: bold; margin-top: 4px; display: inline-flex; 
+            cursor: pointer; min-width: 110px; position: relative; overflow: hidden; 
+        }
+        .balance-text, .amount-text { transition: 0.5s; width: 100%; text-align: center; }
+        .amount-text { position: absolute; left: 0; transform: translateY(35px); color: #f5f5f5; }
+        .show-balance .balance-text { transform: translateY(-35px); }
+        .show-balance .amount-text { transform: translateY(0); }
+
+        .header-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .menu-icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 14px; background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 24px; }
+        .header-info { display: flex; flex-direction: column; gap: 6px; }
+        .user-details p { margin: 0; font-size: 14px; font-weight: bold; }
+        .header-icons { display: flex; gap: 8px; align-items: center; }
+        .header-action { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 14px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.08); cursor: pointer; font-size: 18px; }
+        .quick-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 0;
+        }
+        .quick-header-button {
+            position: relative;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 20px; height: 20px;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            cursor: pointer;
+            color: rgba(255,255,255,0.96);
+            padding: 0;
+            margin: 0;
+            line-height: 1;
+            outline: none;
+            opacity: 1;
+            filter: none;
+        }
+        .quick-header-button svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .notification-bar {
+            position: relative;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 22px; height: 22px;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            cursor: pointer;
+            color: rgba(255,255,255,0.94);
+            font-size: 18px;
+            margin: 0;
+            line-height: 1;
+            opacity: 0.96;
+            filter: none;
+        }
+        .notification-bar svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .notification-bar::before,
+        .notification-bar::after {
+            display: none !important;
+        }
+        .notification-badge { min-width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; background: #dc1107; color: #e01919; border-radius: 999px; font-size: 11px; font-weight: 800; line-height: 1; position: absolute; right: 4px; top: 4px; box-shadow: 0 0 0 2px rgba(255,255,255,0.08); }
+        .menu-icon {
+            position: relative;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 24px; height: 24px;
+            background: transparent !important;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            cursor: pointer;
+            color: rgba(255,255,255,0.96);
+            font-size: 24px;
+            padding: 0;
+            opacity: 0.96;
+            filter: none;
+        }
+        .menu-icon::before,
+        .menu-icon::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 1.8px;
+            background: currentColor;
+            border-radius: 999px;
+        }
+        .menu-icon::before {
+            top: 7px;
+            box-shadow: 0 5px 0 currentColor, 0 10px 0 currentColor;
+        }
+        .menu-icon::after {
+            display: none;
+        }
+
+        /* ২. ১০টি ক্যাটাগরি গ্রিড (সঠিক সিরিয়াল) */
+        .container { 
+                    padding: 20px; 
+                    margin: 15px; 
+                    background: transparent !important; /* keep page background visible */
+                    border: none !important;
+                    box-shadow: none !important;
+                }
+        .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .card { text-align: center; cursor: pointer; transition: 0.2s; background: transparent !important; border: none !important; box-shadow: none !important; padding: 10px 6px !important; position: relative; }
+        .card:active { transform: scale(0.96); }
+
+        .icon-box {
+                    width: 58px;
+                    height: 58px;
+                    margin: 0 auto 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 10px;
+                    border-radius: 16px !important;
+                    position: relative;
+                    overflow: hidden;
+                    background: transparent !important;
+                    border: 2px solid transparent !important;
+                    border-image: linear-gradient(135deg, rgba(255,92,188,0.95), rgba(60,205,255,0.95)) 1 !important;
+                    box-shadow: none;
+                    transition: transform 0.25s ease, filter 0.2s ease;
+                }
+                .icon-box::before {
+                    content: "";
+                    position: absolute;
+                    inset: 4px;
+                    border-radius: 12px;
+                    border: 1px solid rgba(255,255,255,0.04);
+                    pointer-events: none;
+                    display: none;
+                }
+                .icon-box:hover,
+                .card:hover .icon-box {
+                    transform: translateY(-1px) scale(1.02);
+                    box-shadow: none;
+                    filter: none;
+                }
+                .cat-svg {
+                    width: 30px;
+                    height: 30px;
+                    display: block;
+                    position: relative;
+                    z-index: 1;
+                    color: rgba(255,255,255,0.96);
+                    stroke: currentColor;
+                    fill: none;
+                    filter: none;
+                                    stroke-width: 1.8;
+                                }
+
+                /* Remove icon box borders in all themes */
+                body.dark-mode .icon-box, body:not(.dark-mode) .icon-box { border: none !important; }
+
+                /* Ensure category helper classes do not add colored backgrounds when using PNG icons */
+                .icon-box.c-1, .icon-box.c-2, .icon-box.c-3, .icon-box.c-4, .icon-box.c-5, .icon-box.c-6, .icon-box.c-7, .icon-box.c-8, .icon-box.c-9, .icon-box.c-10 {
+                    background: transparent !important;
+                    color: inherit !important;
+                    box-shadow: none !important;
+                    background-image: none !important;
+                }
+
+                                /* Remove visible border from category icon boxes while preserving site navigation borders */
+                                .grid-container .card,
+                                .grid-container .icon-box,
+                                .grid-container .card .icon-box {
+                                                    border: none !important;
+                                                    border-image: none !important;
+                                                    box-shadow: none !important;
+                                                    outline: none !important;
+                                                }
+                                                .grid-container .card * {
+                                                    border: none !important;
+                                                }
+
+        /* ক্যাটাগরি কালারস */
+        .c-1 { background: #e0f2fe; color: #0ea5e9; } .c-2 { background: #fef3c7; color: #d97706; }
+        .c-3 { background: #f3e8ff; color: #a855f7; } .c-4 { background: #dcfce7; color: #22c55e; }
+        .c-5 { background: #fce7f3; color: #ec4899; } .c-6 { background: #fee2e2; color: #ef4444; }
+        .c-7 { background: #ffedd5; color: #f97316; } .c-8 { background: #e0e7ff; color: #6366f1; }
+        .c-9 { background: #f1f5f9; color: #64748b; } .c-10 { background: #ccfbf1; color: #14b8a6; }
+
+        .card h3 { font-size: 10px; margin: 0; color: #555; font-weight: 600; line-height: 1.2; }
+        .category-badge {
+            position: absolute;
+            top: -6px;
+            right: 8px;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.45);
+            z-index: 2;
+        }
+
+        /* ৩. বটম নেভিগেশন বার (ইমেজ-বেসড) */
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%; 
+            background: rgba(10, 15, 30, 0.95); display: flex; 
+            justify-content: center; align-items: flex-end; 
+            padding: 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            width: 100%;
+            max-width: 100%;
+            gap: 10px;
+            padding: 10px 20px;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 10px;
+            transition: background-color 0.3s;
+        }
+        .nav-item:hover {
+            background-color: rgba(223, 20, 110, 0.1);
+        }
+        .nav-icon-img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
+            margin-bottom: 4px;
+            stroke: #e6eef6;
+            color: #e6eef6;
+        }
+        .nav-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #e6eef6;
+            text-align: center;
+        }
+
+
+        /* সাইড মেনু */
+        .side-menu { position: fixed; top: 0; left: 0; transform: translateX(-100%); width: 280px; height: 100vh; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 2000; transition: transform 0.3s ease; padding: 20px; }
+        .side-menu.open { transform: translateX(0); }
+        .side-menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1999; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
+        .side-menu-overlay.show { opacity: 1; visibility: visible; }
+
+        .menu-icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 14px; background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 24px; }
+
+        /* Modal Styles */
+        .modal { position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 18px 0; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
+        .modal-content { background-color: white; padding: 22px 18px 18px; border-radius: 18px; width: min(92vw, 420px); max-width: 420px; max-height: calc(100vh - 36px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; box-shadow: 0 22px 60px rgba(0,0,0,0.25); box-sizing: border-box; }
+        body.dark-mode .modal-content { background-color: #1f1f1f; color: #e0e0e0; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: #333; }
+        .settings-section { margin-top: 20px; }
+        .settings-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom: 14px; }
+        .settings-header h2 { margin: 0; font-size: 26px; }
+        .settings-subtitle { color: #666; font-size: 13px; margin: 0 0 14px; }
+        body.dark-mode .settings-subtitle { color: #bdbdbd; }
+        .account-info { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; padding: 12px; border-radius: 12px; background: rgba(223,20,110,0.05); }
+        body.dark-mode .account-info { background: rgba(255,255,255,0.04); }
+        .account-info p { margin: 2px 0; }
+        .settings-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding: 12px 0; border-top: 1px solid rgba(128,128,128,0.15); }
+        .settings-row:first-of-type { border-top: none; }
+        .settings-row strong { font-size: 14px; }
+        .settings-row span { font-size: 12px; color: #666; }
+        body.dark-mode .settings-row span { color: #bdbdbd; }
+        .theme-options { display: flex; gap: 10px; margin-top: 10px; }
+        .theme-btn { padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 12px; }
+        .theme-btn.active { background: #df146e; color: white; border-color: #df146e; }
+        .background-section { display: none; }
+        .background-section.open { display: block; }
+        .background-section-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px 12px; border: 1px solid rgba(211,38,150,0.55); border-radius: 14px; background: rgba(10,15,30,0.2); color: inherit; cursor: pointer; text-align: left; box-sizing: border-box; }
+        .background-section-container { border-radius: 14px; overflow: hidden; }
+        .background-section.open { display: block; padding: 4px 2px 2px; }
+        .background-section-toggle strong { font-size: 14px; }
+        .background-section-toggle span { display: block; color: #666; font-size: 12px; margin-top: 3px; }
+        body.dark-mode .background-section-toggle span { color: #bdbdbd; }
+        .background-section-arrow { font-size: 18px; line-height: 1; transition: transform 0.2s ease; }
+        .background-section-toggle[aria-expanded="true"] .background-section-arrow { transform: rotate(180deg); }
+        .background-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+        .bg-option { position: relative; height: 70px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.15); overflow: hidden; cursor: pointer; background-position: center; background-size: cover; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08); }
+        .bg-option.active { border-color: #df146e; box-shadow: 0 0 0 2px rgba(223,20,110,0.2); }
+        .bg-option::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.10), rgba(0,0,0,0.48)); }
+        .bg-option-label { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 1; font-size: 11px; font-weight: 700; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+        .toggle { position: relative; width: 48px; height: 28px; border-radius: 999px; background: #dfe3ea; cursor: pointer; transition: all 0.25s ease; }
+        .toggle::after { content: ''; position: absolute; width: 20px; height: 20px; left: 4px; top: 4px; border-radius: 50%; background: white; transition: all 0.25s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .toggle.on { background: linear-gradient(90deg, #df146e, #ff5db1); }
+        .toggle.on::after { left: 24px; }
+        #callRingtoneSelect {
+            min-width: 178px;
+            max-width: 52%;
+            padding: 10px 30px 10px 12px;
+            border: 1px solid rgba(223,20,110,0.5);
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(223,20,110,0.16), rgba(6,182,212,0.14));
+            color: #293044;
+            font-size: 12px;
+            font-weight: 700;
+            outline: none;
+            cursor: pointer;
+        }
+        #callRingtoneSelect:focus {
+            border-color: #df146e;
+            box-shadow: 0 0 0 3px rgba(223,20,110,0.14);
+        }
+        #callRingtoneSelect option {
+            background: #ffffff;
+            color: #202535;
+            font-weight: 600;
+        }
+        body.dark-mode #callRingtoneSelect {
+            background: linear-gradient(135deg, rgba(223,20,110,0.3), rgba(6,182,212,0.24));
+            color: #f5f8ff;
+            border-color: rgba(255,93,177,0.7);
+        }
+        body.dark-mode #callRingtoneSelect option {
+            background: #171d2b;
+            color: #f5f8ff;
+        }
+        @media (max-width: 430px) {
+            #callRingtoneSelect { min-width: 145px; max-width: 48%; }
+        }
+        .settings-actions { display:flex; gap:10px; margin-top:18px; }
+        .btn-action { flex:1; border:none; border-radius:10px; padding:10px 12px; font-weight:700; cursor: pointer; }
+        .btn-action.primary { background: linear-gradient(135deg, #df146e, #ff5db1); color:white; }
+        .btn-action.secondary { background: rgba(128,128,128,0.08); color: inherit; }
+        .delete-btn { background: #dc3545; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
+        .side-menu-header { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
+        .side-menu-avatar { width: 50px; height: 50px; border-radius: 50%; background: #df146e; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .side-menu-info { flex: 1; }
+        .side-menu-info p { margin: 0; font-size: 16px; font-weight: bold; }
+        .side-menu-info span { font-size: 12px; color: #666; }
+        .side-menu-close { font-size: 24px; cursor: pointer; color: #666; }
+        .side-menu-item { display: flex; align-items: center; gap: 15px; padding: 15px 0; border-bottom: 1px solid #eee; cursor: pointer; }
+        .side-menu-item:last-child { border-bottom: none; }
+        .side-menu-item:hover { background: #f9f9f9; }
+        .side-menu-item.active { background: #fde8f6; color: #df146e; }
+        .side-menu-icon { font-size: 20px; width: 24px; text-align: center; }
+        .side-menu-text { font-size: 16px; }
+        .theme-options { display: flex; gap: 10px; margin-top: 10px; }
+        .theme-btn { padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 12px; }
+        .theme-btn.active { background: #df146e; color: white; border-color: #df146e; }
+    </style>
+<style>
+/* Make ringtone choices readable above the translucent theme overrides. */
+.call-ringtone-row {
+    display: block !important;
+    padding: 16px 0 !important;
+}
+.call-ringtone-heading {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 12px !important;
+}
+.call-ringtone-current {
+    padding: 5px 9px !important;
+    border-radius: 999px !important;
+    background: rgba(34, 211, 238, 0.14) !important;
+    color: #67e8f9 !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+}
+.call-ringtone-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+}
+.call-ringtone-option {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 4px !important;
+    min-height: 62px !important;
+    padding: 11px 30px 10px 13px !important;
+    border: 1px solid rgba(148, 163, 184, 0.5) !important;
+    border-radius: 13px !important;
+    background: rgba(15, 23, 42, 0.72) !important;
+    color: #f8fafc !important;
+    text-align: left !important;
+    cursor: pointer !important;
+}
+.call-ringtone-option .preview-label {
+    display: block !important;
+    margin-top: 2px !important;
+    color: #67e8f9 !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+}
+.call-ringtone-option:hover,
+.call-ringtone-option:focus-visible {
+    border-color: #22d3ee !important;
+    background: rgba(30, 41, 59, 0.92) !important;
+    outline: none !important;
+}
+.call-ringtone-option::after {
+    content: 'Select' !important;
+    color: #a5b4fc !important;
+    font-size: 10px !important;
+    font-weight: 600 !important;
+}
+.call-ringtone-option.active {
+    border-color: #f472b6 !important;
+    background: linear-gradient(135deg, rgba(190, 24, 93, 0.55), rgba(8, 145, 178, 0.42)) !important;
+    box-shadow: 0 0 0 2px rgba(244, 114, 182, 0.25) !important;
+}
+.call-ringtone-option.active::after {
+    content: 'Selected ringtone' !important;
+    color: #fef3c7 !important;
+}
+.call-ringtone-option.active::before {
+    content: '✓' !important;
+    position: absolute !important;
+    top: 9px !important;
+    right: 10px !important;
+    display: grid !important;
+    place-items: center !important;
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 50% !important;
+    background: #f472b6 !important;
+    color: #fff !important;
+    font-size: 13px !important;
+}
+.call-ringtone-option:not(.active)::before {
+    content: '♪' !important;
+    position: absolute !important;
+    top: 10px !important;
+    right: 12px !important;
+    color: #67e8f9 !important;
+    font-size: 16px !important;
+}
+.call-ringtone-option span {
+    color: #f8fafc !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+}
+@media (max-width: 430px) {
+    .call-ringtone-grid { grid-template-columns: 1fr !important; }
+}
+/* Global dark/translucent theme overrides applied by Copilot */
+:root {
+    --bg-url: url('https://drive.google.com/uc?export=view&id=1A1BJsv52Pz90JQlT4y-B6XhzcVeYI43w');
+}
+body { background-image: var(--bg-url) !important; background-size: cover !important; background-position: center center !important; background-repeat: no-repeat !important; color: #e6eef6 !important; }
+body.motion-background { background-image: none !important; background-color: #10152b !important; isolation: isolate; }
+body.solid-background { background-image: none !important; background-color: var(--solid-bg-color) !important; isolation: isolate; }
+body.solid-background::before { display: none; }
+body.motion-background::before {
+    content: '';
+    position: fixed;
+    inset: -25%;
+    z-index: -1;
+    pointer-events: none;
+    background: var(--motion-gradient);
+    background-size: 220% 220%;
+    animation: softGradientMotion 18s ease-in-out infinite alternate;
+    filter: saturate(1.08);
+}
+body.custom-image-background::before {
+    background-image: var(--custom-bg-image);
+    background-size: cover;
+    background-position: center;
+    animation: imageBackgroundMotion 22s ease-in-out infinite alternate;
+    filter: saturate(1.05);
+}
+@keyframes imageBackgroundMotion {
+    0% { transform: scale(1.02); }
+    100% { transform: scale(1.10); }
+}
+@keyframes softGradientMotion {
+    0% { background-position: 0% 20%; transform: scale(1) rotate(0deg); }
+    50% { background-position: 100% 80%; transform: scale(1.08) rotate(2deg); }
+    100% { background-position: 15% 100%; transform: scale(1.02) rotate(-2deg); }
+}
+/* Site chrome borders removed; preserve only .icon-box borders */
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu { border: none !important; box-shadow: none !important; background: transparent !important; }
+.icon-box { border: 1px solid rgba(255,255,255,0.08) !important; background: transparent !important; box-shadow: none !important; }
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu { background: transparent !important; color: #e6eef6 !important; border-color: transparent !important; box-shadow: none !important; }
+.card h3, .container h2, .app-header h1, .app-header h2 { color: #e6eef6 !important; }
+.input-field { background: rgba(255,255,255,0.02) !important; color: #e6eef6 !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+.link, a { color: rgba(255,255,255,0.95) !important; }
+.btn-main { background: linear-gradient(135deg, rgba(211,38,150,0.95) 0%, rgba(6,182,212,0.95) 100%) !important; color: #021724 !important; }
+/* small helpers */
+.auth-box { backdrop-filter: none; -webkit-backdrop-filter: none; }
+#toast { background: rgba(20,22,26,0.9) !important; color: #fff !important; }
+</style>
+<style>
+/* category icons: clean line-art, no surrounding border */
+.container, .card, .app-header, .modal-content, .side-menu, .balance-container {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+/* Keep the bottom navigation border visible even when site chrome borders are removed */
+.bottom-nav {
+  border-top: 1px solid rgba(255,255,255,0.1) !important;
+}
+.card { background: transparent !important; }
+.icon-box {
+  width: 58px;
+  height: 58px;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cat-svg {
+ width: 30px;
+ height: 30px;
+ stroke: url(#iconFlowGradient);
+ fill: none;
+ stroke-width: 1.8;
+ stroke-linecap: round;
+ stroke-linejoin: round;
+ filter: none;
+ transition: filter 0.25s ease;
+}
+.card:hover .cat-svg,
+.icon-box:hover .cat-svg {
+ filter: none;
+}
+</style>
+<style>
+    /* Keep the hamburger drawer above the page-level theme overrides. */
+    .side-menu.open { transform: translateX(0) !important; }
+    .side-menu-overlay.show { opacity: 1 !important; visibility: visible !important; }
+</style>
+<link rel="stylesheet" href="assets/bg.css">
+</head>
+<body>
+<svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute; left:-9999px; top:-9999px;">
+    <defs>
+        <linearGradient id="iconFlowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#ff5ecf">
+                <animate attributeName="stop-color" values="#ff5ecf;#3cc8ff;#ff5ecf" dur="3s" repeatCount="indefinite"/>
+            </stop>
+            <stop offset="100%" stop-color="#3cc8ff">
+                <animate attributeName="stop-color" values="#3cc8ff;#ff5ecf;#3cc8ff" dur="3s" repeatCount="indefinite"/>
+            </stop>
+        </linearGradient>
+    </defs>
+</svg>
+
+<!-- হেডার -->
+    <div class="app-header">
+        <div class="header-top">
+            <div class="header-left">
+                <img id="headerProfileImg" class="profile-photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='60' fill='%23df146e'/%3E%3Ctext x='60' y='68' text-anchor='middle' fill='white' font-family='Arial' font-size='42' font-weight='700'%3EMH%3C/text%3E%3C/svg%3E" alt="Profile Photo">
+                <div class="header-info">
+                    <p id="headerName">Mahdi Hasan</p>
+                    <div class="balance-container" id="balance-btn" onclick="toggleBalance()">
+                        <span class="balance-text">৳ ব্যালেন্স দেখুন</span>
+                        <span class="amount-text">৳ ২৫০,৫০০.০০</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-icons">
+               <div class="quick-header-actions">
+                   <button class="quick-header-button" id="teamMeetQuickBtn" type="button" onclick="window.location.href='team-meet.html'" aria-label="Messenger">
+                       <svg viewBox="0 0 24 24" aria-hidden="true">
+                           <path d="M6 18.5V8.5A2.5 2.5 0 0 1 8.5 6h7A2.5 2.5 0 0 1 18 8.5v5A2.5 2.5 0 0 1 15.5 16H11l-5 2.5z"></path>
+                           <path d="M8.5 10.5h7"></path>
+                           <path d="M8.5 13.5h4"></path>
+                       </svg>
+                       <span class="notification-badge" id="teamMeetQuickBadge" style="display:none">0</span>
+                   </button>
+               </div>
+               <div class="notification-bar" id="notifBtn" onclick="toggleNotificationsPanel()" aria-label="Notifications">
+                   <svg viewBox="0 0 24 24" aria-hidden="true">
+                       <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"></path>
+                       <path d="M10 20a2 2 0 0 0 4 0"></path>
+                   </svg>
+                   <span class="notification-badge" id="notifBadge" style="display:none">0</span>
+               </div>
+               <div class="menu-icon" onclick="toggleSideMenu()" aria-label="Open menu"></div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <!-- সাইড মেনু -->
+    <div class="side-menu-overlay" id="sideMenuOverlay" onclick="closeSideMenu()"></div>
+    <div class="side-menu" id="sideMenu">
+        <div class="side-menu-header">
+            <div class="side-menu-avatar" id="sideMenuAvatar">M</div>
+            <div class="side-menu-info">
+                <p id="sideMenuName">Mahdi Hasan</p>
+                <span>SBRYMS Member</span>
+            </div>
+            <div class="side-menu-close" onclick="closeSideMenu()">×</div>
+        </div>
+        <div class="side-menu-item theme-light" onclick="toggleTheme('light')">
+            <div class="side-menu-icon">☀️</div>
+            <div class="side-menu-text">Light Theme</div>
+        </div>
+        <div class="side-menu-item theme-dark" onclick="toggleTheme('dark')">
+            <div class="side-menu-icon">🌙</div>
+            <div class="side-menu-text">Dark Theme</div>
+        </div>
+        <div class="side-menu-item" onclick="openSettings()">
+            <div class="side-menu-icon">⚙️</div>
+            <div class="side-menu-text">Settings</div>
+        </div>
+        <div class="side-menu-item" onclick="logout()">
+            <div class="side-menu-icon">🚪</div>
+            <div class="side-menu-text">Logout</div>
+        </div>
+    </div>
+
+    <!-- ১০টি ক্যাটাগরি গ্রিড -->
+    <div class="container">
+        <div id="notificationsPanel" style="display:none; position:fixed; right:16px; top:70px; width:340px; max-height:60vh; overflow:auto; z-index:1300; backdrop-filter: blur(8px); background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); border-radius:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.03);">
+                <strong>Notifications</strong>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <button id="markAllReadBtn" style="padding:6px 8px;border-radius:8px;border:none;background:transparent;color:#e6eef6;cursor:pointer;font-size:13px;">Mark all read</button>
+                    <button onclick="closeNotificationsPanel()" style="padding:6px 8px;border-radius:8px;border:none;background:transparent;color:#e6eef6;cursor:pointer;font-size:16px;">✕</button>
+                </div>
+            </div>
+            <div id="notificationsList" style="padding:8px;">
+                <div style="color:#9ca3af;padding:12px;text-align:center">Loading...</div>
+            </div>
+        </div>
+        <div class="grid-container">
+                    <div class="card" onclick="window.location.href='deposit.html'" style="cursor:pointer"><div class="icon-box c-1" id="depositIconBox">
+                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <!-- wallet with coin icon -->
+                                <path d="M2 7h20v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z"></path>
+                                <path d="M16 7v4"></path>
+                                <circle cx="18" cy="6" r="2"></circle>
+                            </svg>
+                    </div><h3>Deposit</h3></div>
+                    <div class="card" onclick="window.location.href='dashboard.html'" style="cursor:pointer"><div class="icon-box c-2">
+                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="12" width="4" height="6" rx="1"></rect>
+                            <rect x="10" y="8" width="4" height="10" rx="1"></rect>
+                            <rect x="17" y="4" width="4" height="14" rx="1"></rect>
+                        </svg>
+                    </div><h3>Dashboard</h3></div>
+                    <div class="card" onclick="window.location.href='profile-rank.html'" style="cursor:pointer"><div class="icon-box c-3">
+                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="7" r="3"></circle>
+                            <path d="M5 21c1.5-3 4.5-5 7-5s5.5 2 7 5"></path>
+                            <path d="M12 10v6"></path>
+                        </svg>
+                    </div><h3>Profile-Rank</h3></div>
+                    <div class="card" onclick="window.location.href='members.html'" style="cursor:pointer"><div class="icon-box c-9">
+                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M17 20v-2a3 3 0 0 0-3-3H10a3 3 0 0 0-3 3v2"></path>
+                            <circle cx="9" cy="7" r="3"></circle>
+                            <circle cx="17" cy="7" r="3"></circle>
+                        </svg>
+                    </div><h3>Members</h3></div>
+                    <div class="card" onclick="window.location.href='income.html'" style="cursor:pointer"><div class="icon-box c-4">
+                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 10v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7"></path>
+                            <path d="M8 11l4-4 4 4"></path>
+                        </svg>
+                    </div><h3>Income</h3></div>
+                    <div class="card" onclick="window.location.href='loans.html'" style="cursor:pointer"><div class="icon-box c-5">
+                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 10h18"></path>
+                            <path d="M5 10v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M12 2v6"></path>
+                            <path d="M8 6h8"></path>
+                        </svg>
+                    </div><h3>Loans</h3></div>
+                    <div class="card" onclick="window.location.href='expense.html'" style="cursor:pointer"><div class="icon-box c-6">
+                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="2" y="7" width="20" height="10" rx="2"></rect>
+                            <path d="M7 12h10"></path>
+                        </svg>
+                    </div><h3>Expense</h3></div>
+                    <div class="card" onclick="window.location.href='donation.html'" style="cursor:pointer"><div class="icon-box c-7">
+                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 21s-6-4.35-8-6.36C2.68 12.73 4 9 7 7c2-1.5 5-1 5-1s3-.5 5 1c3 2 4.32 5.73 3 7.64C18 16.65 12 21 12 21z"></path>
+                            <circle cx="12" cy="8" r="2"></circle>
+                        </svg>
+                    </div><h3>Donation</h3></div>
+                    <div class="card" onclick="window.location.href='project.html'" style="cursor:pointer"><div class="icon-box c-8">
+                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect x="3" y="7" width="18" height="13" rx="1"></rect>
+                            <path d="M7 7v-3h10v3"></path>
+                            <path d="M7 12h2M11 12h2M15 12h2"></path>
+                        </svg>
+                    </div><h3>Project</h3></div>
+                    <div class="card team-meet-card" onclick="window.location.href='team-meet.html'" style="cursor:pointer; position:relative;">
+                        <span class="category-badge" id="teamMeetUnreadBadge" style="display:none;">0</span>
+                        <div class="icon-box c-9">
+                            <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="8" r="2"></circle>
+                                <path d="M5 18c1.5-2 4-3 7-3s5.5 1 7 3"></path>
+                            </svg>
+                        </div><h3>Team Meet</h3>
+                    </div>
+                    <div class="card" onclick="window.location.href='profile.html'" style="cursor:pointer"><div class="icon-box c-3">
+                       <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                           <circle cx="12" cy="8" r="3"></circle>
+                           <path d="M5 21c.8-3.6 3.2-6 7-6s6.2 2.4 7 6"></path>
+                           <path d="M19 4v4M17 6h4"></path>
+                       </svg>
+                    </div><h3>My Profile</h3></div>
+                    <div class="card" onclick="window.location.href='security.html'" style="cursor:pointer"><div class="icon-box c-10">
+                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 2l7 4v6c0 5-3.58 9.74-7 10-3.42-.26-7-5-7-10V6l7-4z"></path>
+                            <path d="M12 11v3"></path>
+                        </svg>
+                    </div><h3>Security</h3></div>
+        </div>
+
+        <!-- deposit icon controls: change / restore -->
+
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="settings-header">
+                <h2>Settings</h2>
+                <span class="close" onclick="closeSettingsModal()">&times;</span>
+            </div>
+            <p class="settings-subtitle">Manage your app preferences</p>
+            <div class="settings-section">
+                <div class="account-info">
+                    <img id="modalProfileImg" src="" alt="Profile" style="width:52px; height:52px; border-radius:50%; object-fit:cover; border:2px solid rgba(223,20,110,0.2);">
+                    <div>
+                        <p id="modalName" style="font-weight:700;">Name</p>
+                        <p id="modalEmail" style="color:#666; font-size:12px;">Email</p>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <div>
+                        <strong>Theme</strong>
+                        <span>Choose your view</span>
+                    </div>
+                    <div class="theme-options">
+                        <button class="theme-btn active" data-theme="light" onclick="toggleTheme('light')">Light</button>
+                        <button class="theme-btn" data-theme="dark" onclick="toggleTheme('dark')">Dark</button>
+                    </div>
+                </div>
+
+                <div class="background-section-container">
+                    <button class="background-section-toggle" type="button" onclick="toggleBackgroundOptions()" aria-expanded="false">
+                        <span><strong>Background</strong><span>Pick a wallpaper</span></span>
+                        <span class="background-section-arrow" id="backgroundSectionArrow">⌄</span>
+                    </button>
+                    <div class="background-section" id="backgroundSection">
+                    <div class="background-grid">
+                        <div class="bg-option active" data-bg="pinkBlue" onclick="selectBackgroundPreset('pinkBlue')" style="background:linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5);"><span class="bg-option-label">Pink + Blue</span></div>
+                        <div class="bg-option" data-bg="orangeBlue" onclick="selectBackgroundPreset('orangeBlue')" style="background:linear-gradient(135deg,#ff7a18,#ffb347,#2193b0);"><span class="bg-option-label">Orange + Blue</span></div>
+                        <div class="bg-option" data-bg="mintPurple" onclick="selectBackgroundPreset('mintPurple')" style="background:linear-gradient(135deg,#43e97b,#38f9d7,#7f53ac);"><span class="bg-option-label">Mint + Purple</span></div>
+                        <div class="bg-option" data-bg="peachSky" onclick="selectBackgroundPreset('peachSky')" style="background:linear-gradient(135deg,#ff9a9e,#fad0c4,#a1c4fd);"><span class="bg-option-label">Peach + Sky</span></div>
+                        <div class="bg-option" data-bg="candy" onclick="selectBackgroundPreset('candy')" style="background:linear-gradient(135deg,#fbc2eb,#a6c1ee,#84fab0);"><span class="bg-option-label">Cute Candy</span></div>
+                        <div class="bg-option" data-bg="lavender" onclick="selectBackgroundPreset('lavender')" style="background:linear-gradient(135deg,#c471f5,#fa71cd,#12c2e9);"><span class="bg-option-label">Lavender Glow</span></div>
+                        <div class="bg-option" data-bg="sunset" onclick="selectBackgroundPreset('sunset')" style="background:linear-gradient(135deg,#ee0979,#ff6a00,#ffd200);"><span class="bg-option-label">Sunset</span></div>
+                        <div class="bg-option" data-bg="skyNight" onclick="selectBackgroundPreset('skyNight')" style="background:linear-gradient(135deg,#141e30,#243b55,#00c6ff);"><span class="bg-option-label">Blue Night</span></div>
+                        <div class="bg-option" id="customImageBackgroundOption" data-bg="customImage" onclick="document.getElementById('customBackgroundInput').click()" style="background:linear-gradient(135deg,#252b48,#5963a8);"><span class="bg-option-label">Your Image</span></div>
+                        <div class="bg-option" data-bg="solidBlue" onclick="selectBackgroundPreset('solidBlue')" style="background:#2563eb;"><span class="bg-option-label">Solid Blue</span></div>
+                        <div class="bg-option" data-bg="solidPink" onclick="selectBackgroundPreset('solidPink')" style="background:#ec4899;"><span class="bg-option-label">Solid Pink</span></div>
+                        <div class="bg-option" data-bg="solidOrange" onclick="selectBackgroundPreset('solidOrange')" style="background:#f97316;"><span class="bg-option-label">Solid Orange</span></div>
+                        <div class="bg-option" data-bg="solidPurple" onclick="selectBackgroundPreset('solidPurple')" style="background:#8b5cf6;"><span class="bg-option-label">Solid Purple</span></div>
+                        <div class="bg-option" data-bg="solidGreen" onclick="selectBackgroundPreset('solidGreen')" style="background:#10b981;"><span class="bg-option-label">Solid Green</span></div>
+                        <div class="bg-option" data-bg="solidBlack" onclick="selectBackgroundPreset('solidBlack')" style="background:#000000;"><span class="bg-option-label">Solid Black</span></div>
+                    </div>
+                    <input id="customBackgroundInput" type="file" accept="image/*" onchange="handleCustomBackgroundUpload(event)" style="display:none;">
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <div>
+                        <strong>Browser notifications</strong>
+                        <span>Instant alerts</span>
+                    </div>
+                    <div id="browserNotifToggle" class="toggle" onclick="toggleBrowserNotificationSetting()" aria-label="Toggle browser notifications"></div>
+                </div>
+
+                <div class="settings-row call-ringtone-row">
+                    <div class="call-ringtone-heading">
+                        <div>
+                        <strong>Call ringtone</strong>
+                        <span>Incoming call sound</span>
+                        </div>
+                        <span class="call-ringtone-current" id="callRingtoneCurrent">Not selected</span>
+                    </div>
+                    <div class="call-ringtone-grid" id="callRingtoneGrid" role="radiogroup" aria-label="Call ringtone">
+                        <button class="call-ringtone-option" type="button" data-ringtone="dj-jazz-2" onclick="saveCallRingtoneSetting(this.dataset.ringtone)"><span>DJ Jazz 2</span> Velvet Groove <small class="preview-label">Tap to select &amp; preview</small></button>
+                        <button class="call-ringtone-option" type="button" data-ringtone="uploaded-1" onclick="saveCallRingtoneSetting(this.dataset.ringtone)"><span>Your Audio 1</span> Uploaded Ringtone <small class="preview-label">Tap to select &amp; preview</small></button>
+                        <button class="call-ringtone-option" type="button" data-ringtone="uploaded-2" onclick="saveCallRingtoneSetting(this.dataset.ringtone)"><span>Your Audio 2</span> Uploaded Ringtone <small class="preview-label">Tap to select &amp; preview</small></button>
+                    </div>
+                </div>
+
+                <div class="settings-row">
+                    <div>
+                        <strong>Team Meet badge</strong>
+                        <span>Unread count on dashboard</span>
+                    </div>
+                    <div id="teamMeetBadgeToggle" class="toggle on" onclick="toggleTeamMeetBadgeSetting()" aria-label="Toggle Team Meet badge"></div>
+                </div>
+
+                <div class="settings-actions">
+                    <button class="btn-action secondary" type="button" onclick="closeSettingsModal()">Close</button>
+                    <button class="btn-action primary" type="button" onclick="saveSettings()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleBalance() {
+            const btn = document.getElementById('balance-btn');
+            if(!btn.classList.contains('show-balance')) {
+                btn.classList.add('show-balance');
+                setTimeout(() => { btn.classList.remove('show-balance'); }, 3500);
+            }
+        }
+
+        function getUserStoragePrefix() {
+            const uid = localStorage.getItem('currentUserUid');
+            if (uid) return `user_${uid}_`;
+            const email = localStorage.getItem('currentUserEmail');
+            return email ? `user_${email.replace(/[^a-zA-Z0-9_-]/g, '_')}_` : '';
+        }
+
+        function storageKey(key) {
+            return `${getUserStoragePrefix()}${key}`;
+        }
+
+        function loadProfileHeader() {
+            const name = localStorage.getItem(storageKey('profile_name')) || localStorage.getItem('currentUserEmail') || 'Mahdi Hasan';
+            const photo = localStorage.getItem(storageKey('profile_photo'));
+            const headerName = document.getElementById('headerName');
+            const headerImg = document.getElementById('headerProfileImg');
+            const sideName = document.getElementById('sideMenuName');
+            const sideAvatar = document.getElementById('sideMenuAvatar');
+            const modalName = document.getElementById('modalName');
+            const modalProfileImg = document.getElementById('modalProfileImg');
+
+            if (headerName) headerName.innerText = name;
+            if (sideName) sideName.innerText = name;
+            if (modalName) modalName.innerText = name;
+            if (photo) {
+                if (headerImg) headerImg.src = photo;
+                if (modalProfileImg) modalProfileImg.src = photo;
+                if (sideAvatar) {
+                    sideAvatar.innerHTML = `<img src="${photo}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+                }
+            } else if (sideAvatar) {
+                sideAvatar.textContent = name ? name.charAt(0).toUpperCase() : 'M';
+            }
+        }
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
+            authDomain: "sbryms-finance.firebaseapp.com",
+            projectId: "sbryms-finance",
+            storageBucket: "sbryms-finance.appspot.com",
+            messagingSenderId: "1087018056369",
+            appId: "1:1087018056369:web:81bc39017385a649500090"
+        };
+
+        if (typeof firebase !== 'undefined' && firebase.apps && !firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            firebase.auth().onAuthStateChanged((user) => {
+                if (!user) {
+                    window.location.replace('index.html');
+                    return;
+                }
+                localStorage.setItem('currentUserEmail', user.email || '');
+                localStorage.setItem('currentUserUid', user.uid);
+                document.documentElement.classList.remove('auth-pending');
+            });
+        } else {
+            window.location.replace('index.html');
+        }
+
+        // Firestore instance (if available)
+        const db = (typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null;
+
+        // Notification helpers: load from Firestore where possible, fallback to localStorage
+        function getCurrentUserEmail() {
+            return localStorage.getItem('currentUserEmail') || '';
+        }
+
+        async function fetchNotifications() {
+            const email = getCurrentUserEmail();
+            // if firestore available, query notifications addressed to this user or to 'all'
+            if (db) {
+                try {
+                    const q1 = db.collection('notifications').where('to', '==', email).orderBy('createdAt', 'desc').limit(50).get();
+                    const q2 = db.collection('notifications').where('to', '==', 'all').orderBy('createdAt', 'desc').limit(50).get();
+                    const [r1, r2] = await Promise.all([q1, q2]);
+                    const items = [];
+                    r1.forEach(d => items.push({ id: d.id, ...d.data() }));
+                    r2.forEach(d => items.push({ id: d.id, ...d.data() }));
+                    // sort by createdAt if present
+                    items.sort((a,b)=>{
+                        const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : (a.createdAt || 0);
+                        const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : (b.createdAt || 0);
+                        return tb - ta;
+                    });
+                    return items.slice(0,50);
+                } catch(e){ console.error('fetchNotifications firestore error', e); }
+            }
+            // Fallback: look for payment history or last_completed_payment in localStorage
+            try {
+                const historyRaw = localStorage.getItem('payment_gateway_history');
+                if (historyRaw) {
+                    const history = JSON.parse(historyRaw);
+                    return history.slice(0,50).map(h=>({ id: h.id || ('p_'+(h.timestamp||Date.now())), title: `Payment received from ${h.profileName || h.profile}`, message: `Amount: ৳${h.total}`, createdAt: h.timestamp || '' , read: false }));
+                }
+            } catch(e){/* ignore */}
+            return [];
+        }
+
+        function renderNotifications(items) {
+            const list = document.getElementById('notificationsList');
+            if (!list) return;
+            if (!items || items.length === 0) {
+                list.innerHTML = '<div style="color:#9ca3af;padding:12px;text-align:center">কোনো নোটিফিকেশন নেই</div>';
+                document.getElementById('notifBadge').style.display = 'none';
+                return;
+            }
+            const html = items.map(it=>{
+                const unread = !it.read;
+                const time = it.createdAt && it.createdAt.toDate ? it.createdAt.toDate().toLocaleString() : (it.createdAt || '');
+                return `
+                    <div style="padding:10px;border-radius:8px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;">
+                        <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+                            <div style="flex:1">
+                                <div style="font-weight:700;color:${unread? '#fff':'#9ca3af'}">${it.subject || it.title || 'Notification'}</div>
+                                <div style="font-size:13px;color:#cbd5e1;margin-top:6px">${it.message || ''}</div>
+                            </div>
+                            <div style="text-align:right;min-width:72px;margin-left:8px;color:#9ca3af;font-size:12px">${time}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            list.innerHTML = html;
+            // update badge count
+            const unreadCount = items.filter(i=>!i.read).length;
+            const badge = document.getElementById('notifBadge');
+            if (badge) {
+                if (unreadCount>0) { badge.style.display='inline-flex'; badge.textContent = String(unreadCount); }
+                else { badge.style.display='none'; }
+            }
+        }
+
+        async function openNotificationsPanel() {
+            try {
+                const panel = document.getElementById('notificationsPanel');
+                if (!panel) return;
+                panel.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+                const items = await fetchNotifications();
+                renderNotifications(items);
+                // mark unread as read in firestore if possible
+                if (db && items && items.length) {
+                    items.filter(i=>!i.read).forEach(it=>{
+                        try { db.collection('notifications').doc(it.id).update({ read: true }).catch(()=>{}); } catch(e){}
+                    });
+                    // update badge immediately
+                    const badge = document.getElementById('notifBadge'); if (badge) badge.style.display='none';
+                }
+            } catch(e){ console.error('openNotificationsPanel error', e); }
+        }
+
+        function closeNotificationsPanel() {
+            const panel = document.getElementById('notificationsPanel'); if (!panel) return; panel.style.display='none'; document.body.style.overflow = '';
+        }
+
+        function toggleNotificationsPanel(){
+            const panel = document.getElementById('notificationsPanel'); if (!panel) return; if (panel.style.display==='block') closeNotificationsPanel(); else openNotificationsPanel();
+        }
+
+        function getUnreadMessageCounts() {
+            try {
+                const raw = localStorage.getItem('sbryms_unread_message_counts');
+                return raw ? JSON.parse(raw) : {};
+            } catch (error) {
+                return {};
+            }
+        }
+
+        function getTeamMeetUnreadCount() {
+            const counts = getUnreadMessageCounts();
+            const teamKey = 'team_meet_messages_shared';
+            return Number(counts[teamKey] || 0);
+        }
+
+        function updateTeamMeetBadge() {
+            const badge = document.getElementById('teamMeetUnreadBadge');
+            const quickBadge = document.getElementById('teamMeetQuickBadge');
+            const total = getTeamMeetUnreadCount();
+
+            if (badge) {
+                if (total > 0) {
+                    badge.style.display = 'inline-flex';
+                    badge.textContent = total > 99 ? '99+' : String(total);
+                } else {
+                    badge.style.display = 'none';
+                    badge.textContent = '0';
+                }
+            }
+            if (quickBadge) {
+                if (total > 0) {
+                    quickBadge.style.display = 'inline-flex';
+                    quickBadge.textContent = total > 99 ? '99+' : String(total);
+                } else {
+                    quickBadge.style.display = 'none';
+                    quickBadge.textContent = '0';
+                }
+            }
+        }
+
+        function syncTeamMeetUnreadCountFromFirestore() {
+            if (!db) return;
+            const currentEmail = (getCurrentUserEmail() || '').toLowerCase();
+            const currentUid = localStorage.getItem('currentUserUid') || '';
+
+            db.collection('team_meet_messages_shared')
+                .orderBy('createdAt', 'asc')
+                .onSnapshot(snapshot => {
+                    if (!snapshot || snapshot.empty) {
+                        const counts = getUnreadMessageCounts();
+                        delete counts.team_meet_messages_shared;
+                        localStorage.setItem('sbryms_unread_message_counts', JSON.stringify(counts));
+                        updateTeamMeetBadge();
+                        return;
+                    }
+
+                    const total = snapshot.docs.filter(doc => {
+                        const data = doc.data() || {};
+                        const senderEmail = String(data.senderEmail || '').toLowerCase();
+                        const senderId = String(data.senderId || '');
+                        const isMine = senderEmail === currentEmail || senderId === currentUid || senderId === 'default';
+                        return !isMine;
+                    }).length;
+
+                    const counts = getUnreadMessageCounts();
+                    if (window.location.pathname.endsWith('team-meet.html')) {
+                        delete counts.team_meet_messages_shared;
+                    } else {
+                        counts.team_meet_messages_shared = total;
+                    }
+                    localStorage.setItem('sbryms_unread_message_counts', JSON.stringify(counts));
+                    updateTeamMeetBadge();
+                }, () => {});
+        }
+
+        function refreshUnreadBadges() {
+            updateTeamMeetBadge();
+            const badge = document.getElementById('notifBadge');
+            if (badge) {
+                badge.style.display = 'none';
+                badge.textContent = '0';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function(){
+            syncTeamMeetUnreadCountFromFirestore();
+            const markBtn = document.getElementById('markAllReadBtn');
+            if (markBtn) markBtn.addEventListener('click', async function(){
+                // mark all visible notifications as read in firestore
+                const items = await fetchNotifications();
+                if (db && items && items.length) {
+                    items.forEach(it=>{ if (!it.read) try { db.collection('notifications').doc(it.id).update({ read: true }).catch(()=>{}); } catch(e){} });
+                }
+                renderNotifications(items.map(i=>({...i, read:true})));
+                const badge = document.getElementById('notifBadge'); if (badge) badge.style.display='none';
+                localStorage.setItem('sbryms_unread_message_counts', JSON.stringify({}));
+                updateTeamMeetBadge();
+            });
+        });
+
+        // --- Real-time notification badge subscription (updates red count beside icon) ---
+        let _notifPersonalCount = 0;
+        let _notifAllCount = 0;
+        let _notifPollingId = null;
+        let _notifUnsubPersonal = null;
+        let _notifUnsubAll = null;
+
+        function updateBadgeCount(count) {
+            const badge = document.getElementById('notifBadge');
+            if (badge) {
+                badge.style.display = 'none';
+                badge.textContent = '0';
+            }
+        }
+
+        function showBrowserNotificationForMessage(data) {
+            if (!data) return;
+            if (!('Notification' in window) || Notification.permission !== 'granted') return;
+            const type = data.type || 'message';
+            if (type !== 'message' && type !== 'team_call') return;
+            const senderName = data.fromName || (type === 'team_call' ? 'Team Meet' : 'New message');
+            const body = data.message || (type === 'team_call' ? 'A team call has started.' : 'You have a new message');
+            const tag = type === 'team_call' ? 'sbryms-team-call' : 'sbryms-message';
+            new Notification(senderName, { body, tag, renotify: true });
+        }
+
+        function startNotificationPolling() {
+            // poll every 10s using fetchNotifications fallback
+            if (_notifPollingId) return;
+            _notifPollingId = setInterval(async () => {
+                try {
+                    const items = await fetchNotifications();
+                    const unread = (items || []).filter(i => !i.read).length;
+                    updateBadgeCount(unread);
+                } catch (e) { console.error('polling notifications error', e); }
+            }, 10000);
+        }
+
+        function stopNotificationPolling() {
+            if (_notifPollingId) { clearInterval(_notifPollingId); _notifPollingId = null; }
+        }
+
+        function subscribeNotificationsRealtime() {
+            // If Firestore is available, use onSnapshot for instant updates; otherwise fallback to polling
+            const email = getCurrentUserEmail();
+            if (!db) { startNotificationPolling(); return; }
+
+            try {
+                // personal unread listener
+                if (email) {
+                    const qPersonal = db.collection('notifications').where('to', '==', email).where('read', '==', false);
+                    _notifUnsubPersonal = qPersonal.onSnapshot(snap => {
+                        try {
+                            _notifPersonalCount = snap.size || 0;
+                            updateBadgeCount(_notifPersonalCount + _notifAllCount);
+                            snap.docChanges().forEach(change => {
+                                if (change.type === 'added') {
+                                    const data = change.doc.data();
+                                    if (data && (data.type === 'message' || data.type === 'team_call')) {
+                                        showBrowserNotificationForMessage(data);
+                                    }
+                                }
+                            });
+                        } catch(e){}
+                    }, err => { console.error('personal snapshot error', err); startNotificationPolling(); });
+                }
+
+                // global (to == 'all') unread listener
+                const qAll = db.collection('notifications').where('to', '==', 'all').where('read', '==', false);
+                _notifUnsubAll = qAll.onSnapshot(snap => {
+                    try { _notifAllCount = snap.size || 0; updateBadgeCount(_notifPersonalCount + _notifAllCount); } catch(e){}
+                }, err => { console.error('all snapshot error', err); startNotificationPolling(); });
+
+                // stop polling if it was running
+                stopNotificationPolling();
+            } catch (e) {
+                console.error('subscribeNotificationsRealtime error', e);
+                // fallback
+                startNotificationPolling();
+            }
+        }
+
+        // Call subscription automatically when page loads (if possible)
+        window.addEventListener('load', function() {
+            try { subscribeNotificationsRealtime(); } catch(e){ console.error('subscribe init error', e); }
+        });
+
+        // Cleanup on unload
+        window.addEventListener('beforeunload', function(){
+            try { if (_notifUnsubPersonal) _notifUnsubPersonal(); if (_notifUnsubAll) _notifUnsubAll(); stopNotificationPolling(); } catch(e){}
+        });
+
+        // Theme mode system
+        let currentTheme = 'light'; // 'light' or 'dark'
+        const backgroundPresets = {
+            pinkBlue: "linear-gradient(135deg, #ff3cac, #784ba0, #2b86c5)",
+            orangeBlue: "linear-gradient(135deg, #ff7a18, #ffb347, #2193b0)",
+            mintPurple: "linear-gradient(135deg, #43e97b, #38f9d7, #7f53ac)",
+            peachSky: "linear-gradient(135deg, #ff9a9e, #fad0c4, #a1c4fd)",
+            candy: "linear-gradient(135deg, #fbc2eb, #a6c1ee, #84fab0)",
+            lavender: "linear-gradient(135deg, #c471f5, #fa71cd, #12c2e9)",
+            sunset: "linear-gradient(135deg, #ee0979, #ff6a00, #ffd200)",
+            skyNight: "linear-gradient(135deg, #141e30, #243b55, #00c6ff)",
+            solidBlue: "#2563eb",
+            solidPink: "#ec4899",
+            solidOrange: "#f97316",
+            solidPurple: "#8b5cf6",
+            solidGreen: "#10b981",
+            solidBlack: "#000000"
+        };
+
+        function applyBackgroundSettings() {
+            const selectedPreset = localStorage.getItem('appBackgroundPreset') || 'pinkBlue';
+            const customImage = localStorage.getItem('customBackgroundImage');
+            if (selectedPreset === 'customImage' && customImage) {
+                document.documentElement.style.setProperty('--custom-bg-image', `url("${customImage}")`);
+                document.body.classList.remove('solid-background');
+                document.body.classList.add('motion-background', 'custom-image-background');
+                document.body.style.setProperty('background-image', 'none', 'important');
+                const customOption = document.getElementById('customImageBackgroundOption');
+                if (customOption) customOption.style.backgroundImage = `url("${customImage}")`;
+            } else if (selectedPreset.indexOf('solid') === 0) {
+                document.documentElement.style.setProperty('--solid-bg-color', backgroundPresets[selectedPreset] || backgroundPresets.solidBlue);
+                document.body.classList.remove('custom-image-background', 'motion-background');
+                document.body.classList.add('solid-background');
+                document.body.style.setProperty('background-image', 'none', 'important');
+            } else {
+                document.body.classList.remove('custom-image-background', 'solid-background');
+                const backgroundValue = backgroundPresets[selectedPreset] || backgroundPresets.pinkBlue;
+                document.documentElement.style.setProperty('--motion-gradient', backgroundValue);
+                document.body.classList.add('motion-background');
+                document.body.style.setProperty('background-image', 'none', 'important');
+            }
+            const bgOptions = document.querySelectorAll('.bg-option');
+            bgOptions.forEach(option => {
+                option.classList.toggle('active', option.dataset.bg === selectedPreset);
+            });
+        }
+
+        function selectBackgroundPreset(presetKey) {
+            if (!backgroundPresets[presetKey] && !(presetKey === 'customImage' && localStorage.getItem('customBackgroundImage'))) return;
+            localStorage.setItem('appBackgroundPreset', presetKey);
+            applyBackgroundSettings();
+        }
+
+        function toggleBackgroundOptions() {
+            const section = document.getElementById('backgroundSection');
+            const toggle = document.querySelector('.background-section-toggle');
+            if (!section || !toggle) return;
+            const isOpen = section.classList.toggle('open');
+            toggle.setAttribute('aria-expanded', String(isOpen));
+        }
+
+        function handleCustomBackgroundUpload(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file || !file.type.startsWith('image/')) return;
+            if (file.size > 10 * 1024 * 1024) {
+                alert('Image size must be 10MB or less.');
+                event.target.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function() {
+                const image = new Image();
+                image.onload = function() {
+                    const maxSide = 1600;
+                    const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(image.width * scale));
+                    canvas.height = Math.max(1, Math.round(image.height * scale));
+                    canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+                    const compressedImage = canvas.toDataURL('image/jpeg', 0.82);
+                    localStorage.setItem('customBackgroundImage', compressedImage);
+                    localStorage.setItem('appBackgroundPreset', 'customImage');
+                    applyBackgroundSettings();
+                };
+                image.src = reader.result;
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function applyThemeSettings() {
+            document.body.classList.toggle('dark-mode', currentTheme === 'dark');
+            const darkIcon = document.getElementById('dark-mode-toggle');
+            if (darkIcon) {
+                darkIcon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+            }
+            const lightTheme = document.querySelector('.theme-light');
+            const darkTheme = document.querySelector('.theme-dark');
+            if (lightTheme) lightTheme.classList.toggle('active', currentTheme === 'light');
+            if (darkTheme) darkTheme.classList.toggle('active', currentTheme === 'dark');
+            updateSettingsControls();
+        }
+
+        function toggleDarkMode() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('theme', currentTheme);
+            applyThemeSettings();
+        }
+
+        function toggleTheme(theme) {
+            currentTheme = theme;
+            localStorage.setItem('theme', currentTheme);
+            applyThemeSettings();
+            updateSettingsControls();
+            closeSideMenu();
+        }
+
+        function updateSettingsControls() {
+            const themeButtons = document.querySelectorAll('.theme-btn');
+            themeButtons.forEach(button => {
+                const isActive = button.dataset.theme === currentTheme;
+                button.classList.toggle('active', isActive);
+            });
+
+            const bgOptions = document.querySelectorAll('.bg-option');
+            const selectedPreset = localStorage.getItem('appBackgroundPreset') || 'pinkBlue';
+            bgOptions.forEach(option => {
+                option.classList.toggle('active', option.dataset.bg === selectedPreset);
+            });
+            const customImage = localStorage.getItem('customBackgroundImage');
+            const customOption = document.getElementById('customImageBackgroundOption');
+            if (customOption && customImage) customOption.style.backgroundImage = `url("${customImage}")`;
+
+            const notifToggle = document.getElementById('browserNotifToggle');
+            if (notifToggle) {
+                const notificationsEnabled = localStorage.getItem('browserNotificationsEnabled') !== 'false';
+                notifToggle.classList.toggle('on', notificationsEnabled);
+            }
+
+            const teamBadgeToggle = document.getElementById('teamMeetBadgeToggle');
+            if (teamBadgeToggle) {
+                const enabled = localStorage.getItem('teamMeetBadgeEnabled') !== 'false';
+                teamBadgeToggle.classList.toggle('on', enabled);
+            }
+            const savedRingtone = localStorage.getItem('callRingtone');
+            const validRingtones = ['dj-jazz-2', 'uploaded-1', 'uploaded-2'];
+            const activeRingtone = validRingtones.includes(savedRingtone) ? savedRingtone : 'uploaded-1';
+            if (savedRingtone !== activeRingtone) localStorage.setItem('callRingtone', activeRingtone);
+            const ringtoneNames = {
+                'dj-jazz-2': 'DJ Jazz 2',
+                'uploaded-1': 'ringtone 1',
+                'uploaded-2': 'ringtone 2'
+            };
+            const currentRingtone = document.getElementById('callRingtoneCurrent');
+            if (currentRingtone) currentRingtone.textContent = ringtoneNames[activeRingtone] + ' selected';
+            document.querySelectorAll('.call-ringtone-option').forEach(option => {
+                const isActive = option.dataset.ringtone === activeRingtone;
+                option.classList.toggle('active', isActive);
+                option.setAttribute('aria-checked', String(isActive));
+            });
+        }
+
+        function toggleSideMenu() {
+            const menu = document.getElementById('sideMenu');
+            const overlay = document.getElementById('sideMenuOverlay');
+            menu.classList.add('open');
+            menu.style.setProperty('left', '0', 'important');
+            menu.style.setProperty('transform', 'none', 'important');
+            menu.style.setProperty('transition', 'none', 'important');
+            overlay.classList.add('show');
+            overlay.style.setProperty('opacity', '1', 'important');
+            overlay.style.setProperty('visibility', 'visible', 'important');
+        }
+
+        function closeSideMenu() {
+            const menu = document.getElementById('sideMenu');
+            const overlay = document.getElementById('sideMenuOverlay');
+            menu.classList.remove('open');
+            menu.style.setProperty('left', '-100%', 'important');
+            menu.style.setProperty('transform', 'none', 'important');
+            menu.style.setProperty('transition', 'none', 'important');
+            overlay.classList.remove('show');
+            overlay.style.setProperty('opacity', '0', 'important');
+            overlay.style.setProperty('visibility', 'hidden', 'important');
+        }
+
+        function openSettings() {
+            const modal = document.getElementById('settingsModal');
+            if (modal) {
+                updateSettingsControls();
+                const email = localStorage.getItem('currentUserEmail') || 'member@sbryms.com';
+                const modalEmail = document.getElementById('modalEmail');
+                if (modalEmail) modalEmail.textContent = email;
+                modal.style.display = 'flex';
+            }
+            closeSideMenu();
+        }
+
+        function closeSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function toggleBrowserNotificationSetting() {
+            const toggle = document.getElementById('browserNotifToggle');
+            if (!toggle) return;
+            const isEnabled = localStorage.getItem('browserNotificationsEnabled') !== 'false';
+            const nextState = !isEnabled;
+            localStorage.setItem('browserNotificationsEnabled', String(nextState));
+            toggle.classList.toggle('on', nextState);
+        }
+
+        function toggleTeamMeetBadgeSetting() {
+            const toggle = document.getElementById('teamMeetBadgeToggle');
+            if (!toggle) return;
+            const isEnabled = localStorage.getItem('teamMeetBadgeEnabled') !== 'false';
+            const nextState = !isEnabled;
+            localStorage.setItem('teamMeetBadgeEnabled', String(nextState));
+            toggle.classList.toggle('on', nextState);
+            if (typeof updateTeamMeetBadge === 'function') updateTeamMeetBadge();
+        }
+
+        function saveCallRingtoneSetting(value) {
+            const allowed = ['dj-jazz-2', 'uploaded-1', 'uploaded-2'];
+            const selected = allowed.includes(value) ? value : 'uploaded-1';
+            localStorage.setItem('callRingtone', selected);
+            updateSettingsControls();
+            previewCallRingtone(selected);
+        }
+
+        let ringtonePreviewAudio = null;
+        function previewCallRingtone(ringtone) {
+            if (ringtonePreviewAudio) {
+                ringtonePreviewAudio.pause();
+                ringtonePreviewAudio.currentTime = 0;
+                ringtonePreviewAudio = null;
+            }
+            const uploadedRingtones = {
+                'uploaded-1': 'assets/ringtone-upload-1.mp3',
+                'uploaded-2': 'assets/ringtone-upload-2.mp3'
+            };
+            if (uploadedRingtones[ringtone]) {
+                ringtonePreviewAudio = new Audio(new URL(uploadedRingtones[ringtone], document.baseURI).href);
+                ringtonePreviewAudio.preload = 'auto';
+                ringtonePreviewAudio.volume = 0.7;
+                ringtonePreviewAudio.load();
+                ringtonePreviewAudio.play().catch(error => {
+                    console.warn('Ringtone preview could not play:', error);
+                    const status = document.getElementById('callRingtoneCurrent');
+                    if (status) status.textContent = 'Tap again to play preview';
+                });
+                return;
+            }
+            const patterns = { 'dj-jazz-2': [392, 493.88, 587.33] };
+            const contextClass = window.AudioContext || window.webkitAudioContext;
+            if (!contextClass) return;
+            const context = new contextClass();
+            context.resume().then(() => {
+                (patterns[ringtone] || patterns['dj-jazz-2']).forEach((frequency, index) => {
+                    const oscillator = context.createOscillator();
+                    const gain = context.createGain();
+                    const start = context.currentTime + index * 0.18;
+                    oscillator.type = 'sine';
+                    oscillator.frequency.value = frequency;
+                    gain.gain.setValueAtTime(0, start);
+                    gain.gain.linearRampToValueAtTime(0.08, start + 0.03);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.34);
+                    oscillator.connect(gain);
+                    gain.connect(context.destination);
+                    oscillator.start(start);
+                    oscillator.stop(start + 0.36);
+                });
+                setTimeout(() => context.close().catch(() => {}), 900);
+            }).catch(error => console.warn('DJ Jazz preview could not play:', error));
+        }
+
+        function saveSettings() {
+            closeSettingsModal();
+        }
+
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('currentUserEmail');
+                localStorage.removeItem('currentUserUid');
+                const redirectHome = () => {
+                    window.location.href = 'index.html';
+                };
+
+                if (typeof firebase !== 'undefined' && firebase.auth) {
+                    firebase.auth().signOut().then(redirectHome).catch((error) => {
+                        console.error('Logout error:', error);
+                        redirectHome();
+                    });
+                } else {
+                    redirectHome();
+                }
+            }
+        }
+
+
+        // Load saved preferences
+        window.onload = function() {
+            currentTheme = localStorage.getItem('theme') || 'light';
+            applyBackgroundSettings();
+            applyThemeSettings();
+            loadProfileHeader();
+            if (typeof initDepositIcon === 'function') initDepositIcon();
+            updateTeamMeetBadge();
+            refreshUnreadBadges();
+            // Preload notifications badge (non-blocking)
+            try {
+                fetchNotifications().then(items => {
+                    const badge = document.getElementById('notifBadge');
+                    if (!badge) return;
+                    const unread = (items || []).filter(i => !i.read).length;
+                    if (unread > 0) { badge.style.display = 'inline-flex'; badge.textContent = String(unread); }
+                    else { badge.style.display = 'none'; }
+                }).catch(()=>{});
+            } catch(e){}
+        };
+
+        window.updateTeamMeetBadge = updateTeamMeetBadge;
+    </script>
+    <style>
+    /* User override: remove border overlays on background */
+    .container, .card, .app-header, .bottom-nav, .balance-container, .notification-bar, .header-action, .menu-icon, .icon-box, .profile-photo, .input-field, .btn-main {
+        border: none !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        outline: none !important;
+    }
+    </style>
+<script src="assets/background-settings.js"></script>
+</body>
+</html>
