@@ -133,9 +133,7 @@
       text-overflow: ellipsis;
     }
     .layout {
-      display: grid;
-      grid-template-columns: 320px minmax(0, 1fr);
-      gap: 22px;
+      display: block;
     }
     .sidebar, .panel {
       background: rgba(18,27,46,0.9);
@@ -267,61 +265,7 @@
       z-index: 2;
     }
     .unread-badge.is-visible { display: inline-flex; }
-    .panel {
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .profile-box {
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      background: rgba(255,255,255,0.03);
-      padding: 22px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      gap: 12px;
-    }
-    .profile-hero {
-      width: 96px; height: 96px; border-radius: 50%;
-      background: linear-gradient(135deg, #7dd3fc, #f9a8d4);
-      font-weight: 800; color: #0f172a;
-      display: grid; place-items: center; font-size: 30px;
-      overflow: hidden;
-    }
-    .profile-hero img { width:100%; height:100%; object-fit: cover; }
-    .profile-avatar-container { position: relative; width: 96px; height: 96px; }
-    .profile-avatar-container .profile-hero { width: 100%; height: 100%; }
-    .profile-avatar-container .status-badge { right: 2px; bottom: 2px; width: 16px; height: 16px; border-color: var(--panel); }
-    .profile-name { font-size: 30px; margin: 0; }
-    .profile-role { color: var(--muted); margin: 0; }
-    .profile-email { color: var(--muted); margin-top: 4px; }
-    .large-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-top: 18px;
-    }
-    .action-btn {
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.04);
-      color: var(--text);
-      border-radius: 14px;
-      padding: 14px 22px;
-      cursor: pointer;
-      font-weight: 700;
-      min-width: 150px;
-    }
-    .action-btn.primary {
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      border: none;
-      color: #fff;
-    }
     @media (max-width: 860px) {
-      .layout { grid-template-columns: 1fr; }
       .member-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
     }
   </style>
@@ -376,9 +320,6 @@
         <div id="memberList" class="member-list"></div>
       </aside>
 
-      <main class="panel">
-        <div class="profile-box" id="profileBox"></div>
-      </main>
     </div>
   </div>
 
@@ -649,7 +590,6 @@
         const openMemberChat = () => {
           const email = card.dataset.email;
           const member = members.find(m => m.email === email);
-          if (member) renderProfile(member);
           if (member) openChat(member);
         };
         card.addEventListener('click', openMemberChat);
@@ -661,40 +601,7 @@
         });
       });
 
-      const firstMember = members[0];
-      if (firstMember) renderProfile(firstMember);
       renderUnreadBadges();
-    }
-
-    function renderProfile(member) {
-      const box = document.getElementById('profileBox');
-      const avatar = member.photo
-        ? `<img src="${member.photo}" alt="${member.name}" />`
-        : initials(member.name);
-      box.innerHTML = `
-        <div class="profile-avatar-container">
-          <div class="profile-hero">${avatar}</div>
-          <span class="status-badge ${member.status === 'online' ? 'online' : 'offline'}" aria-label="${member.status === 'online' ? 'Online' : 'Offline'}"></span>
-        </div>
-        <div>
-          <h2 class="profile-name">${member.name}</h2>
-          <p class="profile-role">${member.role}</p>
-          <p class="profile-email">${member.email}</p>
-        </div>
-        <div class="large-actions">
-          <button class="action-btn primary" type="button" data-profile-action="chat">Open Chat</button>
-          <button class="action-btn" type="button" data-profile-action="audio">Audio Call</button>
-          <button class="action-btn" type="button" data-profile-action="video">Video Call</button>
-        </div>
-      `;
-
-      box.querySelectorAll('[data-profile-action]').forEach(button => {
-        button.addEventListener('click', () => {
-          const action = button.dataset.profileAction;
-          if (action === 'chat') openChat(member);
-          if (action === 'audio' || action === 'video') openCall(member, action);
-        });
-      });
     }
 
     function openChat(member) {
