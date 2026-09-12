@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -591,4 +592,599 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
     </script>
 <script src="assets/background-settings.js"></script>
 </body>
+=======
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBRYMS - Edit Profile</title>
+    
+    <!-- ১. Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        body { background-color: #071124; color: #e6eef6; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body.dark-mode { background-color: #111; color: #e5e7eb; }
+        body.dark-mode .profile-header { background: #1f2937; color: #f8fafc; }
+        body.dark-mode .info-card, body.dark-mode .save-btn, body.dark-mode .bottom-nav { background: #161b22; color: #e5e7eb; border-color: rgba(255,255,255,0.08); }
+        body.dark-mode .input-field { border-bottom-color: rgba(255,255,255,0.1); color: #f8fafc; }
+        body.dark-mode .input-field::placeholder { color: rgba(248,250,252,0.6); }
+        body.dark-mode .save-btn { background: #df146e; }
+        body.dark-mode .nav-item { color: #94a3b8; }
+        body.dark-mode .nav-item.active { color: #f472b6; }
+        .profile-header { background-color: #df146e; color: white; padding: 30px 20px; text-align: center; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; position: relative; }
+        .back-btn { position: absolute; left: 20px; top: 20px; font-size: 24px; cursor: pointer; color: white; text-decoration: none; }
+        
+        /* প্রোফাইল ছবি */
+        .profile-pic-container { position: relative; width: 90px; height: 90px; margin: 0 auto 10px; }
+        .profile-pic { width: 100%; height: 100%; border-radius: 50%; border: 3px solid #1a1a1a; background: #1a1a1a; overflow: hidden; }
+        .camera-btn { position: absolute; bottom: 0; right: 0; background: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        .info-container { padding: 20px; margin-top: -20px; }
+        .info-card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .info-item { margin-bottom: 20px; }
+        .label { color: #a0afc0; font-size: 12px; display: block; margin-bottom: 5px; }
+        .input-field { width: 100%; border: none; font-size: 16px; font-weight: bold; border-bottom: 1px solid #ddd; outline: none; padding: 5px 0; background: transparent; }
+        .input-field:focus { border-bottom-color: #df146e; }
+
+        .save-btn { display: block; width: 90%; margin: 20px auto; padding: 15px; background: #df146e; color: white; text-align: center; border-radius: 25px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; }
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: white; display: flex; justify-content: space-around; align-items: center; padding: 12px 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.08); z-index: 1000; }
+        .nav-item { text-align: center; color: #777; cursor: pointer; flex: 1; font-size: 12px; }
+        .nav-item.active { color: #df146e; font-weight: 700; }
+        .nav-icon { font-size: 20px; display: block; margin-bottom: 4px; }
+        body { padding-bottom: 80px; }
+        .display-value { font-weight: bold; font-size: 16px; color: #e6eef6; }
+        body.dark-mode .display-value { color: #e5e7eb; }
+        .edit-btn { display: block; width: 90%; margin: 20px auto; padding: 15px; background: #007bff; color: white; text-align: center; border-radius: 25px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .location-btn { margin-top: 5px; padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        textarea.input-field { resize: vertical; min-height: 60px; }
+    </style>
+<style>
+/* Global dark/translucent theme overrides applied by Copilot */
+/* Remove rounded corners and use linear borders */
+/* Remove global forced rounding; apply refined gradient borders and sensible radii */
+/* Use a transparent base border and a subtle gradient edge for better look on dark background */
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .icon-box, .profile-photo, .input-field, .btn-main {
+    border: 1px solid transparent !important;
+    background-image: linear-gradient(180deg, rgba(7,17,36,0.66), rgba(7,17,36,0.66)), linear-gradient(90deg, rgba(211,38,150,0.12), rgba(6,182,212,0.12));
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    border-radius: 10px !important;
+}
+.profile-photo { border-radius: 50% !important; }
+.menu-icon, .header-action { border-radius: 12px !important; }
+.btn-main { border-radius: 999px !important; }
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .icon-box, .profile-photo, .input-field, .btn-main { border: 1px solid rgba(255,255,255,0.06) !important; }
+body { background-color: #071124 !important; background-image: radial-gradient(1200px 600px at 10% 20%, rgba(207,44,149,0.08), transparent 20%), radial-gradient(900px 500px at 80% 70%, rgba(4,188,212,0.06), transparent 18%), linear-gradient(180deg,#040714 0%, #071124 40%, #071726 100%); color: #e6eef6 !important; }
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu { background: rgba(7,17,36,0.56) !important; color: #e6eef6 !important; border-color: rgba(255,255,255,0.04) !important; box-shadow: 0 12px 30px rgba(2,6,23,0.6) !important; }
+.card h3, .container h2, .app-header h1, .app-header h2 { color: #e6eef6 !important; }
+.input-field { background: rgba(255,255,255,0.02) !important; color: #e6eef6 !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+.link, a { color: rgba(255,255,255,0.95) !important; }
+.btn-main { background: linear-gradient(135deg, rgba(211,38,150,0.95) 0%, rgba(6,182,212,0.95) 100%) !important; color: #021724 !important; }
+/* small helpers */
+.auth-box { backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%); }
+#toast { background: rgba(20,22,26,0.9) !important; color: #fff !important; }
+</style>
+<style>
+/* Remove page chrome borders; keep only .icon-box borders */
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .profile-photo, .input-field, .btn-main {
+  border: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+.icon-box { border: 1px solid rgba(255,255,255,0.08) !important; background: transparent !important; box-shadow: none !important; }
+body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
+</style>
+<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
+<link rel="stylesheet" href="assets/bg.css">
+</head>
+<body>
+
+    <div class="profile-header">
+        <a href="FACE APP.html" class="back-btn">←</a>
+        <div class="profile-pic-container">
+            <div class="profile-pic">
+                <img id="profileImg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23ddd'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23777' font-family='Segoe UI, sans-serif' font-size='16'%3EUser%3C/text%3E%3C/svg%3E" style="width:100%; height:100%; object-fit:cover;">
+            </div>
+            <label for="fileInput" class="camera-btn">📷</label>
+            <input type="file" id="fileInput" style="display:none" accept="image/*" onchange="previewImage(event)">
+        </div>
+        <h3 id="topName" style="margin: 5px 0;">SBRYMS Member</h3>
+        <p style="font-size: 12px; opacity: 0.8;">Edit Profile Information</p>
+    </div>
+
+    <div class="info-container">
+        <div class="profile-display">
+            <div class="info-card">
+                <div class="info-item">
+                    <span class="label">Full Name</span>
+                    <span id="displayName" class="display-value">Name</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Username</span>
+                    <span id="displayUsername" class="display-value">Not set</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Designation</span>
+                    <span id="displayDesignation" class="display-value">Not set</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Email Address</span>
+                    <span id="displayEmail" class="display-value">email@example.com</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Mobile Number</span>
+                    <span id="displayPhone" class="display-value">+880 123 456 7890</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Birth Date</span>
+                    <span id="displayBirthDate" class="display-value">Not set</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Bio</span>
+                    <span id="displayBio" class="display-value">Not set</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Current Location</span>
+                    <span id="displayLocation" class="display-value">Not set</span>
+                </div>
+            </div>
+            <button class="edit-btn" onclick="console.log('Edit Profile button clicked'); toggleEditMode()">Edit Profile</button>
+        </div>
+
+        <div class="profile-edit" style="display:none;">
+            <div class="info-card">
+                <div class="info-item">
+                    <span class="label">Full Name</span>
+                    <input type="text" id="editName" class="input-field" placeholder="Type Name">
+                </div>
+                <div class="info-item">
+                    <span class="label">Username</span>
+                    <input type="text" id="editUsername" class="input-field" placeholder="Username">
+                </div>
+                <div class="info-item">
+                    <span class="label">Designation</span>
+                    <input type="text" id="editDesignation" class="input-field" placeholder="Designation">
+                </div>
+                <div class="info-item">
+                    <span class="label">Mobile Number</span>
+                    <input type="text" id="editPhone" class="input-field" placeholder="Type Number">
+                </div>
+                <div class="info-item">
+                    <span class="label">Email Address</span>
+                    <input type="email" id="editEmail" class="input-field" placeholder="Type Email" readonly>
+                </div>
+                <div class="info-item">
+                    <span class="label">Birth Date</span>
+                    <input type="date" id="editBirthDate" class="input-field">
+                </div>
+                <div class="info-item">
+                    <span class="label">Bio</span>
+                    <textarea id="editBio" class="input-field" placeholder="Tell about yourself" rows="3"></textarea>
+                </div>
+                <div class="info-item">
+                    <span class="label">Current Location</span>
+                    <input type="text" id="editLocation" class="input-field" placeholder="Location">
+                    <button class="location-btn" onclick="getLocation()">Detect Location</button>
+                </div>
+            </div>
+            <button class="save-btn" onclick="saveProfile()">Save Changes</button>
+        </div>
+    </div>
+
+
+    <script>
+        // Admin email list - শুধু এইসব email admin থাকবে
+        const ADMIN_EMAILS = [
+            "mh0392723@gmail.com",
+            "sbrymsteam@gmail.com"
+        ];
+
+        function createInitialsAvatar(name) {
+            const initials = (name || 'U').split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'U';
+            const colors = ['#2cc9f5', '#ff4db8', '#7dd3fc', '#8b5cf6', '#22c55e', '#f59e0b'];
+            const colorA = colors[Math.abs(name.length) % colors.length];
+            const colorB = colors[(Math.abs(name.length) + 2) % colors.length];
+            const svg = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+                    <defs>
+                        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stop-color="${colorA}"/>
+                            <stop offset="100%" stop-color="${colorB}"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="200" height="200" rx="100" fill="url(#g)"/>
+                    <circle cx="100" cy="100" r="62" fill="rgba(255,255,255,0.12)"/>
+                    <text x="50%" y="52%" text-anchor="middle" dominant-baseline="middle" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="64" font-weight="700">${initials}</text>
+                </svg>
+            `;
+            return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+        }
+
+        const selectedProfileName = localStorage.getItem('selectedProfileName');
+        const selectedProfilePhoto = localStorage.getItem('selectedProfilePhoto') || (selectedProfileName ? createInitialsAvatar(selectedProfileName) : '');
+        const selectedProfileAvatar = localStorage.getItem('selectedProfileAvatar') || selectedProfilePhoto;
+        const selectedProfileUsername = localStorage.getItem('selectedProfileUsername');
+        const selectedProfileDesignation = localStorage.getItem('selectedProfileDesignation');
+        const selectedProfileEmail = localStorage.getItem('selectedProfileEmail');
+        const selectedProfileCurrent = localStorage.getItem('selectedProfileCurrent') === 'true';
+
+        function getUserStoragePrefix() {
+            const uid = localStorage.getItem('currentUserUid');
+            if (uid) return `user_${uid}_`;
+            const email = localStorage.getItem('currentUserEmail');
+            return email ? `user_${email.replace(/[^a-zA-Z0-9_-]/g, '_')}_` : '';
+        }
+
+        const PROFILE_ACCOUNTS_KEY = 'profile_accounts';
+
+        function storageKey(key) {
+            return `${getUserStoragePrefix()}${key}`;
+        }
+
+        function getProfileAccounts() {
+            const raw = localStorage.getItem(PROFILE_ACCOUNTS_KEY);
+            try {
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveProfileAccounts(accounts) {
+            localStorage.setItem(PROFILE_ACCOUNTS_KEY, JSON.stringify(accounts));
+        }
+
+        function registerProfileAccount(email, name, photo, username, designation) {
+            if (!email) return;
+            const accounts = getProfileAccounts();
+            const existingIndex = accounts.findIndex(acc => acc.email === email);
+            const account = {
+                email,
+                name: name || email.split('@')[0].replace(/[._-]/g, ' '),
+                photo: photo || '',
+                username: username || email.split('@')[0],
+                designation: designation || '',
+                updatedAt: Date.now()
+            };
+            if (existingIndex >= 0) {
+                accounts[existingIndex] = { ...accounts[existingIndex], ...account };
+            } else {
+                accounts.push(account);
+            }
+            saveProfileAccounts(accounts);
+        }
+
+        if (selectedProfileName && selectedProfileCurrent) {
+            clearSelectedProfile();
+        }
+
+        function clearSelectedProfile() {
+            localStorage.removeItem('selectedProfileName');
+            localStorage.removeItem('selectedProfilePhoto');
+            localStorage.removeItem('selectedProfileAvatar');
+            localStorage.removeItem('selectedProfileEmail');
+            localStorage.removeItem('selectedProfileUsername');
+            localStorage.removeItem('selectedProfileDesignation');
+            localStorage.removeItem('selectedProfileCurrent');
+        }
+
+        function toggleEditMode() {
+            try {
+                const displayDiv = document.querySelector('.profile-display');
+                const editDiv = document.querySelector('.profile-edit');
+                if (editDiv.style.display === 'none') {
+                    // Switch to edit mode
+                    displayDiv.style.display = 'none';
+                    editDiv.style.display = 'block';
+                    // Populate edit fields
+                    document.getElementById('editName').value = document.getElementById('displayName').textContent !== 'Not set' ? document.getElementById('displayName').textContent : '';
+                    document.getElementById('editPhone').value = document.getElementById('displayPhone').textContent !== 'Not set' ? document.getElementById('displayPhone').textContent : '';
+                    document.getElementById('editEmail').value = document.getElementById('displayEmail').textContent;
+                    document.getElementById('editBirthDate').value = document.getElementById('displayBirthDate').textContent !== 'Not set' ? document.getElementById('displayBirthDate').textContent : '';
+                    document.getElementById('editBio').value = document.getElementById('displayBio').textContent !== 'Not set' ? document.getElementById('displayBio').textContent : '';
+                    document.getElementById('editLocation').value = document.getElementById('displayLocation').textContent !== 'Not set' ? document.getElementById('displayLocation').textContent : '';
+                } else {
+                    // Switch to display mode
+                    editDiv.style.display = 'none';
+                    displayDiv.style.display = 'block';
+                }
+            } catch (e) {
+                console.error('Error in toggleEditMode:', e);
+                alert('Error toggling edit mode: ' + e.message);
+            }
+        }
+
+        // Get current location
+        function getLocation() {
+            try {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition((position) => {
+                        const lat = position.coords.latitude;
+                        const lon = position.coords.longitude;
+                        document.getElementById('editLocation').value = `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+                    }, (error) => {
+                        alert('Location access denied or error: ' + error.message);
+                    });
+                } else {
+                    alert('Geolocation not supported by this browser.');
+                }
+            } catch (e) {
+                console.error('Error in getLocation:', e);
+                alert('Error getting location: ' + e.message);
+            }
+        }
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
+            authDomain: "sbryms-finance.firebaseapp.com",
+            projectId: "sbryms-finance",
+            storageBucket: "sbryms-finance.firebasestorage.app",
+            messagingSenderId: "1087018056369",
+            appId: "1:1087018056369:web:81bc39017385a649500090"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentUserRole = 'user'; // Default role
+
+        // ইমেইল থেকে নাম বের করার ফাংশন
+        function extractNameFromEmail(email) {
+            const localPart = email.split('@')[0];
+            const nameParts = localPart.split(/[._-]/);
+            const capitalized = nameParts.map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase());
+            return capitalized.join(' ');
+        }
+
+        async function ensureSelectedProfileFromFirestore() {
+            if (!selectedProfileEmail || selectedProfileCurrent) return;
+            try {
+                const snapshot = await db.collection('users').where('email', '==', selectedProfileEmail).limit(1).get();
+                if (!snapshot.empty) {
+                    const data = snapshot.docs[0].data();
+                    const resolvedName = data.name || selectedProfileName || 'Member';
+                    const resolvedPhoto = data.photo || selectedProfilePhoto || createInitialsAvatar(resolvedName);
+                    localStorage.setItem('selectedProfileName', resolvedName);
+                    localStorage.setItem('selectedProfilePhoto', resolvedPhoto);
+                    localStorage.setItem('selectedProfileDesignation', data.designation || selectedProfileDesignation || 'Not set');
+                    if (data.username) {
+                        localStorage.setItem('selectedProfileUsername', data.username);
+                    }
+                } else if (selectedProfileName && !selectedProfilePhoto) {
+                    localStorage.setItem('selectedProfilePhoto', createInitialsAvatar(selectedProfileName));
+                }
+            } catch (error) {
+                console.error('Error resolving selected profile from Firestore:', error);
+            }
+        }
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                localStorage.setItem('currentUserEmail', user.email);
+                localStorage.setItem('currentUserUid', user.uid);
+                // চেক করো current user admin কিনা
+                currentUserRole = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
+
+                await ensureSelectedProfileFromFirestore();
+
+                if (selectedProfileName && !selectedProfileCurrent) {
+                    const activeProfileName = localStorage.getItem('selectedProfileName') || selectedProfileName;
+                    const activeProfilePhoto = localStorage.getItem('selectedProfilePhoto') || selectedProfilePhoto || createInitialsAvatar(activeProfileName);
+                    const activeProfileDesignation = localStorage.getItem('selectedProfileDesignation') || selectedProfileDesignation || 'Not set';
+                    const activeProfileEmail = localStorage.getItem('selectedProfileEmail') || selectedProfileEmail || 'Not available';
+                    document.getElementById('topName').innerText = activeProfileName;
+                    document.getElementById('displayName').textContent = activeProfileName;
+                    document.getElementById('displayUsername').textContent = localStorage.getItem('selectedProfileUsername') || selectedProfileUsername || activeProfileName;
+                    document.getElementById('displayDesignation').textContent = activeProfileDesignation;
+                    document.getElementById('displayEmail').textContent = activeProfileEmail;
+                    document.getElementById('displayPhone').textContent = 'Not available';
+                    document.getElementById('displayBirthDate').textContent = 'Not set';
+                    document.getElementById('displayBio').textContent = 'Not set';
+                    document.getElementById('displayLocation').textContent = 'Not set';
+                    document.getElementById('profileImg').src = activeProfilePhoto;
+                    localStorage.setItem('selectedProfilePhoto', activeProfilePhoto);
+                    document.querySelector('.edit-btn').style.display = 'none';
+                    document.querySelector('.profile-edit').style.display = 'none';
+                    document.querySelector('.save-btn').style.display = 'none';
+                    document.querySelector('.camera-btn').style.display = 'none';
+                    document.getElementById('fileInput').style.display = 'none';
+                    document.querySelectorAll('.input-field').forEach(input => {
+                        input.disabled = true;
+                    });
+                    clearSelectedProfile();
+                    return;
+                }
+
+                db.collection("users").doc(user.uid).get().then((doc) => {
+                    const userEmail = user.email || localStorage.getItem('currentUserEmail') || '';
+                    if (doc.exists) {
+                        const data = doc.data();
+                        const storedName = localStorage.getItem(storageKey('profile_name'));
+                        const displayName = data.name || storedName || "Member";
+                        const displayUsername = data.username || userEmail.split('@')[0];
+                        const displayDesignation = data.designation || "Not set";
+                        document.getElementById('topName').innerText = displayName;
+                        
+                        // Save button enable for all users
+                        const saveBtn = document.querySelector('.save-btn');
+                        saveBtn.textContent = 'Save Changes';
+                        saveBtn.style.background = '#df146e';
+                        document.querySelectorAll('.input-field').forEach(input => {
+                            input.disabled = false;
+                        });
+                        
+                        // Set display values
+                        document.getElementById('displayName').textContent = data.name || storedName || "Not set";
+                        document.getElementById('displayUsername').textContent = displayUsername;
+                        document.getElementById('displayDesignation').textContent = displayDesignation;
+                        document.getElementById('displayPhone').textContent = data.phone || "Not set";
+                        document.getElementById('displayEmail').textContent = userEmail || data.email || "Not set";
+                        document.getElementById('displayBirthDate').textContent = data.birthDate || "Not set";
+                        document.getElementById('displayBio').textContent = data.bio || "Not set";
+                        document.getElementById('displayLocation').textContent = data.location || "Not set";
+                        
+                        document.getElementById('editName').value = data.name || storedName || "";
+                        document.getElementById('editUsername').value = data.username || userEmail.split('@')[0];
+                        document.getElementById('editDesignation').value = data.designation || "";
+                        document.getElementById('editPhone').value = data.phone || "";
+                        document.getElementById('editEmail').value = userEmail;
+                        document.getElementById('editEmail').readOnly = true;
+                        document.getElementById('editEmail').style.cursor = 'not-allowed';
+                        document.getElementById('editBirthDate').value = data.birthDate || "";
+                        document.getElementById('editBio').value = data.bio || "";
+                        document.getElementById('editLocation').value = data.location || "";
+                        if (data.photo) {
+                            document.getElementById('profileImg').src = data.photo;
+                            localStorage.setItem(storageKey('profile_photo'), data.photo);
+                        }
+                        registerProfileAccount(userEmail, displayName, data.photo || '', displayUsername, data.designation || '');
+                    } else {
+                        // নতুন user - ইমেইল থেকে নাম বের করে সেটআপ করো
+                        const extractedName = extractNameFromEmail(user.email);
+                        document.getElementById('topName').innerText = extractedName;
+                        
+                        // Set display values
+                        document.getElementById('displayName').textContent = extractedName;
+                        document.getElementById('displayUsername').textContent = user.email.split('@')[0];
+                        document.getElementById('displayDesignation').textContent = 'Not set';
+                        document.getElementById('displayEmail').textContent = user.email;
+                        document.getElementById('displayPhone').textContent = "Not set";
+                        document.getElementById('displayBirthDate').textContent = "Not set";
+                        document.getElementById('displayBio').textContent = "Not set";
+                        document.getElementById('displayLocation').textContent = "Not set";
+                        
+                        // Set edit values
+                        document.getElementById('editName').value = extractedName;
+                        document.getElementById('editUsername').value = user.email.split('@')[0];
+                        document.getElementById('editDesignation').value = '';
+                        document.getElementById('editEmail').value = user.email;
+                        document.getElementById('editEmail').readOnly = true;
+                        document.getElementById('editEmail').style.cursor = 'not-allowed';
+                        
+                        // Save button enable for all users
+                        const saveBtn = document.querySelector('.save-btn');
+                        saveBtn.textContent = 'Save Changes';
+                        saveBtn.style.background = '#df146e';
+                        document.querySelectorAll('.input-field').forEach(input => {
+                            input.disabled = false;
+                        });
+                        
+                        // প্রোফাইল ডাটা সেভ করো
+                        db.collection("users").doc(user.uid).set({
+                            name: extractedName,
+                            username: user.email.split('@')[0],
+                            designation: '',
+                            email: user.email,
+                            role: currentUserRole,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true }).then(() => {
+                            registerProfileAccount(user.email, extractedName, '', user.email.split('@')[0], '');
+                            alert("প্রোফাইল সেটআপ হয়েছে! তথ্য আপডেট করুন।");
+                        }).catch((error) => {
+                            console.error("Error setting up profile:", error);
+                        });
+                    }
+                }).catch((error) => {
+                    console.error("Error loading profile:", error);
+                });
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function() {
+                document.getElementById('profileImg').src = reader.result;
+            }
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function saveProfile() {
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Login session expired!");
+                return;
+            }
+
+            const name = document.getElementById('editName').value;
+            const username = document.getElementById('editUsername').value.trim();
+            const designation = document.getElementById('editDesignation').value.trim();
+            const phone = document.getElementById('editPhone').value;
+            const email = user.email;
+            const birthDate = document.getElementById('editBirthDate').value;
+            const bio = document.getElementById('editBio').value;
+            const location = document.getElementById('editLocation').value;
+            const photo = document.getElementById('profileImg').src;
+            
+            localStorage.setItem(storageKey('profile_name'), name || 'Member');
+            localStorage.setItem(storageKey('profile_username'), username || email.split('@')[0]);
+            localStorage.setItem(storageKey('profile_designation'), designation || 'Member');
+            if (photo && photo.length < 1000000) {
+                localStorage.setItem(storageKey('profile_photo'), photo);
+            }
+            
+            const profileData = {
+                name,
+                username: username || email.split('@')[0],
+                designation,
+                phone,
+                email,
+                birthDate,
+                bio,
+                location,
+                role: currentUserRole,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            if (photo && photo.length < 1000000) {
+                profileData.photo = photo;
+            }
+            
+            db.collection("users").doc(user.uid).set(profileData, { merge: true }).then(() => {
+                registerProfileAccount(email, name, photo, username, designation);
+                alert("অসাধারণ! আপনার তথ্যগুলি অনলাইনে সেভ হয়েছে।");
+                // Update display values
+                document.getElementById('displayName').textContent = name || 'Not set';
+                document.getElementById('displayUsername').textContent = username || email.split('@')[0];
+                document.getElementById('displayDesignation').textContent = designation || 'Not set';
+                document.getElementById('displayPhone').textContent = phone || 'Not set';
+                document.getElementById('displayEmail').textContent = email;
+                document.getElementById('displayBirthDate').textContent = birthDate || 'Not set';
+                document.getElementById('displayBio').textContent = bio || 'Not set';
+                document.getElementById('displayLocation').textContent = location || 'Not set';
+                document.getElementById('topName').innerText = name;
+                // Switch back to display mode
+                toggleEditMode();
+            }).catch((error) => {
+                console.error("Error saving profile:", error);
+                alert("Error: " + error.message);
+            });
+        }
+
+        function applyThemeSettings() {
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            const brightness = parseFloat(localStorage.getItem('brightness')) || 1;
+            document.body.classList.toggle('dark-mode', darkMode);
+            document.body.style.filter = `brightness(${brightness})`;
+            document.querySelectorAll('.nav-item').forEach(item => {
+                const page = item.getAttribute('data-page')?.toLowerCase();
+                const current = window.location.pathname.split('/').pop().toLowerCase();
+                item.classList.toggle('active', page === current || (!current && page === 'profile.html'));
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', applyThemeSettings);
+    </script>
+<script src="assets/background-settings.js"></script>
+</body>
+>>>>>>> 8fceecbfbe6f3fb64c92aef170e3f711ba638301
 </html>

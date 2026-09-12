@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -1078,3 +1079,1085 @@
 <script src="assets/background-settings.js"></script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBRYMS Finance - Deposit</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+            color: #1f2937;
+        }
+        .page-header {
+            background: rgba(255, 255, 255, 0.55);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: #111827;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+        }
+        .page-header a { color: #111827; text-decoration: none; font-size: 22px; }
+        .page-title { margin: 0; font-size: 20px; font-weight: 700; }
+        .subtitle { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+        .content { padding: 20px; }
+        .summary-card { background: rgba(255,255,255,0.7); border: 1px solid rgba(148,163,184,0.18); border-radius: 18px; padding: 18px 20px; box-shadow: 0 8px 22px rgba(15,23,42,0.04); margin-bottom: 18px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+        .summary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+        .stat-box { background: #f8fafc; border-radius: 15px; padding: 16px; }
+        .stat-title { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+        .stat-value { font-size: 20px; font-weight: 700; color: #111827; }
+        .action-bar { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+        .action-bar button { border: none; border-radius: 14px; padding: 12px 16px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 20px rgba(15,23,42,0.10); }
+        .btn-add { background: #10b981; color: white; }
+        .btn-refresh { background: #3b82f6; color: white; }
+        .btn-pay { background: #2563eb; color: white; }
+        .btn-filter { background: #f3f4f6; color: #111827; }
+        .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; width: 100%; max-width: 720px; }
+        /* Row status coloring: paid = green text, unpaid = red text */
+        .row-paid { color: #065f46 !important; }
+        .row-unpaid { color: #b91c1c !important; }
+        /* Complete text shown in place of Pay Now after successful payment */
+        .complete-text { color: #065f46; font-weight: 700; }
+        .filters label {
+            display: block;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 8px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+        .filters select {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.08);
+            color: #f5f7ff;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 14px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 10px 25px rgba(15, 23, 42, 0.12);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: linear-gradient(45deg, transparent 50%, #f5f7ff 50%), linear-gradient(135deg, #f5f7ff 50%, transparent 50%);
+            background-position: calc(100% - 18px) calc(50% - 2px), calc(100% - 12px) calc(50% - 2px);
+            background-size: 6px 6px, 6px 6px;
+            background-repeat: no-repeat;
+            padding: 12px 34px 12px 14px;
+        }
+        .filters select option {
+            background: rgba(255, 255, 255, 0.92);
+            color: #111827;
+        }
+        .profile-strip {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            margin-bottom: 18px;
+            padding: 10px 4px 10px 0;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(99, 102, 241, 0.5) transparent;
+        }
+        .profile-strip::-webkit-scrollbar { height: 6px; }
+        .profile-strip::-webkit-scrollbar-thumb { background: linear-gradient(90deg, #ec4899, #3b82f6); border-radius: 999px; }
+        .profile-chip {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.76), rgba(255,255,255,0.58));
+            border-radius: 18px;
+            box-shadow: 0 6px 20px rgba(15,23,42,0.10);
+            cursor: pointer;
+            border: 1px solid rgba(148,163,184,0.18);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, border-radius 0.25s ease;
+            white-space: nowrap;
+            min-width: 150px;
+            overflow: hidden;
+        }
+        .profile-chip::before {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            background: linear-gradient(135deg, rgba(236,72,153,0.18), rgba(59,130,246,0.18));
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            border-radius: inherit;
+            z-index: 0;
+        }
+        .profile-chip:hover {
+            transform: translateY(-1px) scale(1.01);
+            box-shadow: 0 10px 24px rgba(15,23,42,0.12);
+        }
+        .profile-chip.active {
+            border-color: rgba(236,72,153,0.75);
+            background: linear-gradient(135deg, rgba(253, 230, 138, 0.36), rgba(191, 219, 254, 0.32));
+            box-shadow: 0 14px 30px rgba(236,72,153,0.18), 0 12px 26px rgba(59,130,246,0.16);
+            border-radius: 22px;
+            transform: translateY(-2px) scale(1.02);
+            animation: accountPulse 1.7s ease-in-out infinite alternate;
+        }
+        .profile-chip.active::before {
+            opacity: 1;
+        }
+        .profile-chip > * {
+            position: relative;
+            z-index: 1;
+        }
+        @keyframes accountPulse {
+            0% {
+                box-shadow: 0 12px 28px rgba(236,72,153,0.16), 0 8px 22px rgba(59,130,246,0.12);
+            }
+            100% {
+                box-shadow: 0 16px 34px rgba(236,72,153,0.24), 0 12px 28px rgba(59,130,246,0.18);
+            }
+        }
+        .profile-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #ec4899, #3b82f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            font-size: 16px;
+            color: white;
+            font-weight: 700;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+        }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-chip-text { display: flex; flex-direction: column; align-items: flex-start; }
+        .profile-name { margin: 0; font-size: 14px; font-weight: 700; color: #111827; }
+        .profile-email { margin: 1px 0 0; font-size: 11px; color: #6b7280; }
+        .row-action button { margin-right: 6px; padding: 7px 10px; border: none; border-radius: 12px; cursor: pointer; font-size: 12px; }
+        .table-card {
+            background: rgba(255,255,255,0.7);
+            border: 1px solid rgba(148,163,184,0.18);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: 0 10px 28px rgba(15,23,42,0.06);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 10px; text-align: left; }
+        th { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: .1em; border-bottom: 1px solid #e5e7eb; background: #f8fafc; position: sticky; top: 0; z-index: 1; }
+        tbody tr:nth-child(even) { background: #fafafa; }
+        tbody tr:hover { background: #f3f4f6; }
+        td { border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+        .tag { display: inline-flex; padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+        .tag-paid { background: #d1fae5; color: #065f46; }
+        .tag-missed { background: #fee2e2; color: #b91c1c; }
+        .tag-editing { background: #e0f2fe; color: #0c4a6e; }
+        .btn-payment-status { display: inline-block; padding: 8px 12px; border-radius: 10px; background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%); color: white; border: none; cursor: pointer; font-weight: 600; font-size: 12px; transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; }
+        .btn-payment-status:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(139, 92, 246, 0.3); }
+        .row-action button { margin-right: 6px; padding: 7px 10px; border: none; border-radius: 12px; cursor: pointer; font-size: 12px; }
+        .btn-edit { background: #f59e0b; color: white; }
+        .btn-save { background: #10b981; color: white; }
+        .btn-cancel { background: #9ca3af; color: white; }
+        .btn-delete { background: #ef4444; color: white; }
+        input, select { width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid #d1d5db; font-size: 14px; }
+        .grid-cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .grid-cols span { font-size: 13px; color: #6b7280; }
+        .empty-state { text-align: center; padding: 32px 0; color: #6b7280; }
+    </style>
+<style>
+    body {
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        color: #111827;
+    }
+    .page-header, .summary-card, .table-card, .stat-box, .profile-chip {
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    }
+    .summary-card, .table-card, .stat-box, .profile-chip {
+        background: rgba(255, 255, 255, 0.72);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    .page-header { background: rgba(255, 255, 255, 0.5); }
+</style>
+<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
+<link rel="stylesheet" href="assets/bg.css">
+</head>
+<body>
+    <div class="page-header">
+        <div>
+            <a href="FACE APP.html" onclick="event.preventDefault(); window.location.replace('FACE APP.html');">←</a>
+            <div style="display:inline-block; vertical-align: middle; margin-left: 12px;">
+                <h1 class="page-title">Deposit Name</h1>
+                <p class="subtitle">Manage and review monthly deposit data</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="profile-strip" id="profileStrip"></div>
+        <div class="summary-card">
+            <div class="summary-grid">
+                <div class="stat-box">
+                    <div class="stat-title">Total Deposit</div>
+                    <div class="stat-value" id="totalAmount">৳ 0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">Total Fine</div>
+                    <div class="stat-value" id="totalFine">৳ 0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">Total Star Received</div>
+                    <div class="stat-value" id="totalStar">0</div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="table-card">
+            <div class="action-bar">
+                <div class="filters">
+                    <div>
+                        <label for="yearFilter">Year</label>
+                        <select id="yearFilter" onchange="renderTable(); if (ALLOW_AUTOPROMPT) setTimeout(openChangeForFirstVisibleRow,0);"></select>
+                    </div>
+                    <div>
+                        <label>&nbsp;</label>
+                    </div>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Fee</th>
+                        <th>Star</th>
+                        <th>Fine</th>
+                        <th>Pay</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="depositBody"></tbody>
+            </table>
+            <div class="empty-state" id="emptyState" style="display:none;">No data available.</div>
+        </div>
+    </div>
+
+    <script>
+        const PROFILE_ACCOUNTS_KEY = 'profile_accounts';
+        const DEPOSIT_SELECTION_KEY = 'selected_deposit_profile';
+
+        function getUserStoragePrefix() {
+            const uid = localStorage.getItem('currentUserUid');
+            if (uid) return `user_${uid}_`;
+            const email = localStorage.getItem('currentUserEmail');
+            return email ? `user_${email.replace(/[^a-zA-Z0-9_-]/g, '_')}_` : '';
+        }
+
+        function storageKey(key) {
+            return `${getUserStoragePrefix()}${key}`;
+        }
+
+        function getCurrentProfile() {
+            const currentEmail = localStorage.getItem('currentUserEmail') || '';
+            const defaultName = currentEmail ? currentEmail.split('@')[0].replace(/[._-]/g, ' ') : 'Member';
+            const name = localStorage.getItem(storageKey('profile_name')) || defaultName;
+            const photo = localStorage.getItem(storageKey('profile_photo')) || '';
+            return { email: currentEmail, name, photo };
+        }
+
+        const profiles = [
+            { email: 'shakil@gmail.com', name: 'Shakil' },
+            { email: 'bushra@gmail.com', name: 'Bushra' },
+            { email: 'rifat@gmail.com', name: 'Rifat' },
+            { email: 'yahya@gmail.com', name: 'Yahya' },
+            { email: 'mahdi@gmail.com', name: 'Mahdi' },
+            { email: 'sobuj@gmail.com', name: 'Sobuj' }
+        ];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const years = [2022, 2023, 2024, 2025, 2026];
+        let id = 1;
+        const depositData = [];
+        
+        function getLastDayOfMonth(monthIndex, year) {
+            return new Date(year, monthIndex + 1, 0).getDate();
+        }
+        
+        // Period card helpers (show two periods each month and highlight current)
+        function pad(n){ return String(n).padStart(2,'0'); }
+        function renderPeriodCards(){
+            const now = new Date();
+            const day = now.getDate();
+            window.selectedPeriod = day <= 15 ? 1 : 2;
+        }
+        function setActivePeriodCard(n){
+            window.selectedPeriod = n;
+        }
+        function selectPeriod(n){
+            setActivePeriodCard(n);
+            renderTable();
+                    // After switching period, prompt to change fee for the first visible row if it has default fee
+                    if (ALLOW_AUTOPROMPT) setTimeout(openChangeForFirstVisibleRow, 0);
+                }
+
+        function renderYearSections(){
+            const container = document.getElementById('yearSections');
+            if(!container) return;
+            container.innerHTML = '';
+            const now = new Date();
+            const startYear = now.getFullYear();
+            const yearsToShow = 5; // current year + previous 4
+            for(let y = startYear; y > startYear - yearsToShow; y--){
+                const section = document.createElement('div');
+                section.className = 'year-section';
+                section.style.marginBottom = '12px';
+                section.style.padding = '12px';
+                section.style.borderRadius = '12px';
+                section.style.background = 'rgba(255,255,255,0.03)';
+
+                const header = document.createElement('div');
+                header.style.display = 'flex';
+                header.style.justifyContent = 'space-between';
+                header.style.alignItems = 'center';
+                header.style.marginBottom = '8px';
+
+                const title = document.createElement('div');
+                title.textContent = y;
+                title.style.fontSize = '16px';
+                title.style.fontWeight = '700';
+
+                const info = document.createElement('div');
+                info.style.fontSize = '12px';
+                info.style.color = '#9ca3af';
+                info.textContent = 'Click a month to load its periods';
+
+                header.appendChild(title);
+                header.appendChild(info);
+                section.appendChild(header);
+
+                const monthsRow = document.createElement('div');
+                monthsRow.style.display = 'flex';
+                monthsRow.style.flexWrap = 'wrap';
+                monthsRow.style.gap = '8px';
+
+                months.forEach((m, mi) => {
+                    const monthCard = document.createElement('div');
+                    monthCard.style.width = 'calc(25% - 8px)';
+                    monthCard.style.minWidth = '140px';
+                    monthCard.style.background = 'linear-gradient(135deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02))';
+                    monthCard.style.border = '1px solid rgba(255,255,255,0.04)';
+                    monthCard.style.borderRadius = '10px';
+                    monthCard.style.padding = '10px';
+                    monthCard.style.cursor = 'pointer';
+                    monthCard.style.boxSizing = 'border-box';
+
+                    const mn = document.createElement('div');
+                    mn.textContent = m + ' ' + y;
+                    mn.style.fontWeight = '700';
+                    mn.style.marginBottom = '6px';
+
+                    const p1 = document.createElement('div');
+                    p1.textContent = '';
+                    p1.style.fontSize = '13px';
+                    p1.style.padding = '6px';
+                    p1.style.borderRadius = '8px';
+                    p1.style.background = 'rgba(99,102,241,0.06)';
+                    p1.style.marginBottom = '6px';
+
+                    const lastDay = getLastDayOfMonth(mi, y);
+                    const p2 = document.createElement('div');
+                    p2.textContent = '';
+                    p2.style.fontSize = '13px';
+                    p2.style.padding = '6px';
+                    p2.style.borderRadius = '8px';
+                    p2.style.background = 'rgba(6,182,212,0.04)';
+
+                    monthCard.appendChild(mn);
+                    monthCard.appendChild(p1);
+                    monthCard.appendChild(p2);
+
+                    monthCard.addEventListener('click', () => {
+                        const now = new Date();
+                        if (y === now.getFullYear() && mi === now.getMonth()) {
+                            const day = now.getDate();
+                            setActivePeriodCard(day <= 15 ? 1 : 2);
+                        } else {
+                            setActivePeriodCard(1);
+                        }
+                        const top = document.querySelector('.period-panel');
+                        if(top) top.scrollIntoView({behavior:'smooth'});
+                    });
+
+                    monthsRow.appendChild(monthCard);
+                });
+
+                section.appendChild(monthsRow);
+                container.appendChild(section);
+            }
+        }
+
+        years.forEach(year => {
+            months.forEach((month, monthIndex) => {
+                const lastDay = getLastDayOfMonth(monthIndex, year);
+                profiles.forEach(profile => {
+                    // 1-15 range
+                    depositData.push({
+                        id: id++,
+                        profileEmail: profile.email,
+                        year,
+                        date: `${month} 1-15`,
+                        name: profile.name,
+                        fee: '',
+                        fine: '',
+                        star: '',
+                        status: ''
+                    });
+                    // 16 to end of month
+                    depositData.push({
+                        id: id++,
+                        profileEmail: profile.email,
+                        year,
+                        date: `${month} 16-${lastDay}`,
+                        name: profile.name,
+                        fee: '',
+                        fine: '',
+                        star: '',
+                        status: ''
+                    });
+                });
+            });
+        });
+        const yearOptions = [2022, 2023, 2024, 2025, 2026];
+        let editIndex = null;
+        let currentYear = 2026;
+        let selectedProfileEmail = localStorage.getItem(DEPOSIT_SELECTION_KEY) || 'all';
+
+        function getProfileAccounts() {
+            const raw = localStorage.getItem(PROFILE_ACCOUNTS_KEY);
+            let accounts = [];
+            try {
+                accounts = raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                accounts = [];
+            }
+
+            const currentProfile = getCurrentProfile();
+            const depositAccounts = depositData.reduce((map, item) => {
+                if (!map[item.profileEmail]) {
+                    map[item.profileEmail] = {
+                        email: item.profileEmail,
+                        name: item.name || item.profileEmail.split('@')[0].replace(/[._-]/g, ' '),
+                        photo: ''
+                    };
+                }
+                return map;
+            }, {});
+
+            Object.values(depositAccounts).forEach(acc => {
+                const saved = accounts.find(savedAcc => savedAcc.email === acc.email);
+                if (saved) {
+                    acc = { ...acc, ...saved };
+                }
+                if (!accounts.some(saved => saved.email === acc.email)) {
+                    accounts.push(acc);
+                }
+            });
+
+            if (currentProfile.email) {
+                const existingIndex = accounts.findIndex(acc => acc.email === currentProfile.email);
+                if (existingIndex >= 0) {
+                    accounts[existingIndex] = { ...accounts[existingIndex], ...currentProfile };
+                } else {
+                    accounts.unshift(currentProfile);
+                }
+            }
+
+            return accounts.sort((a, b) => {
+                if (a.email === currentProfile.email) return -1;
+                if (b.email === currentProfile.email) return 1;
+                return a.name.localeCompare(b.name);
+            });
+        }
+
+        function renderProfileStrip() {
+            const strip = document.getElementById('profileStrip');
+            const accounts = getProfileAccounts();
+            const currentProfile = getCurrentProfile();
+
+            if (accounts.length === 0) {
+                strip.innerHTML = '<div class="empty-state">কোনো অ্যাকাউন্ট পাওয়া যায়নি</div>';
+                return;
+            }
+
+            if (!selectedProfileEmail) {
+                selectedProfileEmail = currentProfile.email || 'all';
+            }
+
+            const allActive = selectedProfileEmail === 'all' ? 'active' : '';
+            const allChip = `
+                <div class="profile-chip ${allActive}" onclick="selectProfile('all')">
+                    <div class="profile-avatar">All</div>
+                    <div class="profile-chip-text">
+                            <p class="profile-name">All Accounts</p>
+                            <p class="profile-email">${accounts.length} total</p>
+                    </div>
+                </div>
+            `;
+
+            const accountChips = accounts.map(account => {
+                const activeClass = account.email === selectedProfileEmail ? 'active' : '';
+                const isCurrent = account.email === currentProfile.email;
+                const avatar = account.photo ? `<img src="${account.photo}" alt="${account.name}">` : `<span>${account.name.charAt(0).toUpperCase()}</span>`;
+                return `
+                    <div class="profile-chip ${activeClass}" onclick="selectProfile('${account.email.replace(/'/g, "\\'")}')">
+                        <div class="profile-avatar">${avatar}</div>
+                        <div class="profile-chip-text">
+                            <p class="profile-name">${account.name}</p>
+                            <p class="profile-email">${account.email}${isCurrent ? ' • Current' : ''}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            strip.innerHTML = allChip + accountChips;
+        }
+
+        function selectProfile(email) {
+            selectedProfileEmail = email;
+            localStorage.setItem(DEPOSIT_SELECTION_KEY, email);
+            renderProfileStrip();
+            renderTable();
+                    // After changing profile, open change popup for first visible row if applicable
+                    if (ALLOW_AUTOPROMPT) setTimeout(openChangeForFirstVisibleRow, 0);
+                }
+
+        function populateFilters() {
+            const yearFilter = document.getElementById('yearFilter');
+            yearFilter.innerHTML = yearOptions.map(year => `<option value="${year}">${year}</option>`).join('');
+            yearFilter.value = currentYear;
+
+            renderPeriodCards();
+        }
+
+        function getFixedDateLabel(dateValue) {
+            if (!dateValue) return '—';
+            return dateValue;
+        }
+
+        function getFilteredRows() {
+            const yearFilter = document.getElementById('yearFilter');
+            currentYear = Number(yearFilter.value);
+
+            const period = window.selectedPeriod || null;
+
+            return depositData
+                .map((row, index) => ({ row, index }))
+                .filter(item => {
+                    if (item.row.year !== currentYear) return false;
+                    if (selectedProfileEmail !== 'all' && item.row.profileEmail !== selectedProfileEmail) return false;
+                    if (period) {
+                        if (period === 1 && !item.row.date.includes('1-15')) return false;
+                        if (period === 2 && !item.row.date.includes('16-')) return false;
+                    }
+                    return true;
+                });
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('depositBody');
+            const emptyState = document.getElementById('emptyState');
+            tbody.innerHTML = '';
+            const filteredRows = getFilteredRows();
+
+            if (filteredRows.length === 0) {
+                emptyState.style.display = 'block';
+            } else {
+                emptyState.style.display = 'none';
+            }
+
+            filteredRows.forEach(({ row, index }, filteredIndex) => {
+                const tr = document.createElement('tr');
+
+                // Ensure fee defaults to 100 when empty and provide a Change icon to update it later
+                let feeValue = row.fee;
+                const feeEmpty = feeValue === '' || feeValue === null || feeValue === undefined || String(feeValue).trim() === '' || Number(feeValue) === 0;
+                if (feeEmpty) {
+                    // Persist default 100 so it shows and can be updated later
+                    depositData[index] = { ...depositData[index], fee: 100 };
+                    feeValue = 100;
+                }
+
+                // Compute fine dynamically and set star for overdue unpaid rows
+                (function computeFineAndStar(){
+                    try {
+                        const periodLabel = row.date; // e.g. 'Jan 1-15' or 'Jan 16-31'
+                        const parts = periodLabel.split(' ');
+                        const monthName = parts[0];
+                        const monthIndex = months.indexOf(monthName);
+                        if (monthIndex === -1) return;
+                        const lastDay = getLastDayOfMonth(monthIndex, row.year);
+                        let dueDay = 15;
+                        if (periodLabel.includes('16-')) dueDay = lastDay;
+                        const dueDate = new Date(row.year, monthIndex, dueDay);
+                        const today = new Date();
+                        // compare dates without time
+                        const tzToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                        const tzDue = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+
+                        let fineCalculated = 0;
+                        if (row.status !== 'Paid') {
+                            if (tzToday > tzDue) {
+                                const diffMs = tzToday - tzDue;
+                                const days = Math.floor(diffMs / 86400000); // number of days overdue
+                                fineCalculated = days * 5;
+                            }
+                        } else {
+                            // if paid, compute fine up to paidAt (if available)
+                            if (depositData[index] && depositData[index].paidAt) {
+                                const paidAt = new Date(depositData[index].paidAt);
+                                const tzPaid = new Date(paidAt.getFullYear(), paidAt.getMonth(), paidAt.getDate());
+                                if (tzPaid > tzDue) {
+                                    const diffMs = tzPaid - tzDue;
+                                    const days = Math.floor(diffMs / 86400000);
+                                    fineCalculated = days * 5;
+                                }
+                            }
+                        }
+                        // update fine
+                        depositData[index] = { ...depositData[index], fine: fineCalculated };
+                        // set star for unpaid overdue rows
+                        if (row.status !== 'Paid') {
+                            if (fineCalculated > 0) {
+                                depositData[index] = { ...depositData[index], star: 'cross' };
+                            } else {
+                                depositData[index] = { ...depositData[index], star: '' };
+                            }
+                        }
+                    } catch (e) {
+                        // ignore compute errors
+                        console.error('computeFineAndStar error', e);
+                    }
+                })();
+
+                // Fee display with a small icon to open modal
+                const changeIcon = `
+                    <button title="Change fee" onclick="showFeeModal(${index})" style="border:none;background:transparent;cursor:pointer;margin-left:8px;vertical-align:middle;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#374151"/><path d="M20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#374151"/></svg>
+                    </button>`;
+
+                const payCell = row.status !== 'Paid' && Number(feeValue) > 0
+                    ? `<button class="btn-pay" onclick="goToPaymentGatewayForIndex(${index})">Pay Now</button>`
+                    : '<span class="complete-text">Complete</span>';
+
+                const statusCell = row.status !== 'Paid' && Number(depositData[index].fine) > 0
+                    ? `<span class="tag tag-missed">Unpaid</span>`
+                    : (row.status === 'Paid' ? '<span class="tag tag-paid">Paid</span>' : '<span class="tag tag-missed">Unpaid</span>');
+
+                tr.innerHTML = `
+                    <td>${getFixedDateLabel(row.date)}</td>
+                    <td>৳ ${feeValue}${changeIcon}</td>
+                    <td>${renderStar(depositData[index])}</td>
+                    <td>৳ ${depositData[index].fine || 0}</td>
+                    <td>${payCell}</td>
+                    <td>${statusCell}</td>
+                `;
+
+                // color row based on paid/unpaid status
+                if (row.status === 'Paid') tr.classList.add('row-paid');
+                else tr.classList.add('row-unpaid');
+
+                tbody.appendChild(tr);
+            });
+
+            updateSummary(filteredRows);
+        }
+
+        function updateSummary(filteredRows) {
+            const totalAmount = filteredRows.reduce((sum, item) => sum + (Number(item.row.fee) || 0), 0);
+            const totalFine = filteredRows.reduce((sum, item) => sum + (Number(item.row.fine) || 0), 0);
+            const totalStars = filteredRows.reduce((sum, item) => sum + (item.row.star ? 1 : 0), 0);
+
+            const totalAmountEl = document.getElementById('totalAmount');
+            const totalFineEl = document.getElementById('totalFine');
+            const totalStarEl = document.getElementById('totalStar');
+            if (totalAmountEl) totalAmountEl.innerText = `৳ ${totalAmount}`;
+            if (totalFineEl) totalFineEl.innerText = `৳ ${totalFine}`;
+            if (totalStarEl) totalStarEl.innerText = String(totalStars);
+        }
+
+        // Disable automatic prompting for fee change when true/false. Set to false to avoid unexpected popups.
+        const ALLOW_AUTOPROMPT = false;
+
+        // Lightweight non-blocking toast for user messages (replaces alert)
+        function showToast(message) {
+            try {
+                let container = document.getElementById('toastContainer');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'toastContainer';
+                    container.style.position = 'fixed';
+                    container.style.right = '16px';
+                    container.style.bottom = '16px';
+                    container.style.zIndex = '99999';
+                    document.body.appendChild(container);
+                }
+
+                const t = document.createElement('div');
+                t.className = 'toast-item';
+                t.innerText = message;
+                t.style.background = 'rgba(17,24,39,0.95)';
+                t.style.color = '#fff';
+                t.style.padding = '10px 14px';
+                t.style.borderRadius = '8px';
+                t.style.marginTop = '8px';
+                t.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+                t.style.opacity = '0';
+                t.style.transition = 'opacity 220ms ease, transform 220ms ease';
+                t.style.transform = 'translateY(6px)';
+                container.appendChild(t);
+
+                requestAnimationFrame(() => {
+                    t.style.opacity = '1';
+                    t.style.transform = 'translateY(0)';
+                });
+
+                setTimeout(() => {
+                    t.style.opacity = '0';
+                    t.style.transform = 'translateY(6px)';
+                    setTimeout(() => container.removeChild(t), 300);
+                }, 3000);
+            } catch (e) {
+                console.error('showToast error', e);
+            }
+        }
+
+        // Simple confirm dialog replacement (non-blocking). onConfirm/onCancel are callbacks.
+        function showConfirm(message, onConfirm, onCancel) {
+            try {
+                let modal = document.getElementById('confirmModal');
+                if (!modal) {
+                    modal = document.createElement('div');
+                    modal.id = 'confirmModal';
+                    modal.style.position = 'fixed';
+                    modal.style.left = '0';
+                    modal.style.top = '0';
+                    modal.style.width = '100%';
+                    modal.style.height = '100%';
+                    modal.style.background = 'rgba(0,0,0,0.45)';
+                    modal.style.zIndex = '100000';
+                    modal.innerHTML = `
+                        <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;color:#000;padding:16px;border-radius:8px;min-width:300px;box-shadow:0 8px 24px rgba(0,0,0,0.2);">
+                            <div id="confirmMessage" style="margin-bottom:12px;font-size:15px;color:#111827"></div>
+                            <div style="display:flex;justify-content:flex-end;gap:8px;">
+                                <button id="confirmCancel" style="padding:6px 10px;border-radius:6px;border:1px solid #ccc;background:#fff;">No</button>
+                                <button id="confirmOk" style="padding:6px 10px;border-radius:6px;border:none;background:#10b981;color:#fff;">Yes</button>
+                            </div>
+                        </div>`;
+                    document.body.appendChild(modal);
+                }
+                const msgEl = modal.querySelector('#confirmMessage');
+                const okBtn = modal.querySelector('#confirmOk');
+                const cancelBtn = modal.querySelector('#confirmCancel');
+                msgEl.innerText = message || '';
+
+                function cleanup() {
+                    okBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                    modal.style.display = 'none';
+                }
+
+                okBtn.onclick = function () { cleanup(); if (typeof onConfirm === 'function') onConfirm(); };
+                cancelBtn.onclick = function () { cleanup(); if (typeof onCancel === 'function') onCancel(); };
+
+                modal.style.display = 'block';
+            } catch (e) {
+                console.error('showConfirm error', e);
+                // fallback to native confirm
+                const ok = confirm(message);
+                if (ok) { if (typeof onConfirm === 'function') onConfirm(); } else { if (typeof onCancel === 'function') onCancel(); }
+            }
+        }
+
+        function editRow(index) {
+            editIndex = index;
+            renderTable();
+            setTimeout(() => {
+                const feeInput = document.getElementById(`fee-${index}`);
+                const fineInput = document.getElementById(`fine-${index}`);
+                const totalInput = document.getElementById(`total-${index}`);
+                
+                if (feeInput && fineInput && totalInput) {
+                    const updateTotal = () => {
+                        const fee = Number(feeInput.value) || 0;
+                        const fine = Number(fineInput.value) || 0;
+                        totalInput.value = fee + fine;
+                    };
+                    
+                    feeInput.addEventListener('input', updateTotal);
+                    fineInput.addEventListener('input', updateTotal);
+                }
+            }, 0);
+        }
+
+        function cancelEdit() {
+            editIndex = null;
+            renderTable();
+        }
+
+        function saveRow(index) {
+            const date = document.getElementById(`date-${index}`).value.trim();
+            const name = document.getElementById(`name-${index}`).value.trim();
+            const fee = Number(document.getElementById(`fee-${index}`).value);
+            const fine = Number(document.getElementById(`fine-${index}`).value);
+            const star = document.getElementById(`star-${index}`).value === 'true';
+            const status = document.getElementById(`status-${index}`).value;
+
+            if (!date || !name) {
+                showToast('Date and member name are required.');
+                return;
+            }
+
+            depositData[index] = { ...depositData[index], date, name, fee, fine, star, status };
+            editIndex = null;
+            renderTable();
+        }
+
+        function payRow(index) {
+            // Use non-blocking confirm dialog instead of native confirm
+            showConfirm('Mark this member as paid?', function () {
+                try {
+                    const now = new Date();
+                    depositData[index].status = 'Paid';
+                    depositData[index].paidAt = now.toISOString();
+                    if (depositData[index].fee === 0) depositData[index].fee = 100;
+                    // calculate fine and set star up to paidAt
+                    try {
+                        const periodLabel = depositData[index].date;
+                        const parts = periodLabel.split(' ');
+                        const monthName = parts[0];
+                        const monthIndex = months.indexOf(monthName);
+                        const lastDay = getLastDayOfMonth(monthIndex, depositData[index].year);
+                        let dueDay = 15;
+                        if (periodLabel.includes('16-')) dueDay = lastDay;
+                        const dueDate = new Date(depositData[index].year, monthIndex, dueDay);
+                        const paidDate = new Date(depositData[index].paidAt);
+                        const tzPaid = new Date(paidDate.getFullYear(), paidDate.getMonth(), paidDate.getDate());
+                        const tzDue = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+                        let fineCalculated = 0;
+                        if (tzPaid > tzDue) {
+                            const days = Math.floor((tzPaid - tzDue) / 86400000);
+                            fineCalculated = days * 5;
+                        }
+                        depositData[index].fine = fineCalculated;
+                        // Set star based on paid date relative to period
+                        if (fineCalculated > 0) {
+                            depositData[index].star = 'cross';
+                        } else {
+                            // determine period start date
+                            let periodStartDay = 1;
+                            if (periodLabel.includes('16-')) periodStartDay = 16;
+                            const periodStart = new Date(depositData[index].year, monthIndex, periodStartDay);
+                            const tzPaidOnly = new Date(paidDate.getFullYear(), paidDate.getMonth(), paidDate.getDate());
+                            if (tzPaidOnly < periodStart) {
+                                depositData[index].star = 2;
+                            } else {
+                                depositData[index].star = 1;
+                            }
+                        }
+                    } catch (e) { /* ignore */ }
+                    renderTable();
+                } catch (e) {
+                    console.error('payRow error', e);
+                }
+            }, function () {
+                // cancelled - do nothing
+            });
+        }
+
+        function deleteRow(index) {
+            showConfirm('এই রোটি মুছে ফেলতে চান?', function () {
+                depositData.splice(index, 1);
+                if (editIndex === index) editIndex = null;
+                renderTable();
+            }, function () {
+                // cancelled
+            });
+        }
+
+        function goToPaymentGateway(profileEmail, fee = 0, fine = 0) {
+            localStorage.setItem(DEPOSIT_SELECTION_KEY, profileEmail);
+                    const params = new URLSearchParams({ profile: profileEmail, fee: String(fee || 0), fine: String(fine || 0) });
+                    window.location.href = 'payment-gateway.html?' + params.toString();
+                }
+
+        // Navigate to payment gateway with full row details saved to localStorage
+        function goToPaymentGatewayForIndex(index) {
+            const row = depositData[index] || {};
+            try {
+                // Save full row to localStorage so payment page can pre-fill every field
+                localStorage.setItem('pending_payment', JSON.stringify(row));
+                // Also mark which profile was selected for backward compatibility
+                if (row.profileEmail) localStorage.setItem(DEPOSIT_SELECTION_KEY, row.profileEmail);
+                const params = new URLSearchParams({
+                    profile: row.profileEmail || '',
+                    fee: String(row.fee || 0),
+                    fine: String(row.fine || 0),
+                    id: String(row.id || ''),
+                    name: row.name || '',
+                    date: row.date || '',
+                    year: String(row.year || '')
+                });
+                window.location.href = 'payment-gateway.html?' + params.toString();
+            } catch (e) {
+                console.error('goToPaymentGatewayForIndex error', e);
+                // fallback to basic call
+                goToPaymentGateway(row.profileEmail || '', Number(row.fee) || 0, Number(row.fine) || 0);
+            }
+        }
+
+        // Build a small in-page modal for changing fee (quick buttons for 100 / 200 and an input for other)
+        let feeModalIndex = null;
+        function ensureFeeModalExists() {
+            if (document.getElementById('feeModal')) return;
+            const modal = document.createElement('div');
+            modal.id = 'feeModal';
+            modal.style.display = 'none';
+            modal.style.position = 'fixed';
+            modal.style.left = '0';
+            modal.style.top = '0';
+            modal.style.width = '100%';
+            modal.style.height = '100%';
+            modal.style.background = 'rgba(0,0,0,0.5)';
+            modal.style.zIndex = '9999';
+            modal.innerHTML = `
+                <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;color:#000;padding:16px;border-radius:8px;min-width:260px;box-shadow:0 8px 24px rgba(0,0,0,0.2);">
+                    <h3 style="margin:0 0 8px 0;font-size:16px;">Change fee</h3>
+                    <div style="display:flex;gap:8px;margin-bottom:8px;">
+                        <button style="flex:1;padding:8px;border-radius:6px;border:1px solid #ccc;background:#f3f4f6;" onclick="window.applyFee(100)">৳ 100</button>
+                        <button style="flex:1;padding:8px;border-radius:6px;border:1px solid #ccc;background:#f3f4f6;" onclick="window.applyFee(200)">৳ 200</button>
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <input name="feeCustom" type="number" min="0" style="width:100%;padding:8px;border-radius:6px;border:1px solid #ccc;" placeholder="Custom amount" />
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;gap:8px;">
+                        <button onclick="window.hideFeeModal()" style="padding:6px 10px;border-radius:6px;border:1px solid #ccc;background:#fff;">Cancel</button>
+                        <button onclick="window.applyCustomFee()" style="padding:6px 10px;border-radius:6px;border:none;background:#10b981;color:#fff;">Save</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function showFeeModal(index) {
+            ensureFeeModalExists();
+            feeModalIndex = index;
+            const modal = document.getElementById('feeModal');
+            const input = modal.querySelector('input[name="feeCustom"]');
+            const current = Number(depositData[index] && depositData[index].fee) || 100;
+            input.value = current === 0 ? '' : String(current);
+            modal.style.display = 'block';
+            setTimeout(() => input.focus(), 50);
+        }
+
+        function hideFeeModal() {
+            const modal = document.getElementById('feeModal');
+            if (!modal) return;
+            modal.style.display = 'none';
+            feeModalIndex = null;
+        }
+
+        function applyFee(amount) {
+            if (feeModalIndex === null) return;
+            const v = Number(amount) || 0;
+            depositData[feeModalIndex] = { ...depositData[feeModalIndex], fee: v };
+            hideFeeModal();
+            renderTable();
+        }
+
+        function applyCustomFee() {
+            if (feeModalIndex === null) return;
+            const modal = document.getElementById('feeModal');
+            const input = modal.querySelector('input[name="feeCustom"]');
+            const v = Number(input.value);
+            if (Number.isNaN(v) || v < 0) {
+                showToast('Please enter a valid non-negative number for the fee.');
+                return;
+            }
+            applyFee(v);
+        }
+
+        // Helper to render star / cross icons
+        function renderStar(row) {
+            const s = row && row.star;
+            if (!s) return '';
+            if (s === 2) {
+                return '<span title="2 stars" style="color:#f59e0b">★ ★</span>';
+            }
+            if (s === 1) {
+                return '<span title="1 star" style="color:#f59e0b">★</span>';
+            }
+            if (s === 'cross') {
+                return '<span title="Late / No star" style="color:#ef4444">✖</span>';
+            }
+            return '';
+        }
+
+        // When user switches period/profile/year, open Change popup for the first visible row if it exists and has default fee
+        function openChangeForFirstVisibleRow() {
+            try {
+                const filteredRows = getFilteredRows();
+                if (!filteredRows || filteredRows.length === 0) return;
+                const first = filteredRows[0];
+                const fee = Number(first.row.fee) || 0;
+                // Only prompt automatically when fee is the default (100) to avoid unwanted prompts
+                if (fee === 100) {
+                    showFeeModal(first.index);
+                }
+            } catch (e) {
+                // ignore errors
+                console.error('openChangeForFirstVisibleRow error', e);
+            }
+        }
+
+        renderProfileStrip();
+        populateFilters();
+        renderYearSections();
+        renderTable();
+        // If payment page set a completed payment, apply it here to mark the matching row Paid and show Complete
+        (function applyCompletedPaymentOnLoad(){
+            try {
+                const raw = localStorage.getItem('last_completed_payment');
+                if (!raw) return;
+                const completed = JSON.parse(raw);
+                // find matching row by id or by profile/date/year
+                const idx = depositData.findIndex(d => String(d.id) === String(completed.id) || (d.profileEmail === completed.profileEmail && d.date === completed.date && String(d.year) === String(completed.year)));
+                if (idx !== -1) {
+                    depositData[idx] = {
+                        ...depositData[idx],
+                        status: 'Paid',
+                        paidAt: completed.paidAt || new Date().toISOString(),
+                        fee: Number(completed.fee) || depositData[idx].fee,
+                        fine: Number(completed.fine) || depositData[idx].fine,
+                        transactionId: completed.transactionId || completed.paymentRecordId || depositData[idx].transactionId,
+                        star: completed.star || depositData[idx].star
+                    };
+                    // render will pick up Paid and show Complete
+                    renderTable();
+                }
+                // clear the flag so it doesn't reapply
+                localStorage.removeItem('last_completed_payment');
+            } catch (e) {
+                console.error('applyCompletedPaymentOnLoad error', e);
+            }
+        })();
+    </script>
+<script src="assets/background-settings.js"></script>
+</body>
+</html>
+>>>>>>> 8fceecbfbe6f3fb64c92aef170e3f711ba638301

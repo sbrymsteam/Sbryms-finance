@@ -611,10 +611,14 @@
       }, error => {
         console.error('Error loading users for Team Meet:', error);
         members.splice(0, members.length);
+<<<<<<< HEAD
         const message = error && error.code === 'permission-denied'
           ? 'Member access permission is not deployed yet.'
           : 'Members could not be loaded. Please try again.';
         document.getElementById('memberList').innerHTML = `<div class="member-list-state">${message}</div>`;
+=======
+        document.getElementById('memberList').innerHTML = '<div class="member-list-state">Members could not be loaded.</div>';
+>>>>>>> 8fceecbfbe6f3fb64c92aef170e3f711ba638301
       });
     }
 

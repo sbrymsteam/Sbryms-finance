@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -1027,3 +1028,1034 @@
   </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SBRYMS Finance - Team Meet Call</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --panel: #151f2f;
+      --panel-2: #1a2740;
+      --accent: #2cc9f5;
+      --accent-2: #ff4db8;
+      --danger: #ff4f6d;
+      --text: #edf6ff;
+      --muted: #9bb0c9;
+      --border: rgba(255,255,255,0.1);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 18px;
+      background:
+        radial-gradient(circle at 50% 10%, rgba(44,201,245,0.18), transparent 30%),
+        radial-gradient(circle at 85% 85%, rgba(255,77,184,0.12), transparent 28%),
+        #050a12;
+      color: var(--text);
+    }
+    .call-shell {
+      width: min(100%, 460px);
+      min-height: min(760px, calc(100vh - 36px));
+      display: flex;
+      flex-direction: column;
+      background:
+        linear-gradient(180deg, rgba(9, 20, 31, 0.98), rgba(8, 14, 24, 0.98)),
+        radial-gradient(circle at 50% 30%, rgba(44,201,245,0.1), transparent 42%);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 32px;
+      overflow: hidden;
+      box-shadow: 0 28px 90px rgba(0,0,0,0.5), inset 0 1px rgba(255,255,255,0.05);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px 10px;
+    }
+    .back-btn {
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .call-type {
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(90,225,215,0.24);
+      font-size: 12px;
+      color: var(--accent);
+      background: rgba(90,225,215,0.08);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+    .profile {
+      text-align: center;
+      padding: 22px 18px 24px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .video-grid {
+      display: none;
+      padding: 0 18px 12px;
+      position: relative;
+    }
+    .video-grid.active { display: block; }
+    .video-grid video {
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      border-radius: 14px;
+      background: #05080d;
+    }
+    .video-grid #localVideo {
+      position: absolute;
+      z-index: 2;
+      top: 10px;
+      right: 28px;
+      width: 92px;
+      height: 122px;
+      aspect-ratio: auto;
+      border: 2px solid rgba(255,255,255,0.9);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.45);
+    }
+    .video-grid:not(.connected) #localVideo { display: none; }
+    .video-grid:not(.connected) #remoteVideo { visibility: hidden; }
+    .avatar {
+      width: 109px; height: 109px; aspect-ratio: 1 / 1; border-radius: 50%;
+      margin: 0 auto 10px;
+      display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      font-size: 26px; font-weight: 700;
+      box-shadow: 0 0 0 5px rgba(90,225,215,0.05), 0 0 0 10px rgba(90,225,215,0.025), 0 14px 30px rgba(44,201,245,0.16);
+      animation: avatarPulse 2.8s ease-in-out infinite;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .avatar img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 50%; background: #050a12; }
+    @keyframes avatarPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 5px rgba(90,225,215,0.05), 0 0 0 10px rgba(90,225,215,0.025), 0 14px 30px rgba(44,201,245,0.16); }
+      50% { transform: scale(1.02); box-shadow: 0 0 0 7px rgba(90,225,215,0.06), 0 0 0 13px rgba(90,225,215,0.02), 0 16px 34px rgba(44,201,245,0.2); }
+    }
+    .name {
+      font-size: clamp(22px, 5vw, 28px);
+      font-weight: 700;
+      margin: 0;
+      max-width: 90%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .status {
+      color: var(--muted);
+      margin: 9px 0 0;
+      font-size: 14px;
+    }
+    .timer {
+      display: none;
+      margin-top: 14px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+    }
+    .timer.is-active {
+      display: block;
+      text-shadow: 0 0 14px rgba(44,201,245,0.45);
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      padding: 20px 18px 28px;
+      flex-wrap: wrap;
+    }
+    .video-control { display: none; }
+    .video-call .video-control { display: inline-grid; }
+    .control-btn {
+      width: 58px; height: 58px; border-radius: 19px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.07);
+      color: var(--text);
+      font-size: 19px;
+      cursor: pointer;
+      transition: transform 0.18s ease, background 0.18s ease;
+    }
+    .control-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(255,255,255,0.13);
+    }
+    .control-btn.is-active {
+      color: var(--accent);
+      border-color: rgba(90,225,215,0.4);
+      background: rgba(90,225,215,0.12);
+    }
+    .end {
+      width: 68px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #ff5b74, #e83255);
+      border-color: var(--danger);
+      box-shadow: 0 14px 34px rgba(255,79,109,0.35);
+    }
+    .panel {
+      padding: 14px 18px 20px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.025);
+    }
+    .room-tools {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .room-tools input,
+    .room-tools button {
+      min-height: 38px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      padding: 0 10px;
+    }
+    @media (max-width: 520px) {
+      body { padding: 0; }
+      .call-shell {
+        width: 100%;
+        min-height: 100vh;
+        border-radius: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+    }
+    .room-tools input { flex: 1; min-width: 0; }
+    .room-tools button { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="call-shell">
+    <div class="header">
+      <button class="back-btn" type="button" aria-label="Back" onclick="window.location.href='team-meet-chat.html#chat=' + encodeURIComponent(chatEmail)">←</button>
+      <span class="call-type" id="callTypeBadge">Audio</span>
+    </div>
+
+    <div class="profile">
+      <div class="avatar" id="avatar">A</div>
+      <h1 class="name" id="targetName">Member</h1>
+      <p class="status" id="callStatus">Dialing...</p>
+      <div class="timer" id="timer">00:00</div>
+    </div>
+    <div class="video-grid" id="videoGrid">
+      <video id="localVideo" autoplay muted playsinline></video>
+      <video id="remoteVideo" autoplay playsinline></video>
+    </div>
+
+    <div class="controls">
+      <button class="control-btn" type="button" aria-label="Mute">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>
+        </svg>
+      </button>
+      <button class="control-btn" type="button" aria-label="Speaker">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5a4 4 0 0 1 0 5M19.5 7a7.5 7.5 0 0 1 0 10"/>
+        </svg>
+      </button>
+      <button class="control-btn video-control" type="button" aria-label="Camera switch" title="Switch camera">↻</button>
+      <button class="control-btn video-control" type="button" aria-label="Share screen" title="Share screen">▣</button>
+      <button class="control-btn end" type="button" aria-label="End call">
+        <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M5 15.5c3.8-3.2 10.2-3.2 14 0"/><path d="M7.5 14.5 5 18M16.5 14.5 19 18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="panel">
+      You are currently in a <strong id="callModeText">audio</strong> call.
+      <div class="room-tools">
+        <input id="roomIdInput" type="text" placeholder="Room ID" autocomplete="off">
+        <button type="button" onclick="createRoom()">Create</button>
+        <button type="button" onclick="joinRoom()">Join</button>
+      </div>
+      <div id="roomInfo"></div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
+      authDomain: "sbryms-finance.firebaseapp.com",
+      projectId: "sbryms-finance",
+      storageBucket: "sbryms-finance.appspot.com",
+      messagingSenderId: "1087018056369",
+      appId: "1:1087018056369:web:81bc39017385a649500090"
+    };
+
+    if (!window.firebase?.apps?.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+
+    const db = firebase.firestore();
+    const params = new URLSearchParams(window.location.search);
+    const chatEmail = (params.get('chat') || localStorage.getItem('selectedProfileEmail') || 'ahmedmshakil4@gmail.com').trim();
+    const callType = params.get('type') || 'audio';
+    const isGroupCall = params.get('group') === 'true' || chatEmail.toLowerCase() === 'team-group';
+    const initialRoomId = (params.get('room') || '').trim();
+    const callRole = params.get('role') || 'callee';
+    const directCallId = (params.get('call') || '').trim();
+    let currentUserEmail = (localStorage.getItem('currentUserEmail') || '').trim().toLowerCase();
+    const roomTools = document.querySelector('.room-tools');
+    if (roomTools) roomTools.style.display = 'none';
+    const autoJoin = Boolean(initialRoomId);
+    const savedProfileEmail = (localStorage.getItem('selectedProfileEmail') || '').trim().toLowerCase();
+    const savedProfileName = localStorage.getItem('selectedProfileName') || '';
+    const savedProfilePhoto = localStorage.getItem('selectedProfilePhoto') || '';
+
+    const members = [
+      { name: 'Md Mahdi Hasan', email: 'mdmahdihasan@gmail.com', photo: '' },
+      { name: 'Ahmedmshakil4', email: 'ahmedmshakil4@gmail.com', photo: '' },
+      { name: 'Yeahya ahmed', email: 'yeahyaahmed@gmail.com', photo: '' },
+      { name: 'Md Delowar Husain', email: 'mddelowarhusain@gmail.com', photo: '' },
+      { name: 'Arafathusainkamil', email: 'arafathusainkamil@gmail.com', photo: '' }
+    ];
+
+    function initials(name) {
+      return (name || 'U').split(/\s+/).filter(Boolean).slice(0,2).map(part => part[0]).join('').toUpperCase() || 'U';
+    }
+
+    function buildAvatarSvg(name) {
+      const initialsText = initials(name);
+      const colors = ['#2cc9f5', '#ff4db8', '#7dd3fc', '#8b5cf6', '#22c55e', '#f59e0b'];
+      const colorA = colors[Math.abs(name.length) % colors.length];
+      const colorB = colors[(Math.abs(name.length) + 2) % colors.length];
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="${colorA}"/>
+              <stop offset="100%" stop-color="${colorB}"/>
+            </linearGradient>
+          </defs>
+          <rect width="200" height="200" rx="100" fill="url(#g)"/>
+          <circle cx="100" cy="100" r="60" fill="rgba(255,255,255,0.14)"/>
+          <text x="50%" y="52%" text-anchor="middle" dominant-baseline="middle" fill="#ffffff" font-family="Segoe UI, Arial, sans-serif" font-size="62" font-weight="700">${initialsText}</text>
+        </svg>
+      `;
+      return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+    }
+
+    function applyMember(member) {
+      document.body.classList.toggle('video-call', callType === 'video');
+      document.getElementById('targetName').textContent = member.name;
+      document.getElementById('callTypeBadge').textContent = callType === 'video' ? 'Video' : 'Audio';
+      document.getElementById('callStatus').textContent = callType === 'video' ? 'Connecting video call...' : 'Connecting audio call...';
+      document.getElementById('callModeText').textContent = callType;
+      const avatarEl = document.getElementById('avatar');
+      const avatarSrc = member.photo || buildAvatarSvg(member.name);
+      avatarEl.innerHTML = `<img src="${avatarSrc}" alt="${member.name}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;background:#050a12" />`;
+    }
+
+    async function loadMemberFromFirestore() {
+      if (isGroupCall) {
+        applyMember({
+          name: savedProfileName || 'Team Group Chat',
+          email: 'team-group',
+          photo: savedProfilePhoto
+        });
+        return;
+      }
+      try {
+        const snapshot = await db.collection('users').where('email', '==', chatEmail).limit(1).get();
+        if (!snapshot.empty) {
+          const data = snapshot.docs[0].data();
+          const resolved = {
+            name: data.name || (chatEmail ? chatEmail.split('@')[0].replace(/[._-]/g, ' ') : 'Member'),
+            email: data.email || chatEmail,
+            photo: data.photo || ''
+          };
+          applyMember(resolved);
+          return;
+        }
+      } catch (error) {
+        console.error('Error loading call member from Firestore:', error);
+      }
+
+      const normalizedChatEmail = chatEmail.toLowerCase();
+      const fallbackMember = savedProfileEmail === normalizedChatEmail && savedProfileName
+        ? { name: savedProfileName, email: chatEmail, photo: savedProfilePhoto }
+        : members.find(item => item.email.toLowerCase() === normalizedChatEmail) || members[0];
+      applyMember(fallbackMember);
+    }
+
+    const rtcConfig = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+      ]
+    };
+    let peerConnection = null;
+    let localStream = null;
+    let roomRef = null;
+    let roomUnsubscribe = null;
+    let candidateUnsubscribe = null;
+    let callStartedAt = 0;
+    let callTimer = null;
+    let directCallRef = null;
+    let directCallUnsubscribe = null;
+    let directCandidateUnsubscribe = null;
+    let connectingToneTimer = null;
+    let outgoingToneAudio = null;
+    let outgoingToneRequest = 0;
+    let incomingToneTimer = null;
+    let incomingToneAudio = null;
+    let unansweredCallTimer = null;
+    let connectedTonePlayed = false;
+    let callEnding = false;
+
+    function playCallTone({ frequency, duration, volume, type = 'sine' }) {
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!window.sbrymsCallAudioContext) {
+          window.sbrymsCallAudioContext = new AudioContextClass();
+        }
+        const context = window.sbrymsCallAudioContext;
+        if (context.state === 'suspended') context.resume().catch(error => console.warn('Audio context resume failed:', error));
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        const startAt = context.currentTime;
+        oscillator.type = type;
+        oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(0, startAt);
+        gain.gain.linearRampToValueAtTime(volume, startAt + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(startAt);
+        oscillator.stop(startAt + duration);
+      } catch (error) {
+        console.warn('Call tone could not be played:', error);
+      }
+    }
+
+    ['pointerdown', 'touchstart', 'keydown'].forEach(eventName => {
+      document.addEventListener(eventName, () => {
+        if (window.sbrymsCallAudioContext && window.sbrymsCallAudioContext.state === 'suspended') {
+          window.sbrymsCallAudioContext.resume().catch(error => console.warn('Audio context unlock failed:', error));
+        }
+      }, { once: true, passive: true });
+    });
+
+    function startConnectingTone() {
+      if (connectingToneTimer || outgoingToneAudio) return;
+      const requestId = ++outgoingToneRequest;
+      const audio = new Audio('assets/outgoing-call-tone.m4a');
+      outgoingToneAudio = audio;
+      audio.preload = 'auto';
+      outgoingToneAudio.loop = true;
+      outgoingToneAudio.volume = 0.7;
+      const startFallback = (error) => {
+        if (requestId !== outgoingToneRequest || outgoingToneAudio !== audio) return;
+        console.warn('Outgoing call tone could not play; using built-in fallback:', error);
+        outgoingToneAudio = null;
+        playBuiltInConnectingTone();
+      };
+      audio.addEventListener('error', () => startFallback(new Error('Outgoing tone asset failed to load')), { once: true });
+      audio.play().catch(startFallback);
+    }
+
+    function playBuiltInConnectingTone() {
+      if (connectingToneTimer) return;
+      const ring = () => {
+        playCallTone({ frequency: 620, duration: 0.22, volume: 0.012, type: 'sine' });
+        setTimeout(() => playCallTone({
+          frequency: 780,
+          duration: 0.24,
+          volume: 0.01,
+          type: 'triangle'
+        }), 240);
+      };
+      ring();
+      connectingToneTimer = setInterval(ring, 2200);
+    }
+
+    function stopConnectingTone() {
+      outgoingToneRequest += 1;
+      if (connectingToneTimer) {
+        clearInterval(connectingToneTimer);
+        connectingToneTimer = null;
+      }
+      if (outgoingToneAudio) {
+        outgoingToneAudio.pause();
+        outgoingToneAudio.currentTime = 0;
+        outgoingToneAudio.removeAttribute('src');
+        outgoingToneAudio.load();
+        outgoingToneAudio = null;
+      }
+    }
+
+    function startIncomingTone() {
+      if (incomingToneTimer || incomingToneAudio) return;
+      const savedRingtone = localStorage.getItem('callRingtone');
+      const selectedRingtone = ['dj-jazz-2', 'uploaded-1', 'uploaded-2'].includes(savedRingtone) ? savedRingtone : 'uploaded-1';
+      localStorage.setItem('callRingtone', selectedRingtone);
+      const uploadedRingtones = {
+        'uploaded-1': 'assets/ringtone-upload-1.mp3',
+        'uploaded-2': 'assets/ringtone-upload-2.mp3'
+      };
+      if (uploadedRingtones[selectedRingtone]) {
+        incomingToneAudio = new Audio(uploadedRingtones[selectedRingtone]);
+        incomingToneAudio.loop = true;
+        incomingToneAudio.volume = 0.7;
+        incomingToneAudio.play().catch(error => {
+          console.warn('Uploaded ringtone could not play; using built-in fallback:', error);
+          incomingToneAudio = null;
+          playCallTone({ frequency: 660, duration: 0.3, volume: 0.05, type: 'sine' });
+          incomingToneTimer = setInterval(() => {
+            playCallTone({ frequency: 660, duration: 0.3, volume: 0.05, type: 'sine' });
+            setTimeout(() => playCallTone({ frequency: 880, duration: 0.3, volume: 0.04, type: 'sine' }), 360);
+          }, 1800);
+        });
+        return;
+      }
+      const ring = () => {
+        const patterns = { 'dj-jazz-2': [392, 493.88, 587.33, 659.25, 587.33] };
+        const selected = localStorage.getItem('callRingtone') || 'dj-jazz-2';
+        const frequencies = patterns[selected] || patterns['dj-jazz-2'];
+        const notes = frequencies.map((frequency, index) => ({
+          frequency,
+          delay: index < 3 ? index * 120 : 560 + (index - 3) * 120,
+          duration: index === 2 || index === 4 ? 0.42 : 0.28
+        }));
+        notes.forEach(note => setTimeout(() => playCallTone({
+          frequency: note.frequency,
+          duration: note.duration,
+          volume: 0.018,
+          type: 'sine'
+        }), note.delay));
+      };
+      ring();
+      incomingToneTimer = setInterval(ring, 2600);
+    }
+
+    function stopIncomingTone() {
+      if (incomingToneTimer) {
+        clearInterval(incomingToneTimer);
+        incomingToneTimer = null;
+      }
+      if (incomingToneAudio) {
+        incomingToneAudio.pause();
+        incomingToneAudio.currentTime = 0;
+        incomingToneAudio = null;
+      }
+    }
+
+    function playConnectedTone() {
+      if (connectedTonePlayed) return;
+      connectedTonePlayed = true;
+      playCallTone({ frequency: 523, duration: 0.12, volume: 0.025, type: 'triangle' });
+      setTimeout(() => playCallTone({ frequency: 784, duration: 0.18, volume: 0.02, type: 'triangle' }), 130);
+    }
+
+    function stopUnansweredCallTimer() {
+      if (unansweredCallTimer) {
+        clearTimeout(unansweredCallTimer);
+        unansweredCallTimer = null;
+      }
+    }
+
+    function handleRemoteCallEnded() {
+      if (callEnding) return;
+      callEnding = true;
+      stopConnectingTone();
+      stopIncomingTone();
+      stopUnansweredCallTimer();
+      if (callTimer) {
+        clearInterval(callTimer);
+        callTimer = null;
+      }
+      if (directCallUnsubscribe) {
+        directCallUnsubscribe();
+        directCallUnsubscribe = null;
+      }
+      if (directCandidateUnsubscribe) {
+        directCandidateUnsubscribe();
+        directCandidateUnsubscribe = null;
+      }
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
+      }
+      if (window.screenShareStream) {
+        window.screenShareStream.getTracks().forEach(track => track.stop());
+        window.screenShareStream = null;
+      }
+      document.getElementById('callStatus').textContent = 'Call ended';
+      setTimeout(() => {
+        window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
+      }, 500);
+    }
+
+    async function autoEndUnansweredCall() {
+      stopConnectingTone();
+      stopIncomingTone();
+      stopUnansweredCallTimer();
+      document.getElementById('callStatus').textContent = 'No answer';
+      if (directCallRef) {
+        await directCallRef.update({ status: 'ended', endedReason: 'timeout' }).catch(error => {
+          console.error('Failed to end unanswered call:', error);
+        });
+      }
+      await saveCallHistory();
+      if (directCallUnsubscribe) directCallUnsubscribe();
+      if (directCandidateUnsubscribe) directCandidateUnsubscribe();
+      if (peerConnection) peerConnection.close();
+      if (localStream) localStream.getTracks().forEach(track => track.stop());
+      if (window.screenShareStream) {
+        window.screenShareStream.getTracks().forEach(track => track.stop());
+        window.screenShareStream = null;
+      }
+      setTimeout(() => {
+        window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
+      }, 700);
+    }
+
+    async function openUserMedia() {
+      if (localStream) return localStream;
+      const constraints = callType === 'video'
+        ? { audio: true, video: { facingMode: 'user' } }
+        : { audio: true, video: false };
+      localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      document.getElementById('localVideo').srcObject = localStream;
+      document.getElementById('videoGrid').classList.remove('active', 'connected');
+      return localStream;
+    }
+
+    async function switchCamera() {
+      if (callType !== 'video' || !localStream || !peerConnection) return;
+      const currentTrack = localStream.getVideoTracks()[0];
+      if (!currentTrack) return;
+      const nextFacingMode = currentTrack.getSettings().facingMode === 'environment' ? 'user' : 'environment';
+      const replacementStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: nextFacingMode } }
+      });
+      const replacementTrack = replacementStream.getVideoTracks()[0];
+      const sender = peerConnection.getSenders().find(item => item.track && item.track.kind === 'video');
+      if (sender) await sender.replaceTrack(replacementTrack);
+      currentTrack.stop();
+      localStream.removeTrack(currentTrack);
+      localStream.addTrack(replacementTrack);
+      document.getElementById('localVideo').srcObject = localStream;
+    }
+
+    async function toggleScreenShare() {
+      if (callType !== 'video' || !peerConnection || !localStream) return;
+      const videoSender = peerConnection.getSenders().find(item => item.track && item.track.kind === 'video');
+      if (!videoSender) return;
+      const currentCameraTrack = localStream.getVideoTracks()[0];
+      if (window.screenShareStream) {
+        const screenTrack = window.screenShareStream.getVideoTracks()[0];
+        await videoSender.replaceTrack(currentCameraTrack);
+        screenTrack.stop();
+        window.screenShareStream = null;
+        document.getElementById('localVideo').srcObject = localStream;
+        return;
+      }
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const screenTrack = screenStream.getVideoTracks()[0];
+      window.screenShareStream = screenStream;
+      await videoSender.replaceTrack(screenTrack);
+      document.getElementById('localVideo').srcObject = screenStream;
+      screenTrack.onended = () => {
+        toggleScreenShare().catch(error => console.error('Failed to restore camera:', error));
+      };
+    }
+
+    function showConnectedVideoLayout() {
+      if (callType !== 'video') return;
+      const videoGrid = document.getElementById('videoGrid');
+      videoGrid.classList.add('active', 'connected');
+      document.getElementById('localVideo').play().catch(() => {});
+      document.getElementById('remoteVideo').play().catch(() => {});
+    }
+
+    async function preparePeerConnection(ref) {
+      peerConnection = await new RTCPeerConnection(rtcConfig);
+      const stream = await openUserMedia();
+      stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+      peerConnection.ontrack = event => {
+        document.getElementById('remoteVideo').srcObject = event.streams[0];
+      };
+      peerConnection.onicecandidate = event => {
+        if (event.candidate) ref.collection('candidates').add(event.candidate.toJSON());
+      };
+      peerConnection.onconnectionstatechange = () => {
+        const state = peerConnection.connectionState;
+        document.getElementById('callStatus').textContent = state === 'connected' ? 'Connected' : `Call ${state}...`;
+        if (state === 'connected') {
+          showConnectedVideoLayout();
+          stopConnectingTone();
+          stopIncomingTone();
+          stopUnansweredCallTimer();
+          playConnectedTone();
+          startCallTimer();
+        }
+      };
+    }
+
+    function subscribeToCandidates(ref, collectionName) {
+      if (candidateUnsubscribe) candidateUnsubscribe();
+      candidateUnsubscribe = ref.collection(collectionName).onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(change => {
+          if (change.type !== 'added' || !peerConnection) return;
+          const candidate = change.doc.data();
+          peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(error => {
+            console.error('Failed to add remote ICE candidate:', error);
+          });
+        });
+      }, error => {
+        console.error('ICE candidate listener failed:', error);
+      });
+    }
+
+    function subscribeToDirectCandidates(ref, collectionName) {
+      if (directCandidateUnsubscribe) directCandidateUnsubscribe();
+      directCandidateUnsubscribe = ref.collection(collectionName).onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(change => {
+          if (change.type !== 'added' || !peerConnection) return;
+          peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())).catch(error => {
+            console.error('Failed to add direct-call ICE candidate:', error);
+          });
+        });
+      }, error => console.error('Direct-call ICE listener failed:', error));
+    }
+
+    async function startDirectCall() {
+      if (peerConnection || !directCallId) return;
+      const authenticatedUser = firebase.auth().currentUser;
+      if (!authenticatedUser || !authenticatedUser.email) {
+        throw new Error('Please sign in again before starting a call.');
+      }
+      directCallRef = db.collection('calls').doc(directCallId);
+      await preparePeerConnection(directCallRef);
+      peerConnection.onicecandidate = event => {
+        if (event.candidate) directCallRef.collection('callerCandidates').add(event.candidate.toJSON());
+      };
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      await directCallRef.set({
+        callerId: authenticatedUser.email.trim().toLowerCase(),
+        callerName: localStorage.getItem('currentUserName') || 'SBRYMS member',
+        receiverId: chatEmail.toLowerCase(),
+        callType,
+        offer: { type: offer.type, sdp: offer.sdp },
+        status: 'ringing',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      startConnectingTone();
+      unansweredCallTimer = setTimeout(autoEndUnansweredCall, 60000);
+      subscribeToDirectCandidates(directCallRef, 'receiverCandidates');
+      directCallUnsubscribe = directCallRef.onSnapshot(async snapshot => {
+        const data = snapshot.data();
+        if (data?.status === 'ended') {
+          handleRemoteCallEnded();
+          return;
+        }
+        if (data?.answer && !peerConnection.currentRemoteDescription) {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+          stopConnectingTone();
+          stopIncomingTone();
+          stopUnansweredCallTimer();
+          document.getElementById('callStatus').textContent = 'Connected';
+          showConnectedVideoLayout();
+          playConnectedTone();
+          startCallTimer();
+        }
+      });
+    }
+
+    async function answerDirectCall() {
+      if (peerConnection || !directCallId) return;
+      startIncomingTone();
+      directCallRef = db.collection('calls').doc(directCallId);
+      const snapshot = await directCallRef.get();
+      const data = snapshot.data();
+      if (!snapshot.exists || !data?.offer) throw new Error('Call request not found.');
+      await preparePeerConnection(directCallRef);
+      peerConnection.onicecandidate = event => {
+        if (event.candidate) directCallRef.collection('receiverCandidates').add(event.candidate.toJSON());
+      };
+      subscribeToDirectCandidates(directCallRef, 'callerCandidates');
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      await directCallRef.update({
+        answer: { type: answer.type, sdp: answer.sdp },
+        status: 'connected'
+      });
+      directCallUnsubscribe = directCallRef.onSnapshot(snapshot => {
+        if (snapshot.data()?.status === 'ended') handleRemoteCallEnded();
+      }, error => console.error('Remote call status listener failed:', error));
+      stopConnectingTone();
+      stopIncomingTone();
+      stopUnansweredCallTimer();
+      document.getElementById('callStatus').textContent = 'Connected';
+      startCallTimer();
+    }
+
+    function startCallTimer() {
+      if (callTimer) return;
+      callStartedAt = Date.now();
+      document.getElementById('timer').classList.add('is-active');
+      callTimer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - callStartedAt) / 1000);
+        document.getElementById('timer').textContent =
+          `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    function formatCallDuration(totalSeconds) {
+      const seconds = Math.max(0, Number(totalSeconds) || 0);
+      return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+    }
+
+    async function saveCallHistory() {
+      const durationSeconds = callStartedAt ? Math.max(0, Math.floor((Date.now() - callStartedAt) / 1000)) : 0;
+      const callConversationId = isGroupCall
+        ? 'team_group_chat'
+        : [currentUserEmail, chatEmail.toLowerCase()].filter(Boolean).sort().join('__');
+      if (!callConversationId || !currentUserEmail) return;
+      const conversationRef = db.collection('team_meet_conversations').doc(callConversationId);
+      const historyMessage = {
+        id: `call-history-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        sender: 'me',
+        senderEmail: currentUserEmail,
+        senderName: 'You',
+        self: true,
+        type: 'call-history',
+        callType,
+        durationSeconds,
+        duration: formatCallDuration(durationSeconds),
+        text: durationSeconds > 0
+          ? `${callType === 'video' ? 'Video' : 'Audio'} call`
+          : `${callType === 'video' ? 'Video' : 'Audio'} call cancelled`,
+        time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+        reactions: {}
+      };
+      try {
+        const localStorageKey = isGroupCall
+          ? 'team_meet_group_chat'
+          : `team_meet_chat_${[currentUserEmail, chatEmail.toLowerCase()].filter(Boolean).sort().join('__')}`;
+        let localMessages = [];
+        try {
+          localMessages = JSON.parse(localStorage.getItem(localStorageKey) || '[]');
+        } catch (storageError) {
+          console.error('Failed to read local call history:', storageError);
+        }
+        localStorage.setItem(localStorageKey, JSON.stringify([...localMessages, historyMessage]));
+        await db.runTransaction(async transaction => {
+          const snapshot = await transaction.get(conversationRef);
+          const messages = snapshot.exists ? (snapshot.data().messages || []) : [];
+          transaction.set(conversationRef, {
+            conversationId: callConversationId,
+            participants: [currentUserEmail, chatEmail].filter(Boolean),
+            messages: [...messages, historyMessage],
+            updatedAt: new Date()
+          }, { merge: true });
+        });
+      } catch (error) {
+        console.error('Failed to save call history:', error);
+      }
+    }
+
+    async function createRoom() {
+      if (peerConnection) return;
+      const id = document.getElementById('roomIdInput').value.trim();
+      roomRef = id ? db.collection('rooms').doc(id) : db.collection('rooms').doc();
+      document.getElementById('roomIdInput').value = roomRef.id;
+      document.getElementById('roomInfo').textContent = isGroupCall
+        ? 'Team Group call is connecting automatically...'
+        : `Share this Room ID: ${roomRef.id}`;
+      await preparePeerConnection(roomRef);
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      await roomRef.set({ offer: { type: offer.type, sdp: offer.sdp }, createdAt: new Date() });
+      startConnectingTone();
+      subscribeToCandidates(roomRef, 'receiverCandidates');
+      roomUnsubscribe = roomRef.onSnapshot(async snapshot => {
+        const data = snapshot.data();
+        if (data?.answer && !peerConnection.currentRemoteDescription) {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+          document.getElementById('callStatus').textContent = 'Connecting...';
+        }
+      });
+    }
+
+    async function joinRoom() {
+      if (peerConnection) return;
+      if (isGroupCall) startIncomingTone();
+      const id = document.getElementById('roomIdInput').value.trim();
+      if (!id) {
+        document.getElementById('roomInfo').textContent = 'Enter a Room ID first.';
+        return;
+      }
+      roomRef = db.collection('rooms').doc(id);
+      const snapshot = await roomRef.get();
+      const data = snapshot.data();
+      if (!snapshot.exists || !data?.offer) {
+        document.getElementById('roomInfo').textContent = 'Room not found.';
+        return;
+      }
+      await preparePeerConnection(roomRef);
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+      subscribeToCandidates(roomRef, 'callerCandidates');
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+      await roomRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
+      document.getElementById('callStatus').textContent = 'Connecting...';
+    }
+
+    document.querySelector('[aria-label="Mute"]').addEventListener('click', async event => {
+      const stream = await openUserMedia();
+      const track = stream.getAudioTracks()[0];
+      if (track) {
+        track.enabled = !track.enabled;
+        event.currentTarget.classList.toggle('is-active', !track.enabled);
+        event.currentTarget.setAttribute('aria-label', track.enabled ? 'Mute' : 'Unmute');
+      }
+    });
+
+    document.querySelector('[aria-label="Speaker"]').addEventListener('click', event => {
+      const remoteVideo = document.getElementById('remoteVideo');
+      remoteVideo.muted = !remoteVideo.muted;
+      event.currentTarget.classList.toggle('is-active', !remoteVideo.muted);
+      event.currentTarget.setAttribute('aria-label', remoteVideo.muted ? 'Speaker off' : 'Speaker on');
+    });
+
+    document.querySelector('[aria-label="Camera switch"]').addEventListener('click', () => {
+      switchCamera().catch(error => console.error('Camera switch failed:', error));
+    });
+    document.querySelector('[aria-label="Share screen"]').addEventListener('click', () => {
+      toggleScreenShare().catch(error => console.error('Screen sharing failed:', error));
+    });
+
+    document.querySelector('[aria-label="End call"]').addEventListener('click', async () => {
+      if (callEnding) return;
+      callEnding = true;
+      stopConnectingTone();
+      stopIncomingTone();
+      stopUnansweredCallTimer();
+      if (callTimer) {
+        clearInterval(callTimer);
+        callTimer = null;
+      }
+      await saveCallHistory();
+      if (roomUnsubscribe) roomUnsubscribe();
+      if (candidateUnsubscribe) candidateUnsubscribe();
+      if (directCallUnsubscribe) directCallUnsubscribe();
+      if (directCandidateUnsubscribe) directCandidateUnsubscribe();
+      if (directCallRef) directCallRef.update({ status: 'ended' }).catch(error => console.error('Failed to end call:', error));
+      if (peerConnection) peerConnection.close();
+      if (localStream) localStream.getTracks().forEach(track => track.stop());
+      window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
+    });
+
+    if (initialRoomId) {
+      document.getElementById('roomIdInput').value = initialRoomId;
+      document.getElementById('roomInfo').textContent = isGroupCall
+        ? 'Group call invite. Press Join to connect.'
+        : 'Press Join to connect to this call.';
+    }
+
+    async function initializeCall() {
+      const authenticatedUser = await new Promise(resolve => {
+        let unsubscribe = () => {};
+        unsubscribe = firebase.auth().onAuthStateChanged(user => {
+          unsubscribe();
+          resolve(user);
+        });
+      });
+
+      if (!authenticatedUser || !authenticatedUser.email) {
+        document.getElementById('callStatus').textContent = 'Sign in required';
+        document.getElementById('roomInfo').textContent = 'Please sign in from the login page before starting a call.';
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 1800);
+        return;
+      }
+
+      currentUserEmail = authenticatedUser.email.trim().toLowerCase();
+      localStorage.setItem('currentUserEmail', currentUserEmail);
+      localStorage.setItem('currentUserUid', authenticatedUser.uid || '');
+      loadMemberFromFirestore();
+
+      if (!isGroupCall && directCallId) {
+        if (callRole !== 'caller') startIncomingTone();
+        const directAction = callRole === 'caller' ? startDirectCall() : answerDirectCall();
+        directAction.catch(error => {
+        console.error('Direct call setup failed:', error);
+        stopConnectingTone();
+        stopIncomingTone();
+        stopUnansweredCallTimer();
+        if (peerConnection) peerConnection.close();
+        if (localStream) localStream.getTracks().forEach(track => track.stop());
+        const isMediaPermissionError = ['NotAllowedError', 'PermissionDeniedError', 'NotFoundError'].includes(error.name);
+        const isFirestorePermissionError = error.code === 'permission-denied'
+          || /missing or insufficient permissions/i.test(error.message || '');
+        document.getElementById('callStatus').textContent = isMediaPermissionError
+          ? 'Microphone permission is required'
+          : isFirestorePermissionError
+            ? 'Call permission is not available'
+            : 'Call could not connect';
+        document.getElementById('roomInfo').textContent = isMediaPermissionError
+          ? 'Allow microphone access in your browser, then try again.'
+          : isFirestorePermissionError
+            ? 'Please sign in again or update Firebase calls permissions.'
+            : (error.message || 'Please try again.');
+        });
+      } else if (autoJoin) {
+        const joinAction = callRole === 'caller' ? createRoom() : joinRoom();
+        joinAction.catch(error => {
+          console.error('Automatic room join failed:', error);
+          document.getElementById('roomInfo').textContent = 'Could not join this call room.';
+        });
+      }
+    }
+
+    initializeCall().catch(error => {
+      console.error('Call initialization failed:', error);
+      document.getElementById('callStatus').textContent = 'Call could not start';
+      document.getElementById('roomInfo').textContent = error.message || 'Please try again.';
+    });
+  </script>
+</body>
+</html>
+>>>>>>> 8fceecbfbe6f3fb64c92aef170e3f711ba638301

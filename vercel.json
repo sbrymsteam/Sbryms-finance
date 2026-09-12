@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
@@ -54,3 +55,14 @@
     }
   ]
 }
+=======
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "framework": null,
+  "buildCommand": "npm run build",
+  "outputDirectory": ".",
+  "cleanUrls": false,
+  "trailingSlash": false
+}
+>>>>>>> 8fceecbfbe6f3fb64c92aef170e3f711ba638301

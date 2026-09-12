@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bgGradient" x1="50" y1="40" x2="440" y2="470" gradientUnits="userSpaceOnUse">
@@ -41,3 +42,48 @@
     <circle cx="405" cy="375" r="14" fill="#FFFFFF" fill-opacity="0.25"/>
   </g>
 </svg>
+=======
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="50" y1="40" x2="440" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF7AC6"/>
+      <stop offset="48%" stop-color="#5AA9FF"/>
+      <stop offset="100%" stop-color="#FFB86B"/>
+    </linearGradient>
+    <linearGradient id="glassGlow" x1="120" y1="130" x2="400" y2="370" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.38)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0.06)"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#1F2A6D" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <rect x="32" y="32" width="448" height="448" rx="120" fill="url(#bgGradient)"/>
+  <rect x="52" y="52" width="408" height="408" rx="100" fill="url(#glassGlow)" opacity="0.65"/>
+
+  <g filter="url(#shadow)">
+    <path d="M150 168C150 153.641 161.641 142 176 142H336C350.359 142 362 153.641 362 168V188C362 202.359 350.359 214 336 214H224C209.641 214 198 225.641 198 240V246C198 260.359 209.641 272 224 272H312C326.359 272 338 283.641 338 298V302C338 316.359 326.359 328 312 328H176C161.641 328 150 316.359 150 302V168Z" fill="rgba(255,255,255,0.18)"/>
+  </g>
+
+  <g opacity="0.95">
+    <path d="M170 190H332C340.837 190 348 197.163 348 206V208C348 216.837 340.837 224 332 224H170C161.163 224 154 216.837 154 208V206C154 197.163 161.163 190 170 190Z" fill="white" fill-opacity="0.9"/>
+    <path d="M210 230H306C314.837 230 322 237.163 322 246V248C322 256.837 314.837 264 306 264H210C201.163 264 194 256.837 194 248V246C194 237.163 201.163 230 210 230Z" fill="white" fill-opacity="0.8"/>
+    <path d="M166 290H338C346.837 290 354 297.163 354 306V310C354 318.837 346.837 326 338 326H166C157.163 326 150 318.837 150 310V306C150 297.163 157.163 290 166 290Z" fill="white" fill-opacity="0.72"/>
+  </g>
+
+  <g>
+    <path d="M209 157L344 351" stroke="rgba(255,255,255,0.72)" stroke-width="18" stroke-linecap="round"/>
+    <path d="M205 315L271 245L313 287L378 209" stroke="white" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <circle cx="378" cy="209" r="16" fill="white"/>
+  <circle cx="205" cy="315" r="16" fill="white" opacity="0.9"/>
+
+  <g opacity="0.8">
+    <circle cx="118" cy="126" r="12" fill="#FFFFFF" fill-opacity="0.32"/>
+    <circle cx="390" cy="118" r="9" fill="#FFFFFF" fill-opacity="0.28"/>
+    <circle cx="405" cy="375" r="14" fill="#FFFFFF" fill-opacity="0.25"/>
+  </g>
+</svg>
+>>>>>>> 8fceecbfbe6f3fb64c92aef170e3f711ba638301

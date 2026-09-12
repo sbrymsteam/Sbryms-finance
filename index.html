@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -103,3 +104,104 @@
     </script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#071124">
+    <meta name="description" content="SBRYMS Finance Web - Smart financial management">
+    <link rel="manifest" href="manifest.json">
+    <title>SBRYMS Finance Web</title>
+    <style>
+        :root { color-scheme: dark; --mint: #5ed5bf; --cyan: #06b6d4; --pink: #d32696; --muted: #aab7c9; }
+        * { box-sizing: border-box; }
+        body {
+            min-height: 100vh; margin: 0; padding: 20px; color: #e6eef6;
+            font-family: 'Segoe UI', sans-serif;
+            background: radial-gradient(900px 500px at 5% 0%, rgba(211,38,150,.22), transparent 55%),
+                        radial-gradient(800px 500px at 100% 90%, rgba(6,182,212,.16), transparent 55%),
+                        #071124;
+        }
+        .site { width: min(1120px, 100%); margin: 0 auto; }
+        .topbar {
+            display: flex; align-items: center; justify-content: space-between; gap: 18px;
+            padding: 14px 18px; border: 1px solid rgba(255,255,255,.1); border-radius: 18px;
+            background: rgba(7,17,36,.74); backdrop-filter: blur(12px);
+        }
+        .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+        .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: var(--mint); color: #06251b; }
+        .login-button, .apk-button {
+            border: 0; border-radius: 999px; padding: 11px 19px; font-weight: 800; cursor: pointer;
+        }
+        .login-button { color: #06251b; background: linear-gradient(135deg, var(--mint), var(--cyan)); }
+        .hero {
+            display: grid; grid-template-columns: 1.35fr .65fr; gap: 22px; align-items: stretch; margin-top: 26px;
+        }
+        .hero-main, .info-card, .apk-card {
+            border: 1px solid rgba(255,255,255,.1); border-radius: 26px; padding: clamp(24px, 5vw, 54px);
+            background: rgba(19,28,46,.9); box-shadow: 0 20px 55px rgba(0,0,0,.25);
+        }
+        .hero-main { border-left: 5px solid var(--mint); }
+        .eyebrow { color: var(--mint); letter-spacing: .18em; font-size: 12px; font-weight: 800; }
+        h1 { margin: 12px 0; font-size: clamp(32px, 6vw, 62px); line-height: 1.12; }
+        .hero-main p, .info-card p, .apk-card p { color: var(--muted); line-height: 1.7; }
+        .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+        .secondary-button { padding: 11px 18px; border: 1px solid rgba(255,255,255,.18); border-radius: 999px; background: transparent; color: #fff; cursor: pointer; font-weight: 700; }
+        .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 22px; }
+        .info-card { padding: 24px; }
+        .info-card h2 { margin: 0 0 8px; font-size: 18px; }
+        .info-card strong { color: var(--mint); font-size: 25px; }
+        .apk-card { padding: 28px; background: linear-gradient(145deg, #682a75, #18163e); }
+        .apk-icon { font-size: 38px; margin-bottom: 18px; }
+        .apk-button { width: 100%; color: #5b2369; background: #fff; }
+        .note { display: block; margin-top: 12px; color: rgba(255,255,255,.58); font-size: 11px; line-height: 1.5; }
+        @media (max-width: 760px) {
+            body { padding: 12px; }
+            .hero { grid-template-columns: 1fr; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .hero-main, .info-card, .apk-card { padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="site">
+        <header class="topbar">
+            <div class="brand"><span class="brand-mark">S</span><span>SBRYMS Finance Web</span></div>
+            <button class="login-button" type="button" onclick="window.location.href='login.html'">Login</button>
+        </header>
+
+        <section class="hero">
+            <article class="hero-main">
+                <div class="eyebrow">SBRYMS FINANCE</div>
+                <h1>আপনার ফাইন্যান্স,<br>এখন আরও সহজ।</h1>
+                <p>SBRYMS-এর সাথে খরচ ট্র্যাক করুন, স্মার্টভাবে সঞ্চয় করুন এবং আপনার ভবিষ্যৎকে আরও নিরাপদ করুন।</p>
+                <div class="hero-actions">
+                    <button class="login-button" type="button" onclick="window.location.href='login.html'">Open Web Login</button>
+                    <button class="secondary-button" type="button" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Explore Features</button>
+                </div>
+            </article>
+            <aside class="apk-card">
+                <div class="apk-icon">📱</div>
+                <h2>Mobile APK</h2>
+                <p>আপনার Android ফোনে SBRYMS Finance ব্যবহার করুন।</p>
+                <button class="apk-button" id="apkButton" type="button">Download APK</button>
+                <small class="note">APK ফাইল আপলোড হলে এখান থেকেই download চালু হবে।</small>
+            </aside>
+        </section>
+
+        <section class="feature-grid" id="features">
+            <article class="info-card"><h2>Growth Score</h2><strong>৭২০</strong><p>আপনার আর্থিক অগ্রগতি এক নজরে দেখুন।</p></article>
+            <article class="info-card"><h2>Smart Tracking</h2><strong>24/7</strong><p>Income, expense এবং deposit সহজে পরিচালনা করুন।</p></article>
+            <article class="info-card"><h2>Secure Access</h2><strong>100%</strong><p>শুধু login করা সদস্যরাই dashboard ব্যবহার করতে পারবেন।</p></article>
+        </section>
+    </main>
+    <script>
+        document.getElementById('apkButton').addEventListener('click', () => {
+            alert('Free Android APK will be available here soon.');
+        });
+    </script>
+</body>
+</html>
+>>>>>>> 8fceecbfbe6f3fb64c92aef170e3f711ba638301

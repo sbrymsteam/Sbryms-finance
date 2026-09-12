@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 rules_version = '2';
 
 service cloud.firestore {
@@ -54,4 +55,34 @@ service cloud.firestore {
       allow read, create, update: if signedIn();
     }
   }
+=======
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    match /calls/{callId} {
+      allow read, create, update: if signedIn();
+
+      match /{candidateCollection}/{candidateId} {
+        allow read, create: if signedIn();
+      }
+    }
+
+    match /rooms/{roomId} {
+      allow read, create, update: if signedIn();
+
+      match /{candidateCollection}/{candidateId} {
+        allow read, create: if signedIn();
+      }
+    }
+
+    match /team_meet_conversations/{conversationId} {
+      allow read, create, update: if signedIn();
+    }
+  }
+>>>>>>> 8fceecbfbe6f3fb64c92aef170e3f711ba638301
 }

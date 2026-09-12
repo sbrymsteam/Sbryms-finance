@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="bn">
 <head>
@@ -139,4 +140,147 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
     </footer>
 <script src="assets/background-settings.js"></script>
 </body>
+=======
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ইমেইল ডেলিভারি টাইম - SBRYMS</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f8f9fa; }
+        .card { background: white; padding: 20px; margin: 15px 0; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .time-box { background: #e3f2fd; padding: 15px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #2196f3; }
+        .urgent { background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800; }
+        .success { background: #e8f5e8; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50; }
+        .steps { counter-reset: step-counter; }
+        .step { counter-increment: step-counter; margin: 10px 0; padding-left: 30px; position: relative; }
+        .step::before { content: counter(step-counter); position: absolute; left: 0; top: 0; background: #2196f3; color: white; width: 25px; height: 25px; border-radius: 50%; text-align: center; line-height: 25px; font-weight: bold; }
+        .email-icon { font-size: 2em; margin-bottom: 10px; }
+    </style>
+<style>
+/* Global dark/translucent theme overrides applied by Copilot */
+/* Remove rounded corners and use linear borders */
+/* Remove global forced rounding; apply refined gradient borders and sensible radii */
+/* Use a transparent base border and a subtle gradient edge for better look on dark background */
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .icon-box, .profile-photo, .input-field, .btn-main {
+    border: 1px solid transparent !important;
+    background-image: linear-gradient(180deg, rgba(7,17,36,0.66), rgba(7,17,36,0.66)), linear-gradient(90deg, rgba(211,38,150,0.12), rgba(6,182,212,0.12));
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+    border-radius: 10px !important;
+}
+.profile-photo { border-radius: 50% !important; }
+.menu-icon, .header-action { border-radius: 12px !important; }
+.btn-main { border-radius: 999px !important; }
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .icon-box, .profile-photo, .input-field, .btn-main { border: 1px solid rgba(255,255,255,0.06) !important; }
+body { background-color: #071124 !important; background-image: radial-gradient(1200px 600px at 10% 20%, rgba(207,44,149,0.08), transparent 20%), radial-gradient(900px 500px at 80% 70%, rgba(4,188,212,0.06), transparent 18%), linear-gradient(180deg,#040714 0%, #071124 40%, #071726 100%); color: #e6eef6 !important; }
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu { background: rgba(7,17,36,0.56) !important; color: #e6eef6 !important; border-color: rgba(255,255,255,0.04) !important; box-shadow: 0 12px 30px rgba(2,6,23,0.6) !important; }
+.card h3, .container h2, .app-header h1, .app-header h2 { color: #e6eef6 !important; }
+.input-field { background: rgba(255,255,255,0.02) !important; color: #e6eef6 !important; border: 1px solid rgba(255,255,255,0.06) !important; }
+.link, a { color: rgba(255,255,255,0.95) !important; }
+.btn-main { background: linear-gradient(135deg, rgba(211,38,150,0.95) 0%, rgba(6,182,212,0.95) 100%) !important; color: #021724 !important; }
+/* small helpers */
+.auth-box { backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%); }
+#toast { background: rgba(20,22,26,0.9) !important; color: #fff !important; }
+</style>
+<style>
+/* Remove page chrome borders; keep only .icon-box borders */
+.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .profile-photo, .input-field, .btn-main {
+  border: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+.icon-box { border: 1px solid rgba(255,255,255,0.08) !important; background: transparent !important; box-shadow: none !important; }
+body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
+</style>
+<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
+<link rel="stylesheet" href="assets/bg.css">
+</head>
+<body>
+    <h1 style="text-align: center; color: #1976d2;">⏰ ইমেইল কোড কখন আসবে?</h1>
+
+    <div class="card">
+        <div class="email-icon">📧</div>
+        <h2>ইমেইল ডেলিভারি টাইম</h2>
+        <p>SBRYMS লগইন সিস্টেমে কোড পাঠানোর সময় কত লাগে তা নির্ভর করে আপনার সেটআপের উপর:</p>
+    </div>
+
+    <div class="card">
+        <h3>🚀 EmailJS সেটআপ থাকলে:</h3>
+        <div class="time-box">
+            <strong>⏱️ সময়:</strong> ৫-৩০ সেকেন্ড<br>
+            <strong>📍 যেখানে যাবে:</strong> আপনার আসল ইমেইল ইনবক্স<br>
+            <strong>✅ স্ট্যাটাস:</strong> স্বয়ংক্রিয়ভাবে পাঠানো হয়
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>⚡ Mailto ফলব্যাক (যদি EmailJS না থাকে):</h3>
+        <div class="success">
+            <strong>⚡ সময়:</strong> তাৎক্ষণিক (১-২ সেকেন্ড)<br>
+            <strong>📍 যেখানে যাবে:</strong> আপনার কম্পিউটারের ইমেইল প্রোগ্রাম<br>
+            <strong>✅ স্ট্যাটাস:</strong> ইমেইল ক্লায়েন্ট খুলে যাবে
+        </div>
+    </div>
+
+    <div class="card urgent">
+        <h3>⚠️ যদি ইমেইল না আসে:</h3>
+        <div class="steps">
+            <div class="step">৩০ সেকেন্ড অপেক্ষা করুন</div>
+            <div class="step">ইনবক্স চেক করুন</div>
+            <div class="step">স্প্যাম/জাঙ্ক ফোল্ডার চেক করুন</div>
+            <div class="step">প্রমোশন/সোশ্যাল ফোল্ডার চেক করুন</div>
+            <div class="step">"কোড আবার পাঠান" বোতাম চাপুন</div>
+            <div class="step">Browser Console এ Error চেক করুন (F12 → Console)</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>🔧 EmailJS সমস্যা সমাধান:</h3>
+        <ul>
+            <li><strong>Service Quota:</strong> EmailJS-এ ফ্রি একাউন্টে দৈনিক ২০০ ইমেইল লিমিট</li>
+            <li><strong>Template Error:</strong> Template ID সঠিক কিনা চেক করুন</li>
+            <li><strong>Network:</strong> ইন্টারনেট কানেকশন চেক করুন</li>
+            <li><strong>Browser:</strong> Ad-blocker disable করে দেখুন</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h3>📱 বিভিন্ন ইমেইল প্রোভাইডারের জন্য:</h3>
+        <ul>
+            <li><strong>Gmail:</strong> প্রমোশন ট্যাবে যেতে পারে</li>
+            <li><strong>Outlook:</strong> জাঙ্ক ইমেইল ফোল্ডার চেক করুন</li>
+            <li><strong>Yahoo:</strong> বাল্ক ফোল্ডারে যেতে পারে</li>
+            <li><strong>Custom Email:</strong> সার্ভার সেটিংস চেক করুন</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h3>🎯 টেস্ট করার উপায়:</h3>
+        <ol>
+            <li>LOGIN.html খুলুন</li>
+            <li>অনুমোদিত ইমেইল দিয়ে রেজিস্ট্রেশন/পাসওয়ার্ড রিসেট করুন</li>
+            <li>Alert মেসেজ দেখুন (সময় বলে দেবে)</li>
+            <li>ইমেইল চেক করুন</li>
+            <li>কোড ইনপুট করে ভেরিফাই করুন</li>
+        </ol>
+    </div>
+
+    <div class="card" style="background: #f3e5f5; border-left: 4px solid #9c27b0;">
+        <h3>💡 প্রোডাকশন টিপস:</h3>
+        <ul>
+            <li>আসল প্রোজেক্টে EmailJS-এর পরিবর্তে আপনার নিজস্ব SMTP সার্ভার ব্যবহার করুন</li>
+            <li>কোডের এক্সপায়ার টাইম যোগ করুন (১০ মিনিট)</li>
+            <li>ডাটাবেসে কোড স্টোর করুন (localStorage নয়)</li>
+            <li>Rate limiting যোগ করুন (একই ইমেইলে বারবার কোড না পাঠাতে)</li>
+        </ul>
+    </div>
+
+    <footer style="text-align: center; margin-top: 30px; color: #666;">
+        <p>❓ এখনও সমস্যা? <a href="EmailJS-Setup-Guide.html">EmailJS Setup Guide</a> দেখুন</p>
+    </footer>
+<script src="assets/background-settings.js"></script>
+</body>
+>>>>>>> 8fceecbfbe6f3fb64c92aef170e3f711ba638301
 </html>

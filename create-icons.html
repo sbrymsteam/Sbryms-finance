@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 <!DOCTYPE html>
 <html>
 <head>
@@ -88,3 +89,95 @@
 <script src="assets/background-settings.js"></script>
 </body>
 </html>
+=======
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { margin: 0; padding: 20px; background: white; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h2>Navigation Icons</h2>
+    <canvas id="homeCanvas"></canvas>
+    <canvas id="profileCanvas"></canvas>
+    <canvas id="teamCanvas"></canvas>
+
+    <script>
+        function drawIcon(canvasId, drawFunc) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            canvas.width = 64;
+            canvas.height = 64;
+            ctx.fillStyle = '#000';
+            drawFunc(ctx, 32, 32);
+            
+            // Convert to PNG and download
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = canvasId.replace('Canvas', '-icon.png');
+                a.click();
+            });
+        }
+
+        function drawHome(ctx, x, y) {
+            // Draw house icon
+            const size = 20;
+            ctx.beginPath();
+            // Roof
+            ctx.moveTo(x - size, y);
+            ctx.lineTo(x, y - size);
+            ctx.lineTo(x + size, y);
+            // Base
+            ctx.lineTo(x + size, y + size);
+            ctx.lineTo(x - size, y + size);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Door
+            ctx.fillRect(x - 4, y + 8, 8, 12);
+        }
+
+        function drawProfile(ctx, x, y) {
+            // Draw person/profile icon
+            // Head circle
+            ctx.beginPath();
+            ctx.arc(x, y - 8, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Body
+            ctx.beginPath();
+            ctx.moveTo(x - 8, y);
+            ctx.lineTo(x - 8, y + 10);
+            ctx.lineTo(x + 8, y + 10);
+            ctx.lineTo(x + 8, y);
+            ctx.fill();
+        }
+
+        function drawTeam(ctx, x, y) {
+            // Draw people/team icon
+            // Person 1
+            ctx.beginPath();
+            ctx.arc(x - 6, y - 6, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(x - 8, y - 2, 4, 8);
+            
+            // Person 2
+            ctx.beginPath();
+            ctx.arc(x + 6, y - 6, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(x + 4, y - 2, 4, 8);
+        }
+
+        // Generate icons
+        drawIcon('homeCanvas', drawHome);
+        setTimeout(() => drawIcon('profileCanvas', drawProfile), 500);
+        setTimeout(() => drawIcon('teamCanvas', drawTeam), 1000);
+    </script>
+<script src="assets/background-settings.js"></script>
+</body>
+</html>
+>>>>>>> 8fceecbfbe6f3fb64c92aef170e3f711ba638301
