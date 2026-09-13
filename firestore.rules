@@ -52,6 +52,9 @@ service cloud.firestore {
 
     match /team_meet_conversations/{conversationId} {
       allow read, create, update: if signedIn();
+      match /messages/{messageId} {
+        allow read, create, update: if signedIn();
+      }
     }
   }
 }
