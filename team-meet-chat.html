@@ -1207,6 +1207,11 @@
     }
 
     const db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(error => {
+      if (error.code !== 'failed-precondition' && error.code !== 'unimplemented') {
+        console.error('Firestore offline persistence could not start:', error);
+      }
+    });
     const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
     const members = [
       { name: 'Md Mahdi Hasan', email: 'mdmahdihasan@gmail.com', photo: '' },
@@ -1837,24 +1842,16 @@
 
     function saveNewMessage(message) {
       localStorage.setItem(storageKey, JSON.stringify([...getMessages(), message]));
-      messageWriteQueue = messageWriteQueue
-        .catch(error => console.error('Previous message write failed:', error))
-        .then(() => db.runTransaction(async transaction => {
-          const snapshot = await transaction.get(conversationRef);
-          const latest = snapshot.exists ? (snapshot.data().messages || []) : [];
-          if (latest.some(item => item.id === message.id)) return;
-          transaction.set(conversationRef, {
-            conversationId,
-            participants: [currentUserEmail, selectedMember.email].filter(Boolean),
-            messages: [...latest, message],
-            updatedAt: new Date()
-          }, { merge: true });
-        }))
+      conversationRef.set({
+        conversationId,
+        participants: [currentUserEmail, selectedMember.email].filter(Boolean),
+        messages: firebase.firestore.FieldValue.arrayUnion(message),
+        updatedAt: new Date()
+      }, { merge: true })
         .catch(error => {
           console.error('Failed to deliver new message:', error);
           showAttachmentNotice('Message could not be delivered. Please try again.');
         });
-      return messageWriteQueue;
     }
 
     function createInAppNotification({ to, type, title, message, from }) {
