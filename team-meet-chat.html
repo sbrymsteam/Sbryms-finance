@@ -1833,6 +1833,23 @@
       return messageWriteQueue;
     }
 
+    function saveNewMessage(message) {
+      localStorage.setItem(storageKey, JSON.stringify([...getMessages(), message]));
+      messageWriteQueue = messageWriteQueue
+        .catch(error => console.error('Previous message write failed:', error))
+        .then(() => conversationRef.set({
+          conversationId,
+          participants: [currentUserEmail, selectedMember.email].filter(Boolean),
+          messages: firebase.firestore.FieldValue.arrayUnion(message),
+          updatedAt: new Date()
+        }, { merge: true }))
+        .catch(error => {
+          console.error('Failed to deliver new message:', error);
+          showAttachmentNotice('Message could not be delivered. Please try again.');
+        });
+      return messageWriteQueue;
+    }
+
     function createInAppNotification({ to, type, title, message, from }) {
       const recipient = String(to || '').trim().toLowerCase();
       if (!recipient || recipient === currentUserEmail || !db) return;
@@ -2386,7 +2403,7 @@
       updateTypingIndicator(false);
       const nextMessages = [...messages, message];
       pendingMessageIds.add(message.id);
-      saveMessages(nextMessages);
+      saveNewMessage(message);
       createInAppNotification({
         to: isGroupChat ? 'all' : selectedMember.email,
         type: 'message',
