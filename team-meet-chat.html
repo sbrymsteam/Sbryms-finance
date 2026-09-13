@@ -359,6 +359,29 @@
       line-height: 1.35;
       opacity: 0.94;
     }
+    .composer .reply-preview {
+      position: relative;
+      padding-right: 34px;
+    }
+    .reply-cancel-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 22px;
+      height: 22px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .reply-cancel-btn:hover,
+    .reply-cancel-btn:focus-visible {
+      background: rgba(255,255,255,0.16);
+      color: var(--text);
+    }
     .reply-preview strong {
       font-size: 11px;
       opacity: 0.8;
@@ -1641,6 +1664,16 @@
       }).catch(error => console.error('Failed to create in-app notification:', error));
     }
 
+    function cancelReply() {
+      activeReply = null;
+      renderReplyPreview();
+      const input = document.getElementById('messageInput');
+      if (input) {
+        input.placeholder = 'Type a message...';
+        input.focus();
+      }
+    }
+
     function renderReplyPreview() {
       const replyPreview = document.getElementById('replyPreview');
       if (!replyPreview) return;
@@ -1651,9 +1684,11 @@
       }
       replyPreview.style.display = 'block';
       replyPreview.innerHTML = `
+        <button type="button" class="reply-cancel-btn" id="replyCancel" aria-label="Cancel reply">×</button>
         <strong>Replying to ${activeReply.senderName}</strong>
         <div>${activeReply.text}</div>
       `;
+      document.getElementById('replyCancel').addEventListener('click', cancelReply);
     }
 
     function replyToMessageAtIndex(index) {
