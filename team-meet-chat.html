@@ -1329,12 +1329,11 @@
 
     function isMessageFromCurrentUser(message = {}) {
       const senderEmail = String(message.senderEmail || '').trim().toLowerCase();
-      if (senderEmail) return Boolean(currentUserEmail && senderEmail === currentUserEmail);
       if (message.self === true) return true;
       const senderValue = (message.sender || '').toString().trim().toLowerCase();
       if (senderValue === 'me' || senderValue === 'self') return true;
       if (message.senderName && /^(you|me)$/i.test(String(message.senderName).trim())) return true;
-      return false;
+      return Boolean(currentUserEmail && senderEmail && senderEmail === currentUserEmail);
     }
 
     function renderGroupSenderProfile(message, isMe) {
@@ -1345,7 +1344,11 @@
       const knownMember = members.find(member =>
         String(member.email || '').trim().toLowerCase() === senderEmail.toLowerCase()
       );
-      const name = message.senderName || knownMember?.name || savedAccount.name || emailName || message.sender || 'Member';
+      const currentProfile = getCurrentSenderProfile();
+      const rawName = message.senderName || knownMember?.name || savedAccount.name || emailName || message.sender || 'Member';
+      const name = /^(you|me)$/i.test(String(rawName).trim())
+        ? currentProfile.name
+        : rawName;
       const photo = message.senderPhoto || knownMember?.photo || savedAccount.photo || buildAvatarSvg(name);
       return `
         <div class="group-message-profile sender">
