@@ -438,6 +438,28 @@
       }
     }
 
+    function membersCacheKey() {
+      return `team_meet_members_${currentUserEmail || 'guest'}`;
+    }
+
+    function saveMembersCache(memberList) {
+      try {
+        localStorage.setItem(membersCacheKey(), JSON.stringify(memberList));
+      } catch (error) {
+        console.error('Could not cache Team Meet members:', error);
+      }
+    }
+
+    function loadMembersCache() {
+      try {
+        const cachedMembers = JSON.parse(localStorage.getItem(membersCacheKey()) || '[]');
+        return Array.isArray(cachedMembers) ? cachedMembers : [];
+      } catch (error) {
+        console.error('Could not read cached Team Meet members:', error);
+        return [];
+      }
+    }
+
     function getLatestMessage(messages) {
       return [...(messages || [])]
         .filter(message => !message.deleted && String(message.text || '').trim())
@@ -584,12 +606,19 @@
     }
 
     function loadMembersFromFirestore() {
+      const cachedMembers = loadMembersCache();
+      if (cachedMembers.length) {
+        members.splice(0, members.length, ...cachedMembers);
+        renderMembers();
+        watchUnreadMessages();
+      }
       db.collection('users').limit(20).onSnapshot(snapshot => {
         const fireMembers = snapshot.docs
           .map(doc => normalizeMember(doc.data()))
           .filter(member => member.email);
 
         members.splice(0, members.length, ...fireMembers);
+        saveMembersCache(fireMembers);
         renderMembers();
         watchUnreadMessages();
       }, error => {
@@ -653,6 +682,14 @@
       });
 
       renderUnreadBadges();
+    }
+
+    if (currentUserEmail) {
+      const cachedMembers = loadMembersCache();
+      if (cachedMembers.length) {
+        members.splice(0, members.length, ...cachedMembers);
+        renderMembers();
+      }
     }
 
     window.addEventListener('online', () => {
