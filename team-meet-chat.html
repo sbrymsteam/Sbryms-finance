@@ -1731,18 +1731,7 @@
         return { ...message, readBy };
       });
       if (!changed) return updated;
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-      db.runTransaction(async transaction => {
-        const snapshot = await transaction.get(conversationRef);
-        const latest = snapshot.exists ? (snapshot.data().messages || []) : [];
-        const merged = latest.map(item => {
-          const message = updated.find(candidate => candidate.id === item.id);
-          return message
-            ? { ...item, readBy: { ...(item.readBy || {}), ...message.readBy } }
-            : item;
-        });
-        transaction.update(conversationRef, { messages: merged });
-      }).catch(error => console.error('Could not save group message seen receipts:', error));
+      saveMessages(updated);
       return updated;
     }
 
@@ -1769,18 +1758,7 @@
         return { ...message, readBy };
       });
       if (!changed) return updated;
-      localStorage.setItem(storageKey, JSON.stringify(updated));
-      db.runTransaction(async transaction => {
-        const snapshot = await transaction.get(conversationRef);
-        const latest = snapshot.exists ? (snapshot.data().messages || []) : [];
-        const merged = latest.map(item => {
-          const message = updated.find(candidate => candidate.id === item.id);
-          return message
-            ? { ...item, readBy: { ...(item.readBy || {}), ...message.readBy } }
-            : item;
-        });
-        transaction.update(conversationRef, { messages: merged });
-      }).catch(error => console.error('Could not save private message seen receipt:', error));
+      saveMessages(updated);
       return updated;
     }
 
@@ -1826,23 +1804,25 @@
       }
     }
 
+    let messageWriteQueue = Promise.resolve();
     function saveMessages(messages) {
       localStorage.setItem(storageKey, JSON.stringify(messages));
-      db.runTransaction(async transaction => {
-        const snapshot = await transaction.get(conversationRef);
-        const latest = snapshot.exists ? (snapshot.data().messages || []) : [];
-        const desiredById = new Map(messages.map(message => [message.id, message]));
-        const latestById = new Map(latest.map(message => [message.id, message]));
-        desiredById.forEach((message, id) => latestById.set(id, message));
-        transaction.set(conversationRef, {
-          conversationId,
-          participants: [currentUserEmail, selectedMember.email].filter(Boolean),
-          messages: Array.from(latestById.values()),
-          updatedAt: new Date()
-        }, { merge: true });
-      }).catch(error => {
-        console.error('Failed to save messages to Firestore:', error);
-      });
+      messageWriteQueue = messageWriteQueue
+        .catch(error => console.error('Previous message write failed:', error))
+        .then(() => db.runTransaction(async transaction => {
+          const snapshot = await transaction.get(conversationRef);
+          const latest = snapshot.exists ? (snapshot.data().messages || []) : [];
+          const desiredById = new Map(messages.map(message => [message.id, message]));
+          const latestById = new Map(latest.map(message => [message.id, message]));
+          desiredById.forEach((message, id) => latestById.set(id, message));
+          transaction.set(conversationRef, {
+            conversationId,
+            participants: [currentUserEmail, selectedMember.email].filter(Boolean),
+            messages: Array.from(latestById.values()),
+            updatedAt: new Date()
+          }, { merge: true });
+        }))
+        .catch(error => console.error('Failed to save messages to Firestore:', error));
     }
 
     function createInAppNotification({ to, type, title, message, from }) {
