@@ -1627,6 +1627,20 @@
       });
     }
 
+    function createInAppNotification({ to, type, title, message, from }) {
+      const recipient = String(to || '').trim().toLowerCase();
+      if (!recipient || recipient === currentUserEmail || !db) return;
+      db.collection('notifications').add({
+        to: recipient,
+        from: from || currentUserEmail,
+        type,
+        title,
+        message,
+        read: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(error => console.error('Failed to create in-app notification:', error));
+    }
+
     function renderReplyPreview() {
       const replyPreview = document.getElementById('replyPreview');
       if (!replyPreview) return;
@@ -2138,6 +2152,12 @@
       updateTypingIndicator(false);
       const nextMessages = [...messages, message];
       saveMessages(nextMessages);
+      createInAppNotification({
+        to: isGroupChat ? 'all' : selectedMember.email,
+        type: 'message',
+        title: `New message from ${localStorage.getItem('currentUserName') || 'SBRYMS member'}`,
+        message: text
+      });
       input.value = '';
       activeReply = null;
       renderReplyPreview();
@@ -2167,6 +2187,12 @@
           reactions: {}
         };
         saveMessages([...messages, inviteMessage]);
+        createInAppNotification({
+          to: 'all',
+          type: 'team_call',
+          title: 'Team group call',
+          message: `${type === 'video' ? 'Video' : 'Audio'} group call started`
+        });
         db.collection('calls').doc(groupCallId).set({
           groupId: 'team-group',
           roomId,

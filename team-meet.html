@@ -799,6 +799,15 @@
         status: 'ringing',
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(error => console.error('Failed to publish group call:', error));
+      db.collection('notifications').add({
+        to: 'all',
+        from: currentUserEmail,
+        type: 'team_call',
+        title: 'Team group call',
+        message: `${type === 'video' ? 'Video' : 'Audio'} group call started`,
+        read: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(error => console.error('Failed to create group call notification:', error));
       const storageKey = 'team_meet_group_chat';
       let messages = [];
       try {
@@ -827,6 +836,15 @@
       localStorage.setItem('selectedProfileDesignation', member.role || 'Member');
       localStorage.setItem('selectedProfileCurrent', 'false');
       const callId = `call-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      db.collection('notifications').add({
+        to: String(member.email || '').trim().toLowerCase(),
+        from: currentUserEmail,
+        type: 'team_call',
+        title: `${type === 'video' ? 'Video' : 'Audio'} call`,
+        message: `${localStorage.getItem('currentUserName') || 'A member'} is calling you`,
+        read: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(error => console.error('Failed to create call notification:', error));
       window.location.href = 'team-meet-call.html?chat='
         + encodeURIComponent(member.email)
         + '&call=' + encodeURIComponent(callId)
