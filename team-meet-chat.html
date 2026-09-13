@@ -1262,18 +1262,27 @@
     async function loadSelectedMemberFromFirestore() {
       if (isGroupChat) return;
       try {
-        const snapshot = await db.collection('users').where('email', '==', chatEmail).limit(1).get();
-        if (!snapshot.empty) {
-          const data = snapshot.docs[0].data();
-          const savedAccount = getSavedProfileAccount(chatEmail);
+        const snapshot = await db.collection('users').limit(100).get();
+        const profileDoc = snapshot.docs.find(doc =>
+          String(doc.data().email || '').trim().toLowerCase() === normalizedTargetEmail
+        );
+        const savedAccount = getSavedProfileAccount(chatEmail);
+        const savedName = localStorage.getItem('selectedProfileName') || savedAccount.name;
+        if (profileDoc) {
+          const data = profileDoc.data();
           selectedMember = {
-            name: data.name || (chatEmail ? chatEmail.split('@')[0].replace(/[._-]/g, ' ') : 'Member'),
+            name: data.name || data.displayName || savedName || (chatEmail ? chatEmail.split('@')[0].replace(/[._-]/g, ' ') : 'Member'),
             email: data.email || chatEmail,
-            photo: data.photo || data.profilePhoto || data.photoURL || data.avatar || savedAccount.photo || '',
+            photo: data.photo || data.profilePhoto || data.photoURL || data.avatar || localStorage.getItem('selectedProfilePhoto') || savedAccount.photo || '',
             role: data.designation || data.role || 'Member',
-            status: data.status === 'online' ? 'online' : 'offline',
+            status: data.status || 'offline',
+            presenceStatus: data.presenceStatus || data.status || 'offline',
             lastSeen: data.lastSeen || data.lastActive || data.updatedAt || null
           };
+          renderProfile();
+        } else {
+          selectedMember.name = savedName || selectedMember.name;
+          selectedMember.photo = localStorage.getItem('selectedProfilePhoto') || savedAccount.photo || selectedMember.photo;
           renderProfile();
         }
       } catch (error) {
@@ -1292,8 +1301,9 @@
         console.error(`Could not read saved profile for ${email}:`, error);
         return {};
       }
+    }
 
-      async function loadSenderProfiles() {
+    async function loadSenderProfiles() {
         try {
           const snapshot = await db.collection('users').limit(100).get();
           snapshot.docs.forEach(doc => {
@@ -1308,7 +1318,6 @@
         } catch (error) {
           console.error('Could not load group sender profiles:', error);
         }
-      }
     }
 
     function getPresenceDate(value) {
@@ -1319,8 +1328,11 @@
     }
 
     function formatPresence(member) {
-      if (member.status === 'online') return 'Online';
       const lastSeen = getPresenceDate(member.lastSeen);
+      if (member.presenceStatus === 'online'
+        && lastSeen
+        && Date.now() - lastSeen.getTime() <= 90000
+        && navigator.onLine) return 'Online';
       if (!lastSeen) return 'Offline';
       const minutes = Math.max(0, Math.floor((Date.now() - lastSeen.getTime()) / 60000));
       if (minutes < 1) return 'Last seen just now';
@@ -1345,7 +1357,7 @@
         <div class="avatar">${avatar}</div>
         <div class="meta">
           <h1>${profileName}</h1>
-          <p class="profile-status ${selectedMember?.status === 'online' ? 'online' : ''}">${isGroupChat ? 'All members can join this group chat' : (isSelfChat ? 'Your saved messages' : formatPresence(selectedMember || {}))}</p>
+          <p class="profile-status ${formatPresence(selectedMember || {}) === 'Online' ? 'online' : ''}">${isGroupChat ? 'All members can join this group chat' : (isSelfChat ? 'Your saved messages' : formatPresence(selectedMember || {}))}</p>
         </div>
       `;
     }
