@@ -1329,11 +1329,14 @@
 
     function isMessageFromCurrentUser(message = {}) {
       const senderEmail = String(message.senderEmail || '').trim().toLowerCase();
+      if (senderEmail) {
+        return Boolean(currentUserEmail && senderEmail === currentUserEmail);
+      }
       if (message.self === true) return true;
       const senderValue = (message.sender || '').toString().trim().toLowerCase();
       if (senderValue === 'me' || senderValue === 'self') return true;
       if (message.senderName && /^(you|me)$/i.test(String(message.senderName).trim())) return true;
-      return Boolean(currentUserEmail && senderEmail && senderEmail === currentUserEmail);
+      return false;
     }
 
     function renderGroupSenderProfile(message, isMe) {
