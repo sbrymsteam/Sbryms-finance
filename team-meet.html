@@ -391,6 +391,7 @@
     const members = [];
     const unreadCounts = new Map();
     const unreadListeners = new Map();
+    let membersLoaded = false;
     let currentUserEmail = (localStorage.getItem('currentUserEmail') || '').trim().toLowerCase();
 
     function conversationIdFor(email) {
@@ -439,7 +440,7 @@
     }
 
     function membersCacheKey() {
-      return `team_meet_members_${currentUserEmail || 'guest'}`;
+      return 'team_meet_members_shared';
     }
 
     function saveMembersCache(memberList) {
@@ -452,7 +453,12 @@
 
     function loadMembersCache() {
       try {
-        const cachedMembers = JSON.parse(localStorage.getItem(membersCacheKey()) || '[]');
+        const legacyKey = `team_meet_members_${currentUserEmail || 'guest'}`;
+        const cachedMembers = JSON.parse(
+          localStorage.getItem(membersCacheKey())
+          || localStorage.getItem(legacyKey)
+          || '[]'
+        );
         return Array.isArray(cachedMembers)
           ? cachedMembers
             .filter(member => member && typeof member === 'object' && String(member.email || '').trim())
@@ -621,13 +627,20 @@
           .map(doc => normalizeMember(doc.data()))
           .filter(member => member.email);
 
-        members.splice(0, members.length, ...fireMembers);
-        saveMembersCache(fireMembers);
-        renderMembers();
+        if (fireMembers.length || !members.length) {
+          members.splice(0, members.length, ...fireMembers);
+          if (fireMembers.length) saveMembersCache(fireMembers);
+          renderMembers();
+        }
+        membersLoaded = true;
         watchUnreadMessages();
       }, error => {
         console.error('Error loading users for Team Meet:', error);
-        members.splice(0, members.length);
+        membersLoaded = true;
+        if (members.length) {
+          renderMembers();
+          return;
+        }
         const message = error && error.code === 'permission-denied'
           ? 'Member access permission is not deployed yet.'
           : 'Members could not be loaded. Please try again.';
