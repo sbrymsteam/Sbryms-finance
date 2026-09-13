@@ -1784,9 +1784,16 @@
       try {
         const snapshot = await conversationRef.get();
         const firestoreMessages = snapshot.exists ? (snapshot.data().messages || []) : [];
-        if (firestoreMessages.length) {
-          localStorage.setItem(storageKey, JSON.stringify(firestoreMessages));
-          return firestoreMessages;
+        const localMessages = getMessages();
+        const firestoreIds = new Set(firestoreMessages.map(message => message.id));
+        const mergedMessages = [
+          ...firestoreMessages,
+          ...localMessages.filter(message => !firestoreIds.has(message.id))
+        ];
+        if (mergedMessages.length) {
+          localStorage.setItem(storageKey, JSON.stringify(mergedMessages));
+          if (mergedMessages.length > firestoreMessages.length) saveMessages(mergedMessages);
+          return mergedMessages;
         }
 
         const fallbackMessages = getMessages();
@@ -1823,6 +1830,7 @@
           }, { merge: true });
         }))
         .catch(error => console.error('Failed to save messages to Firestore:', error));
+      return messageWriteQueue;
     }
 
     function createInAppNotification({ to, type, title, message, from }) {
@@ -2277,6 +2285,7 @@
     }
 
     let lastRenderedMessageIds = new Set();
+    const pendingMessageIds = new Set();
     function listenForMessages() {
       conversationRef.onSnapshot((doc) => {
         if (!doc.exists) {
@@ -2286,6 +2295,13 @@
         }
 
         let firestoreMessages = doc.data().messages || [];
+        const localMessages = getMessages();
+        const firestoreMessageIds = new Set(firestoreMessages.map(message => message.id));
+        const pendingLocalMessages = localMessages.filter(message =>
+          pendingMessageIds.has(message.id) && !firestoreMessageIds.has(message.id)
+        );
+        firestoreMessages = [...firestoreMessages, ...pendingLocalMessages];
+        firestoreMessageIds.forEach(id => pendingMessageIds.delete(id));
         const newIncoming = firestoreMessages.filter(message =>
           !isMessageFromCurrentUser(message) &&
           !lastRenderedMessageIds.has(message.id) &&
@@ -2369,6 +2385,7 @@
       playSendTone();
       updateTypingIndicator(false);
       const nextMessages = [...messages, message];
+      pendingMessageIds.add(message.id);
       saveMessages(nextMessages);
       createInAppNotification({
         to: isGroupChat ? 'all' : selectedMember.email,
