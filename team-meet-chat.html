@@ -1709,13 +1709,22 @@
     function markGroupMessagesSeen(messages) {
       if (!isGroupChat || !currentUserEmail) return messages;
       const profile = getGroupReadProfile();
+      const latestVisibleIndex = messages.reduce((lastIndex, message, index) =>
+        message && !message.deleted ? index : lastIndex, -1);
+      if (latestVisibleIndex < 0) return messages;
       let changed = false;
-      const updated = messages.map(message => {
-        if (isMessageFromCurrentUser(message) || message.deleted) return message;
+      const updated = messages.map((message, index) => {
         const readBy = Array.isArray(message.readBy)
           ? Object.fromEntries(message.readBy.map(item => [item.email, item]))
           : { ...(message.readBy || {}) };
-        if (!readBy[currentUserEmail]) {
+        if (readBy[currentUserEmail] && index !== latestVisibleIndex) {
+          delete readBy[currentUserEmail];
+          changed = true;
+        }
+        if (index === latestVisibleIndex
+          && (!readBy[currentUserEmail]
+            || readBy[currentUserEmail].name !== profile.name
+            || readBy[currentUserEmail].photo !== profile.photo)) {
           readBy[currentUserEmail] = { email: currentUserEmail, ...profile };
           changed = true;
         }
@@ -1738,7 +1747,7 @@
     }
 
     function renderSeenBy(message, isMe) {
-      if (!isGroupChat || !isMe || !message.readBy) return '';
+      if (!isGroupChat || !message.readBy) return '';
       const readers = Object.values(message.readBy)
         .filter(reader => reader && reader.email && reader.email !== currentUserEmail)
         .slice(-5);
