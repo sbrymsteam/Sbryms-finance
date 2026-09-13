@@ -748,6 +748,17 @@
         status: 'ringing',
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
+      db.collection('notifications').add({
+        to: chatEmail.toLowerCase(),
+        from: authenticatedUser.email.trim().toLowerCase(),
+        type: 'team_call',
+        title: `${callType === 'video' ? 'Video' : 'Audio'} call`,
+        message: `${localStorage.getItem('currentUserName') || 'A member'} is calling you`,
+        callId: directCallId,
+        callType,
+        read: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      }).catch(error => console.error('Failed to create direct-call notification:', error));
       startConnectingTone();
       unansweredCallTimer = setTimeout(autoEndUnansweredCall, 60000);
       subscribeToDirectCandidates(directCallRef, 'receiverCandidates');

@@ -23,6 +23,40 @@
         if (firebase.apps && !firebase.apps.length) {
             firebase.initializeApp(mainPageFirebaseConfig);
         }
+
+        function subscribeIncomingDirectCalls() {
+            if (!db || _incomingCallUnsub) return;
+            const email = getCurrentUserEmail().trim().toLowerCase();
+            if (!email) return;
+            _incomingCallUnsub = db.collection('calls')
+                .where('receiverId', '==', email)
+                .onSnapshot(snapshot => {
+                    snapshot.docChanges().forEach(change => {
+                        if (change.type !== 'added') return;
+                        const data = change.doc.data() || {};
+                        const createdAt = data.createdAt && typeof data.createdAt.toMillis === 'function'
+                            ? data.createdAt.toMillis()
+                            : (data.createdAt ? new Date(data.createdAt).getTime() : Date.now());
+                        if (data.status !== 'ringing' || Date.now() - createdAt > 60000) return;
+                        const callUrl = `team-meet-call.html?chat=${encodeURIComponent(data.callerId || '')}&call=${encodeURIComponent(change.doc.id)}&role=callee&type=${encodeURIComponent(data.callType || 'audio')}`;
+                        const openCall = () => { window.location.href = callUrl; };
+                        if ('Notification' in window && Notification.permission === 'granted') {
+                            const notification = new Notification(data.callerName || 'Incoming call', {
+                                body: `${data.callType === 'video' ? 'Video' : 'Audio'} call`,
+                                tag: `incoming-call-${change.doc.id}`
+                            });
+                            notification.onclick = () => {
+                                window.focus();
+                                notification.close();
+                                openCall();
+                            };
+                        }
+                    });
+                }, error => {
+                    console.error('Incoming direct-call listener failed:', error);
+                    _incomingCallUnsub = null;
+                });
+        }
         firebase.auth().onAuthStateChanged((user) => {
             if (!user) {
                 window.location.replace('index.html');
@@ -1014,6 +1048,8 @@ body.custom-image-background::before {
                 localStorage.setItem('currentUserEmail', user.email || '');
                 localStorage.setItem('currentUserUid', user.uid);
                 document.documentElement.classList.remove('auth-pending');
+                subscribeNotificationsRealtime();
+                subscribeIncomingDirectCalls();
             });
         } else {
             window.location.replace('index.html');
@@ -1070,7 +1106,7 @@ body.custom-image-background::before {
                 const unread = !it.read;
                 const time = it.createdAt && it.createdAt.toDate ? it.createdAt.toDate().toLocaleString() : (it.createdAt || '');
                 return `
-                    <div style="padding:10px;border-radius:8px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;">
+                    <div onclick="${it.type === 'team_call' && it.callId ? `window.location.href='team-meet-call.html?chat=${encodeURIComponent(it.from || '')}&call=${encodeURIComponent(it.callId)}&role=callee&type=${encodeURIComponent(it.callType || 'audio')}'` : ''}" style="padding:10px;border-radius:8px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.03);background:transparent;${it.type === 'team_call' && it.callId ? 'cursor:pointer;' : ''}">
                         <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
                             <div style="flex:1">
                                 <div style="font-weight:700;color:${unread? '#fff':'#9ca3af'}">${it.subject || it.title || 'Notification'}</div>
@@ -1224,6 +1260,7 @@ body.custom-image-background::before {
         let _notifPollingId = null;
         let _notifUnsubPersonal = null;
         let _notifUnsubAll = null;
+        let _incomingCallUnsub = null;
 
         function updateBadgeCount(count) {
             const badge = document.getElementById('notifBadge');
@@ -1307,7 +1344,12 @@ body.custom-image-background::before {
 
         // Cleanup on unload
         window.addEventListener('beforeunload', function(){
-            try { if (_notifUnsubPersonal) _notifUnsubPersonal(); if (_notifUnsubAll) _notifUnsubAll(); stopNotificationPolling(); } catch(e){}
+            try {
+                if (_notifUnsubPersonal) _notifUnsubPersonal();
+                if (_notifUnsubAll) _notifUnsubAll();
+                if (_incomingCallUnsub) _incomingCallUnsub();
+                stopNotificationPolling();
+            } catch(e){}
         });
 
         // Theme mode system
