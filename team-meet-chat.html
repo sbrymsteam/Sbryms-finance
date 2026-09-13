@@ -1186,6 +1186,7 @@
       { name: 'Md Delowar Husain', email: 'mddelowarhusain@gmail.com', photo: '' },
       { name: 'Arafathusainkamil', email: 'arafathusainkamil@gmail.com', photo: '' }
     ];
+    const senderProfiles = new Map();
 
     const params = new URLSearchParams(window.location.search);
     const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -1291,6 +1292,23 @@
         console.error(`Could not read saved profile for ${email}:`, error);
         return {};
       }
+
+      async function loadSenderProfiles() {
+        try {
+          const snapshot = await db.collection('users').limit(100).get();
+          snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            const email = String(data.email || '').trim().toLowerCase();
+            if (!email) return;
+            senderProfiles.set(email, {
+              name: data.name || data.displayName || '',
+              photo: data.photo || data.profilePhoto || data.photoURL || data.avatar || ''
+            });
+          });
+        } catch (error) {
+          console.error('Could not load group sender profiles:', error);
+        }
+      }
     }
 
     function getPresenceDate(value) {
@@ -1344,15 +1362,19 @@
       const senderEmail = String(message.senderEmail || '').trim();
       const emailName = senderEmail ? senderEmail.split('@')[0].replace(/[._-]/g, ' ') : '';
       const savedAccount = getSavedProfileAccount(senderEmail);
+      const firestoreProfile = senderProfiles.get(senderEmail) || {};
       const knownMember = members.find(member =>
         String(member.email || '').trim().toLowerCase() === senderEmail.toLowerCase()
       );
       const currentProfile = getCurrentSenderProfile();
-      const rawName = message.senderName || knownMember?.name || savedAccount.name || emailName || message.sender || 'Member';
+      const messageName = String(message.senderName || '').trim();
+      const rawName = !messageName || /^(you|me|member)$/i.test(messageName)
+        ? (firestoreProfile.name || knownMember?.name || savedAccount.name || emailName || message.sender || 'Member')
+        : messageName;
       const name = /^(you|me)$/i.test(String(rawName).trim())
         ? currentProfile.name
         : rawName;
-      const photo = message.senderPhoto || knownMember?.photo || savedAccount.photo || buildAvatarSvg(name);
+      const photo = message.senderPhoto || firestoreProfile.photo || knownMember?.photo || savedAccount.photo || buildAvatarSvg(name);
       return `
         <div class="group-message-profile sender">
           <span class="sender-avatar"><img src="${photo}" alt="${name} profile"></span>
@@ -1363,9 +1385,10 @@
 
     function getCurrentSenderProfile() {
       const savedAccount = getSavedProfileAccount(currentUserEmail);
+      const firestoreProfile = senderProfiles.get(currentUserEmail) || {};
       return {
-        name: localStorage.getItem('currentUserName') || savedAccount.name || 'Member',
-        photo: savedAccount.photo || ''
+        name: localStorage.getItem('currentUserName') || firestoreProfile.name || savedAccount.name || currentUserEmail.split('@')[0] || 'Member',
+        photo: firestoreProfile.photo || savedAccount.photo || ''
       };
     }
 
@@ -2842,6 +2865,8 @@
       const cachedMessages = getMessages();
       renderMessages(cachedMessages);
       lastRenderedMessageIds = new Set(cachedMessages.map(message => message.id));
+      await loadSenderProfiles();
+      renderMessages(cachedMessages);
       await loadSelectedMemberFromFirestore();
       renderProfile();
       const initialMessages = await loadMessagesFromFirestore();
