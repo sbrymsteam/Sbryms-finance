@@ -309,11 +309,14 @@
       display: block;
     }
     .group-message-profile {
-      display: inline-flex;
+      display: flex;
       align-items: center;
-      margin: 0 0 4px 4px;
-      font-size: 10px;
-      line-height: 1;
+      gap: 6px;
+      margin: 0 0 4px 2px;
+      color: rgba(255,255,255,0.72);
+      font-size: 11px;
+      line-height: 1.1;
+      font-weight: 600;
     }
     .group-message-profile .sender-avatar {
       width: 20px;
@@ -1338,13 +1341,26 @@
       if (!isGroupChat || isMe) return '';
       const senderEmail = String(message.senderEmail || '').trim();
       const emailName = senderEmail ? senderEmail.split('@')[0].replace(/[._-]/g, ' ') : '';
-      const name = message.senderName || emailName || message.sender || 'Member';
-      const photo = message.senderPhoto || buildAvatarSvg(name);
+      const savedAccount = getSavedProfileAccount(senderEmail);
+      const knownMember = members.find(member =>
+        String(member.email || '').trim().toLowerCase() === senderEmail.toLowerCase()
+      );
+      const name = message.senderName || knownMember?.name || savedAccount.name || emailName || message.sender || 'Member';
+      const photo = message.senderPhoto || knownMember?.photo || savedAccount.photo || buildAvatarSvg(name);
       return `
         <div class="group-message-profile sender">
-          <span class="sender-avatar"><img src="${photo}" alt="Member profile"></span>
+          <span class="sender-avatar"><img src="${photo}" alt="${name} profile"></span>
+          <span>${name}</span>
         </div>
       `;
+    }
+
+    function getCurrentSenderProfile() {
+      const savedAccount = getSavedProfileAccount(currentUserEmail);
+      return {
+        name: localStorage.getItem('currentUserName') || savedAccount.name || 'Member',
+        photo: savedAccount.photo || ''
+      };
     }
 
     function getDefaultMessages() {
@@ -2170,7 +2186,8 @@
         id: `msg-${Date.now()}-${Math.random().toString(16).slice(2)}`,
         sender: 'me',
         senderEmail: currentUserEmail,
-        senderName: 'You',
+        senderName: getCurrentSenderProfile().name,
+        senderPhoto: getCurrentSenderProfile().photo,
         self: true,
         status: 'sent',
         text,
@@ -2212,7 +2229,8 @@
           id: `call-${Date.now()}`,
           sender: 'me',
           senderEmail: currentUserEmail,
-          senderName: 'You',
+          senderName: getCurrentSenderProfile().name,
+          senderPhoto: getCurrentSenderProfile().photo,
           self: true,
           type: 'call-invite',
           callType: type,
@@ -2510,7 +2528,8 @@
         id: `voice-${Date.now()}-${Math.random().toString(16).slice(2)}`,
         sender: 'me',
         senderEmail: currentUserEmail,
-        senderName: 'You',
+        senderName: getCurrentSenderProfile().name,
+        senderPhoto: getCurrentSenderProfile().photo,
         self: true,
         status: 'sent',
         type: 'voice',
@@ -2661,7 +2680,8 @@
           id: `attachment-${Date.now()}-${Math.random().toString(16).slice(2)}`,
           sender: 'me',
           senderEmail: currentUserEmail,
-          senderName: 'You',
+          senderName: getCurrentSenderProfile().name,
+          senderPhoto: getCurrentSenderProfile().photo,
           self: true,
           status: 'sent',
           type: 'attachment',
