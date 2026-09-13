@@ -1837,12 +1837,17 @@
       localStorage.setItem(storageKey, JSON.stringify([...getMessages(), message]));
       messageWriteQueue = messageWriteQueue
         .catch(error => console.error('Previous message write failed:', error))
-        .then(() => conversationRef.set({
-          conversationId,
-          participants: [currentUserEmail, selectedMember.email].filter(Boolean),
-          messages: firebase.firestore.FieldValue.arrayUnion(message),
-          updatedAt: new Date()
-        }, { merge: true }))
+        .then(() => db.runTransaction(async transaction => {
+          const snapshot = await transaction.get(conversationRef);
+          const latest = snapshot.exists ? (snapshot.data().messages || []) : [];
+          if (latest.some(item => item.id === message.id)) return;
+          transaction.set(conversationRef, {
+            conversationId,
+            participants: [currentUserEmail, selectedMember.email].filter(Boolean),
+            messages: [...latest, message],
+            updatedAt: new Date()
+          }, { merge: true });
+        }))
         .catch(error => {
           console.error('Failed to deliver new message:', error);
           showAttachmentNotice('Message could not be delivered. Please try again.');
@@ -2314,10 +2319,8 @@
         let firestoreMessages = doc.data().messages || [];
         const localMessages = getMessages();
         const firestoreMessageIds = new Set(firestoreMessages.map(message => message.id));
-        const pendingLocalMessages = localMessages.filter(message =>
-          pendingMessageIds.has(message.id) && !firestoreMessageIds.has(message.id)
-        );
-        firestoreMessages = [...firestoreMessages, ...pendingLocalMessages];
+        const localOnlyMessages = localMessages.filter(message => !firestoreMessageIds.has(message.id));
+        firestoreMessages = [...firestoreMessages, ...localOnlyMessages];
         firestoreMessageIds.forEach(id => pendingMessageIds.delete(id));
         const newIncoming = firestoreMessages.filter(message =>
           !isMessageFromCurrentUser(message) &&
@@ -2329,10 +2332,8 @@
         firestoreMessages = markPrivateMessagesSeen(firestoreMessages);
         newIncoming.forEach(showMessageNotification);
         lastRenderedMessageIds = new Set(firestoreMessages.map(message => message.id));
-        if (firestoreMessages.length) {
-          localStorage.setItem(storageKey, JSON.stringify(firestoreMessages));
-          renderMessages(firestoreMessages);
-        }
+        localStorage.setItem(storageKey, JSON.stringify(firestoreMessages));
+        renderMessages(firestoreMessages);
       }, (error) => {
         console.error('Snapshot error:', error);
         renderMessages(getMessages());
