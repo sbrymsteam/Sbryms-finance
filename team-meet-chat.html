@@ -1332,15 +1332,20 @@
 
     function renderProfile() {
       const chip = document.getElementById('profileChip');
-      const avatarSrc = selectedMember.photo || buildAvatarSvg(selectedMember.name);
-      const avatar = `<img src="${avatarSrc}" alt="${selectedMember.name}">`;
-      const profileName = isSelfChat ? `${selectedMember.name} <span class="you-badge">You</span>` : selectedMember.name;
+      if (!chip) return;
+      const fallbackName = isGroupChat
+        ? 'Team Group Chat'
+        : (localStorage.getItem('selectedProfileName') || chatEmail.split('@')[0] || 'Member');
+      const memberName = String(selectedMember?.name || fallbackName).trim() || fallbackName;
+      const avatarSrc = selectedMember?.photo || buildAvatarSvg(memberName);
+      const avatar = `<img src="${avatarSrc}" alt="${memberName}">`;
+      const profileName = isSelfChat ? `${memberName} <span class="you-badge">You</span>` : memberName;
 
       chip.innerHTML = `
         <div class="avatar">${avatar}</div>
         <div class="meta">
           <h1>${profileName}</h1>
-          <p class="profile-status ${selectedMember.status === 'online' ? 'online' : ''}">${isGroupChat ? 'All members can join this group chat' : (isSelfChat ? 'Your saved messages' : formatPresence(selectedMember))}</p>
+          <p class="profile-status ${selectedMember?.status === 'online' ? 'online' : ''}">${isGroupChat ? 'All members can join this group chat' : (isSelfChat ? 'Your saved messages' : formatPresence(selectedMember || {}))}</p>
         </div>
       `;
     }
@@ -2877,6 +2882,7 @@
       listenForIncomingCalls();
     }
 
+    renderProfile();
     initializeChat();
   </script>
 </body>
