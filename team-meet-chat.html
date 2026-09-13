@@ -2200,7 +2200,7 @@
       renderMessages(nextMessages);
     }
 
-    function openCall(type) {
+    async function openCall(type) {
       localStorage.setItem('selectedProfileName', selectedMember.name || 'Member');
       localStorage.setItem('selectedProfileEmail', selectedMember.email || '');
       localStorage.setItem('selectedProfilePhoto', selectedMember.photo || '');
@@ -2228,7 +2228,7 @@
           title: 'Team group call',
           message: `${type === 'video' ? 'Video' : 'Audio'} group call started`
         });
-        db.collection('calls').doc(groupCallId).set({
+        await db.collection('calls').doc(groupCallId).set({
           groupId: 'team-group',
           roomId,
           callerId: currentUserEmail,
@@ -2236,7 +2236,10 @@
           callType: type,
           status: 'ringing',
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).catch(error => console.error('Failed to publish group call:', error));
+        }).catch(error => {
+          console.error('Failed to publish group call:', error);
+          throw error;
+        });
         const url = `team-meet-call.html?chat=team-group&group=true&room=${encodeURIComponent(roomId)}&role=caller&type=${type}`;
         window.location.href = url;
         return;

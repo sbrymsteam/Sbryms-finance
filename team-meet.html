@@ -808,7 +808,7 @@
       window.location.replace(chatUrl.href);
     }
 
-    function openGroupCall(type) {
+    async function openGroupCall(type) {
       const savedGroupPhoto = localStorage.getItem('teamGroupChatPhoto') || createGroupAvatarDataUrl();
       const currentUserEmail = (localStorage.getItem('currentUserEmail') || 'currentuser@sbryms.com').trim().toLowerCase();
       const roomId = `group-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -827,7 +827,7 @@
         time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
         reactions: {}
       };
-      db.collection('calls').doc(groupCallId).set({
+      await db.collection('calls').doc(groupCallId).set({
         groupId: 'team-group',
         roomId,
         callerId: currentUserEmail,
@@ -835,7 +835,10 @@
         callType: type,
         status: 'ringing',
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).catch(error => console.error('Failed to publish group call:', error));
+      }).catch(error => {
+        console.error('Failed to publish group call:', error);
+        throw error;
+      });
       db.collection('notifications').add({
         to: 'all',
         from: currentUserEmail,
