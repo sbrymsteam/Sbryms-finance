@@ -1746,8 +1746,46 @@
       return updated;
     }
 
+    function markPrivateMessagesSeen(messages) {
+      if (isGroupChat || !currentUserEmail) return messages;
+      const profile = getGroupReadProfile();
+      const latestIncomingIndex = messages.reduce((lastIndex, message, index) =>
+        !isMessageFromCurrentUser(message) && !message.deleted ? index : lastIndex, -1);
+      if (latestIncomingIndex < 0) return messages;
+      let changed = false;
+      const updated = messages.map((message, index) => {
+        const readBy = { ...(message.readBy || {}) };
+        if (!isMessageFromCurrentUser(message) && readBy[currentUserEmail] && index !== latestIncomingIndex) {
+          delete readBy[currentUserEmail];
+          changed = true;
+        }
+        if (index === latestIncomingIndex
+          && (!readBy[currentUserEmail]
+            || readBy[currentUserEmail].name !== profile.name
+            || readBy[currentUserEmail].photo !== profile.photo)) {
+          readBy[currentUserEmail] = { email: currentUserEmail, ...profile };
+          changed = true;
+        }
+        return { ...message, readBy };
+      });
+      if (!changed) return updated;
+      localStorage.setItem(storageKey, JSON.stringify(updated));
+      db.runTransaction(async transaction => {
+        const snapshot = await transaction.get(conversationRef);
+        const latest = snapshot.exists ? (snapshot.data().messages || []) : [];
+        const merged = latest.map(item => {
+          const message = updated.find(candidate => candidate.id === item.id);
+          return message
+            ? { ...item, readBy: { ...(item.readBy || {}), ...message.readBy } }
+            : item;
+        });
+        transaction.update(conversationRef, { messages: merged });
+      }).catch(error => console.error('Could not save private message seen receipt:', error));
+      return updated;
+    }
+
     function renderSeenBy(message, isMe) {
-      if (!isGroupChat || !message.readBy) return '';
+      if (!message.readBy) return '';
       const readers = Object.values(message.readBy)
         .filter(reader => reader && reader.email && reader.email !== currentUserEmail)
         .slice(-5);
@@ -2275,6 +2313,7 @@
         );
         firestoreMessages = markIncomingMessagesRead(firestoreMessages);
         firestoreMessages = markGroupMessagesSeen(firestoreMessages);
+        firestoreMessages = markPrivateMessagesSeen(firestoreMessages);
         newIncoming.forEach(showMessageNotification);
         lastRenderedMessageIds = new Set(firestoreMessages.map(message => message.id));
         if (firestoreMessages.length) {
