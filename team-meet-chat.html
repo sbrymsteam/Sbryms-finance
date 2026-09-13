@@ -1844,13 +1844,17 @@
     function saveNewMessage(message) {
       localStorage.setItem(storageKey, JSON.stringify([...getMessages(), message]));
       messageCollectionRef.doc(message.id).set({
-        ...message,
-        conversationId,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      })
+          ...message,
+          conversationId,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        })
         .catch(error => {
-          console.error('Failed to deliver new message:', error);
-          showAttachmentNotice('Message could not be delivered. Please try again.');
+          console.warn('Realtime message path failed; using conversation fallback:', error);
+          return saveMessages([...getMessages(), message])
+            .catch(fallbackError => {
+              console.error('Failed to deliver new message:', fallbackError);
+              showAttachmentNotice('Message could not be delivered. Please try again.');
+            });
         });
     }
 
