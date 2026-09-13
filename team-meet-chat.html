@@ -1291,10 +1291,11 @@
     async function loadSelectedMemberFromFirestore() {
       if (isGroupChat) return;
       try {
-        const snapshot = await db.collection('users').limit(100).get();
-        const profileDoc = snapshot.docs.find(doc =>
-          String(doc.data().email || '').trim().toLowerCase() === normalizedTargetEmail
-        );
+        const snapshot = await db.collection('users')
+          .where('email', '==', normalizedTargetEmail)
+          .limit(1)
+          .get();
+        const profileDoc = snapshot.docs[0] || null;
         const savedAccount = getSavedProfileAccount(chatEmail);
         const savedName = localStorage.getItem('selectedProfileName') || savedAccount.name;
         if (profileDoc) {
@@ -1333,8 +1334,9 @@
     }
 
     async function loadSenderProfiles() {
+        if (!isGroupChat) return;
         try {
-          const snapshot = await db.collection('users').limit(100).get();
+            const snapshot = await db.collection('users').limit(100).get();
           snapshot.docs.forEach(doc => {
             const data = doc.data();
             const email = String(data.email || '').trim().toLowerCase();
@@ -3037,11 +3039,12 @@
       const cachedMessages = getMessages();
       renderMessages(cachedMessages);
       lastRenderedMessageIds = new Set(cachedMessages.map(message => message.id));
-      await loadSenderProfiles();
+      const profileLoad = loadSenderProfiles();
+      const memberLoad = loadSelectedMemberFromFirestore();
+      const messageLoad = loadMessagesFromFirestore();
       renderMessages(cachedMessages);
-      await loadSelectedMemberFromFirestore();
       renderProfile();
-      const initialMessages = await loadMessagesFromFirestore();
+      const [, , initialMessages] = await Promise.all([profileLoad, memberLoad, messageLoad]);
       renderMessages(initialMessages);
       lastRenderedMessageIds = new Set(initialMessages.map(message => message.id));
       requestBrowserNotifications();
