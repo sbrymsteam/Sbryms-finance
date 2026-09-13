@@ -2810,6 +2810,9 @@
         window.location.replace('index.html');
         return;
       }
+      const cachedMessages = getMessages();
+      renderMessages(cachedMessages);
+      lastRenderedMessageIds = new Set(cachedMessages.map(message => message.id));
       await loadSelectedMemberFromFirestore();
       renderProfile();
       const initialMessages = await loadMessagesFromFirestore();
