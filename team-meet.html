@@ -453,7 +453,11 @@
     function loadMembersCache() {
       try {
         const cachedMembers = JSON.parse(localStorage.getItem(membersCacheKey()) || '[]');
-        return Array.isArray(cachedMembers) ? cachedMembers : [];
+        return Array.isArray(cachedMembers)
+          ? cachedMembers
+            .filter(member => member && typeof member === 'object' && String(member.email || '').trim())
+            .map(member => normalizeMember(member))
+          : [];
       } catch (error) {
         console.error('Could not read cached Team Meet members:', error);
         return [];
@@ -633,10 +637,13 @@
 
     function renderMembers() {
       const list = document.getElementById('memberList');
+      if (!list) return;
       if (!members.length) {
         list.innerHTML = '<div class="member-list-state">No members found.</div>';
         return;
       }
+      const validMembers = members.filter(member => member && typeof member === 'object' && String(member.email || '').trim());
+      members.splice(0, members.length, ...validMembers);
       members.forEach(member => {
         member.status = getMemberStatus(member);
         const latestMessage = member.latestActivity || getLatestMessage(getLocalMessages(member.email));
