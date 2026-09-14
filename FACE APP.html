@@ -877,12 +877,12 @@ body.custom-image-background::before {
                            <path d="M19 4v4M17 6h4"></path>
                        </svg>
                     </div><h3>My Profile</h3></div>
-                    <div class="card" onclick="window.location.href='security.html'" style="cursor:pointer"><div class="icon-box c-10">
+                    <div class="card" onclick="openSettings()" style="cursor:pointer"><div class="icon-box c-10">
                         <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M12 2l7 4v6c0 5-3.58 9.74-7 10-3.42-.26-7-5-7-10V6l7-4z"></path>
-                            <path d="M12 11v3"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 1.7-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V20h-2.4v-.2a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.7-1.7.06-.06A1.7 1.7 0 0 0 8.4 15a1.7 1.7 0 0 0-1.56-1.03h-.2v-2.4h.2A1.7 1.7 0 0 0 8.4 10a1.7 1.7 0 0 0-.34-1.88L8 8.06l1.7-1.7.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V5h2.4v.2A1.7 1.7 0 0 0 16.1 6.76a1.7 1.7 0 0 0 1.88-.34l.06-.06 1.7 1.7-.06.06A1.7 1.7 0 0 0 19.4 10a1.7 1.7 0 0 0 1.56 1.03h.2v2.4h-.2A1.7 1.7 0 0 0 19.4 15z"></path>
                         </svg>
-                    </div><h3>Security</h3></div>
+                    </div><h3>Settings</h3></div>
         </div>
 
         <!-- deposit icon controls: change / restore -->
@@ -914,6 +914,14 @@ body.custom-image-background::before {
                         <button class="theme-btn active" data-theme="light" onclick="toggleTheme('light')">Light</button>
                         <button class="theme-btn" data-theme="dark" onclick="toggleTheme('dark')">Dark</button>
                     </div>
+                </div>
+
+                <div class="settings-row">
+                    <div>
+                        <strong>Security</strong>
+                        <span>Manage account security settings</span>
+                    </div>
+                    <button class="theme-btn" type="button" onclick="window.location.href='security.html'">Open</button>
                 </div>
 
                 <div class="background-section-container">
