@@ -55,6 +55,12 @@
       text-decoration: none; font-size: 12px;
     }
     .choice.active { color: #fff; background: #df146e; border-color: #df146e; }
+    .preset-grid, .ringtone-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; padding: 10px 0 14px; }
+    .preset, .ringtone { min-height: 42px; border: 1px solid rgba(255,255,255,.16); border-radius: 9px; color: #fff; cursor: pointer; font-size: 11px; }
+    .preset.active, .ringtone.active { outline: 2px solid #fff; outline-offset: 1px; }
+    .ringtone { color: #dce7ff; background: rgba(255,255,255,.07); }
+    .ringtone small { display: block; margin-top: 3px; color: #aeb9ce; font-size: 10px; }
+    .background-row, .ringtone-row { display: block; padding-bottom: 4px; }
     .toggle { width: 38px; height: 22px; padding: 3px; border: 0; border-radius: 20px; background: #536077; cursor: pointer; }
     .toggle::after { content: ""; display: block; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; }
     .toggle.on { background: #df146e; }
@@ -96,6 +102,29 @@
     </div>
 
     <div class="section">
+      <p class="section-title">Personalization</p>
+      <div class="row background-row">
+        <div><strong>Background</strong><small>Choose the app wallpaper</small></div>
+        <div class="preset-grid" id="backgroundPresets">
+          <button class="preset" data-bg="pinkBlue" style="background:linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5)">Pink + Blue</button>
+          <button class="preset" data-bg="orangeBlue" style="background:linear-gradient(135deg,#ff7a18,#ffb347,#2193b0)">Orange + Blue</button>
+          <button class="preset" data-bg="mintPurple" style="background:linear-gradient(135deg,#43e97b,#38f9d7,#7f53ac)">Mint + Purple</button>
+          <button class="preset" data-bg="lavender" style="background:linear-gradient(135deg,#c471f5,#fa71cd,#12c2e9)">Lavender</button>
+          <button class="preset" data-bg="skyNight" style="background:linear-gradient(135deg,#141e30,#243b55,#00c6ff)">Blue Night</button>
+          <button class="preset" data-bg="solidBlack" style="background:#000">Black</button>
+        </div>
+      </div>
+      <div class="row ringtone-row">
+        <div><strong>Call ringtone</strong><small>Preview and choose incoming call sound</small></div>
+        <div class="ringtone-grid" id="ringtoneOptions">
+          <button class="ringtone" data-ringtone="dj-jazz-2">DJ Jazz 2<small>Built-in</small></button>
+          <button class="ringtone" data-ringtone="uploaded-1">Audio 1<small>Uploaded</small></button>
+          <button class="ringtone" data-ringtone="uploaded-2">Audio 2<small>Uploaded</small></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
       <p class="section-title">Account</p>
       <div class="row">
         <div><strong>Security</strong><small>Password and account protection</small></div>
@@ -111,6 +140,39 @@
   <script src="assets/background-settings.js"></script>
   <script>
     const theme = localStorage.getItem('theme') || 'light';
+    const backgroundPresets = {
+      pinkBlue: 'linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5)',
+      orangeBlue: 'linear-gradient(135deg,#ff7a18,#ffb347,#2193b0)',
+      mintPurple: 'linear-gradient(135deg,#43e97b,#38f9d7,#7f53ac)',
+      lavender: 'linear-gradient(135deg,#c471f5,#fa71cd,#12c2e9)',
+      skyNight: 'linear-gradient(135deg,#141e30,#243b55,#00c6ff)',
+      solidBlack: '#000000'
+    };
+    const ringtoneFiles = {
+      'uploaded-1': 'assets/ringtone-upload-1.mp3',
+      'uploaded-2': 'assets/ringtone-upload-2.mp3'
+    };
+    const selectBackground = key => {
+      localStorage.setItem('appBackgroundPreset', key);
+      document.documentElement.style.setProperty('--motion-gradient', backgroundPresets[key]);
+      document.querySelectorAll('[data-bg]').forEach(button => button.classList.toggle('active', button.dataset.bg === key));
+    };
+    document.querySelectorAll('[data-bg]').forEach(button => {
+      button.addEventListener('click', () => selectBackground(button.dataset.bg));
+    });
+    const previewRingtone = key => {
+      localStorage.setItem('callRingtone', key);
+      document.querySelectorAll('[data-ringtone]').forEach(button => button.classList.toggle('active', button.dataset.ringtone === key));
+      const file = ringtoneFiles[key];
+      if (file) {
+        const audio = new Audio(file);
+        audio.volume = 0.7;
+        audio.play().catch(error => console.warn('Ringtone preview could not play:', error));
+      }
+    };
+    document.querySelectorAll('[data-ringtone]').forEach(button => {
+      button.addEventListener('click', () => previewRingtone(button.dataset.ringtone));
+    });
     const applyTheme = value => {
       localStorage.setItem('theme', value);
       document.body.classList.toggle('light', value === 'light');
@@ -138,6 +200,9 @@
     };
     bindToggle('notificationToggle', 'browserNotificationsEnabled', true);
     bindToggle('badgeToggle', 'teamMeetBadgeEnabled', true);
+    selectBackground(localStorage.getItem('appBackgroundPreset') || 'pinkBlue');
+    const savedRingtone = localStorage.getItem('callRingtone') || 'dj-jazz-2';
+    document.querySelectorAll('[data-ringtone]').forEach(button => button.classList.toggle('active', button.dataset.ringtone === savedRingtone));
     document.getElementById('logoutButton').addEventListener('click', () => {
       localStorage.removeItem('currentUserEmail');
       localStorage.removeItem('currentUserUid');
