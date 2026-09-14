@@ -1009,6 +1009,14 @@
             const row = depositData[index];
             if (!row) return;
             const carryOver = getCarryOver(index);
+            if (carryOver.ids.length) {
+                const previousDue = depositData
+                    .filter(previous => carryOver.ids.includes(previous.id))
+                    .map(previous => previous.date)
+                    .join(', ');
+                showToast(`আগের due date (${previousDue})-এর fee ও fine আগে পরিশোধ করুন। এরপর এই পরের due কার্যকর হবে।`);
+                return;
+            }
             const currentFee = Number(row.fee) || 100;
             const currentFine = Number(row.fine) || getCurrentFine(row);
             const total = currentFee + currentFine + carryOver.fee + carryOver.fine;
