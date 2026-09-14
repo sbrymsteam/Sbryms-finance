@@ -355,7 +355,7 @@
                 <div class="filters">
                     <div>
                         <label for="yearFilter">Year</label>
-                        <select id="yearFilter" onchange="renderTable(); if (ALLOW_AUTOPROMPT) setTimeout(openChangeForFirstVisibleRow,0);"></select>
+                        <select id="yearFilter" onchange="handleYearChange(this.value);"></select>
                     </div>
                     <div>
                         <label>&nbsp;</label>
@@ -755,6 +755,15 @@
             yearFilter.value = currentYear;
 
             renderPeriodCards();
+        }
+
+        function handleYearChange(value) {
+            const selectedYear = Number(value);
+            if (!Number.isInteger(selectedYear)) return;
+            currentYear = selectedYear;
+            window.selectedPeriod = null;
+            renderTable();
+            if (ALLOW_AUTOPROMPT) setTimeout(openChangeForFirstVisibleRow, 0);
         }
 
         function getFixedDateLabel(dateValue) {
