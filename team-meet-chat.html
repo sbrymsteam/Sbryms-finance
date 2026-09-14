@@ -1487,10 +1487,23 @@
         if (!stored) {
           return getDefaultMessages();
         }
-        return JSON.parse(stored);
+        const messages = JSON.parse(stored);
+        return Array.isArray(messages) ? messages : getDefaultMessages();
       } catch (error) {
+        console.error('Could not read saved messages:', error);
         return getDefaultMessages();
       }
+    }
+
+    function getMessageDate(message = {}) {
+      const value = message.createdAt || message.timestamp || message.date;
+      if (value && typeof value.toDate === 'function') return value.toDate();
+      if (value && typeof value.toMillis === 'function') return new Date(value.toMillis());
+      if (value) {
+        const parsed = new Date(value);
+        if (!Number.isNaN(parsed.getTime())) return parsed;
+      }
+      return new Date();
     }
 
     function requestBrowserNotifications() {
