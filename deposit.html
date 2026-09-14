@@ -206,6 +206,74 @@
 </style>
 <link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
 <link rel="stylesheet" href="assets/bg.css">
+<style>
+    /* Deposit uses a light surface, so shared dark-theme overrides must not reduce contrast. */
+    body {
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%) !important;
+        color: #1f2937 !important;
+    }
+    .page-header {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border-bottom-color: #dbe3ef !important;
+    }
+    .page-header a,
+    .page-title,
+    .profile-name,
+    .stat-value,
+    td,
+    th,
+    .table-card,
+    .summary-card,
+    .stat-box,
+    .profile-chip,
+    .profile-chip span {
+        color: #1f2937 !important;
+    }
+    .subtitle,
+    .stat-title,
+    th,
+    .profile-email,
+    .filters label,
+    .grid-cols span {
+        color: #64748b !important;
+        opacity: 1 !important;
+    }
+    .summary-card,
+    .table-card {
+        background: #ffffff !important;
+        border-color: #dbe3ef !important;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08) !important;
+    }
+    .stat-box {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+    .profile-chip {
+        background: #ffffff !important;
+        border-color: #dbe3ef !important;
+    }
+    .profile-chip.active {
+        background: #eef2ff !important;
+        border-color: #8b5cf6 !important;
+    }
+    .filters select {
+        background-color: #ffffff !important;
+        color: #1f2937 !important;
+        border-color: #cbd5e1 !important;
+        background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%) !important;
+    }
+    .filters select option {
+        background: #ffffff !important;
+        color: #1f2937 !important;
+    }
+    table th,
+    table td {
+        border-color: #e2e8f0 !important;
+    }
+    .row-paid { color: #047857 !important; }
+    .row-unpaid { color: #b91c1c !important; }
+</style>
 </head>
 <body>
     <div class="page-header">
