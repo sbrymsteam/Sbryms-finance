@@ -223,21 +223,16 @@
             opacity: 0.96;
             filter: none;
         }
+        .menu-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.9;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
         .menu-icon::before,
-        .menu-icon::after {
-            content: "";
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 18px;
-            height: 1.8px;
-            background: currentColor;
-            border-radius: 999px;
-        }
-        .menu-icon::before {
-            top: 7px;
-            box-shadow: 0 5px 0 currentColor, 0 10px 0 currentColor;
-        }
         .menu-icon::after {
             display: none;
         }
@@ -748,7 +743,12 @@ body.custom-image-background::before {
                    </svg>
                    <span class="notification-badge" id="notifBadge" style="display:none">0</span>
                </div>
-               <div class="menu-icon" onclick="toggleSideMenu()" aria-label="Open menu"></div>
+               <div class="menu-icon" onclick="toggleSideMenu()" aria-label="Open settings menu" role="button" tabindex="0">
+                   <svg viewBox="0 0 24 24" aria-hidden="true">
+                       <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"></path>
+                       <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 1.7-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V20h-2.4v-.2a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.7-1.7.06-.06A1.7 1.7 0 0 0 8.4 15a1.7 1.7 0 0 0-1.56-1.03h-.2v-2.4h.2A1.7 1.7 0 0 0 8.4 10a1.7 1.7 0 0 0-.34-1.88L8 8.06l1.7-1.7.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V5h2.4v.2A1.7 1.7 0 0 0 16.1 6.76a1.7 1.7 0 0 0 1.88-.34l.06-.06 1.7 1.7-.06.06A1.7 1.7 0 0 0 19.4 10a1.7 1.7 0 0 0 1.56 1.03h.2v2.4h-.2A1.7 1.7 0 0 0 19.4 15z"></path>
+                   </svg>
+               </div>
             </div>
         </div>
     </div>
