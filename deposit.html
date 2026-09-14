@@ -374,6 +374,7 @@
     </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script>
         const firebaseConfig = {
@@ -389,6 +390,7 @@
         const PROFILE_ACCOUNTS_KEY = 'profile_accounts';
         const DEPOSIT_SELECTION_KEY = 'selected_deposit_profile';
         let registeredMemberAccounts = [];
+        let membersAuthReady = false;
 
         function getUserStoragePrefix() {
             const uid = localStorage.getItem('currentUserUid');
@@ -636,9 +638,40 @@
                 .join(' ') || 'Member';
         }
 
+        function ensureDepositRowsForProfiles(accounts) {
+            accounts.forEach(profile => {
+                if (depositData.some(row => row.profileEmail === profile.email)) return;
+                years.forEach(year => {
+                    months.forEach((month, monthIndex) => {
+                        const lastDay = getLastDayOfMonth(monthIndex, year);
+                        [`${month} 1-15`, `${month} 16-${lastDay}`].forEach(date => {
+                            depositData.push({
+                                id: id++,
+                                profileEmail: profile.email,
+                                year,
+                                date,
+                                name: profile.name,
+                                fee: '',
+                                fine: '',
+                                star: '',
+                                status: ''
+                            });
+                        });
+                    });
+                });
+            });
+        }
+
         async function loadRegisteredMembers() {
+            if (!membersAuthReady) return;
             try {
-                const snapshot = await membersDb.collection('users').orderBy('name').get();
+                let snapshot;
+                try {
+                    snapshot = await membersDb.collection('users').orderBy('name').get();
+                } catch (orderedQueryError) {
+                    console.warn('Ordered member query failed; loading users without ordering:', orderedQueryError);
+                    snapshot = await membersDb.collection('users').get();
+                }
                 registeredMemberAccounts = snapshot.docs.map(doc => {
                     const data = doc.data() || {};
                     const email = String(data.email || '').trim().toLowerCase();
@@ -648,8 +681,12 @@
                         name,
                         photo: data.photo || data.profilePhoto || data.photoURL || data.avatar || ''
                     };
-                }).filter(member => member.email);
+                }).filter(member => member.email)
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                ensureDepositRowsForProfiles(registeredMemberAccounts);
                 renderProfileStrip();
+                populateFilters();
+                renderTable();
             } catch (error) {
                 console.error('Could not load registered members for deposits:', error);
             }
@@ -1196,7 +1233,10 @@
         }
 
         renderProfileStrip();
-        loadRegisteredMembers();
+        firebase.auth().onAuthStateChanged(user => {
+            membersAuthReady = Boolean(user);
+            if (membersAuthReady) loadRegisteredMembers();
+        });
         populateFilters();
         renderYearSections();
         renderTable();
