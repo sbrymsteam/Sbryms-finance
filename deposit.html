@@ -440,7 +440,12 @@
 
         const profiles = getRegisteredProfiles();
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const years = [2022, 2023, 2024, 2025, 2026];
+        const firstDepositYear = 2022;
+        const currentCalendarYear = new Date().getFullYear();
+        const years = Array.from(
+            { length: Math.max(1, currentCalendarYear - firstDepositYear + 1) },
+            (_, index) => firstDepositYear + index
+        );
         let id = 1;
         const depositData = [];
         
@@ -591,9 +596,9 @@
                 });
             });
         });
-        const yearOptions = [2022, 2023, 2024, 2025, 2026];
+        const yearOptions = [...years];
         let editIndex = null;
-        let currentYear = 2026;
+        let currentYear = currentCalendarYear;
         let selectedProfileEmail = localStorage.getItem(DEPOSIT_SELECTION_KEY) || 'all';
 
         function getProfileAccounts() {
