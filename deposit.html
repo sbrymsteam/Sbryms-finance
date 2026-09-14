@@ -285,11 +285,11 @@
     .profile-chip {
         min-width: 132px !important;
         padding: 7px 10px !important;
-        border: 1px solid #eef2f7 !important;
+        border: 0 !important;
         border-radius: 12px !important;
         box-shadow: none !important;
     }
-    .profile-chip.active { border-color: #c7d2fe !important; box-shadow: none !important; transform: none !important; animation: none !important; }
+    .profile-chip.active { border: 0 !important; box-shadow: none !important; transform: none !important; animation: none !important; }
     .profile-avatar { width: 34px !important; height: 34px !important; border-radius: 10px !important; font-size: 13px !important; }
     .profile-name { font-size: 12px !important; font-weight: 600 !important; }
     .profile-email { font-size: 10px !important; }
@@ -396,14 +396,28 @@
             return { email: currentEmail, name, photo };
         }
 
-        const profiles = [
-            { email: 'shakil@gmail.com', name: 'Shakil' },
-            { email: 'bushra@gmail.com', name: 'Bushra' },
-            { email: 'rifat@gmail.com', name: 'Rifat' },
-            { email: 'yahya@gmail.com', name: 'Yahya' },
-            { email: 'mahdi@gmail.com', name: 'Mahdi' },
-            { email: 'sobuj@gmail.com', name: 'Sobuj' }
-        ];
+        function getRegisteredProfiles() {
+            let accounts = [];
+            try {
+                const saved = JSON.parse(localStorage.getItem(PROFILE_ACCOUNTS_KEY) || '[]');
+                accounts = Array.isArray(saved) ? saved : [];
+            } catch (error) {
+                console.error('Could not read registered profiles:', error);
+            }
+            const current = getCurrentProfile();
+            if (current.email && !accounts.some(account => account.email === current.email)) {
+                accounts.unshift(current);
+            }
+            return accounts
+                .filter(account => account && account.email)
+                .map(account => ({
+                    email: String(account.email).trim().toLowerCase(),
+                    name: account.name || account.displayName || account.email.split('@')[0].replace(/[._-]/g, ' '),
+                    photo: account.photo || account.profilePhoto || account.photoURL || ''
+                }));
+        }
+
+        const profiles = getRegisteredProfiles();
         const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const years = [2022, 2023, 2024, 2025, 2026];
         let id = 1;
@@ -572,27 +586,6 @@
             }
 
             const currentProfile = getCurrentProfile();
-            const depositAccounts = depositData.reduce((map, item) => {
-                if (!map[item.profileEmail]) {
-                    map[item.profileEmail] = {
-                        email: item.profileEmail,
-                        name: item.name || item.profileEmail.split('@')[0].replace(/[._-]/g, ' '),
-                        photo: ''
-                    };
-                }
-                return map;
-            }, {});
-
-            Object.values(depositAccounts).forEach(acc => {
-                const saved = accounts.find(savedAcc => savedAcc.email === acc.email);
-                if (saved) {
-                    acc = { ...acc, ...saved };
-                }
-                if (!accounts.some(saved => saved.email === acc.email)) {
-                    accounts.push(acc);
-                }
-            });
-
             if (currentProfile.email) {
                 const existingIndex = accounts.findIndex(acc => acc.email === currentProfile.email);
                 if (existingIndex >= 0) {
@@ -602,11 +595,18 @@
                 }
             }
 
-            return accounts.sort((a, b) => {
+            return accounts
+                .filter(account => account && account.email)
+                .map(account => ({
+                    ...account,
+                    name: account.name || account.displayName || account.email.split('@')[0].replace(/[._-]/g, ' '),
+                    photo: account.photo || account.profilePhoto || account.photoURL || ''
+                }))
+                .sort((a, b) => {
                 if (a.email === currentProfile.email) return -1;
                 if (b.email === currentProfile.email) return 1;
                 return a.name.localeCompare(b.name);
-            });
+                });
         }
 
         function renderProfileStrip() {
