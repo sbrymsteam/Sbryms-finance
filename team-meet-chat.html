@@ -641,6 +641,19 @@
       color: var(--muted);
       font-size: 9px;
     }
+    .message-date-divider {
+      display: flex;
+      justify-content: center;
+      margin: 14px 0 8px;
+    }
+    .message-date-divider span {
+      padding: 4px 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      color: var(--muted);
+      font-size: 10px;
+    }
     .deleted-message {
       color: rgba(255,255,255,0.62);
       font-style: italic;
@@ -2014,8 +2027,15 @@
 
     function renderMessages(messages = getMessages()) {
       const messagesEl = document.getElementById('messages');
+      let previousDateKey = '';
       messagesEl.innerHTML = messages.map((msg, index) => {
         const isMe = isMessageFromCurrentUser(msg);
+        const messageDate = getMessageDate(msg) || new Date();
+        const dateKey = messageDate.toISOString().slice(0, 10);
+        const dateMarkup = dateKey === previousDateKey ? '' : `
+          <div class="message-date-divider"><span>${messageDate.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
+        `;
+        previousDateKey = dateKey;
         const replyMarkup = msg.replyTo ? `
           <div class="reply-preview">
             <strong>Replying to ${msg.replyTo.senderName || 'message'}</strong>
@@ -2024,6 +2044,7 @@
         ` : '';
         if (msg.type === 'voice') {
           return `
+            ${dateMarkup}
             <div class="msg-row ${isMe ? 'me' : 'them'}" data-message-index="${index}">
               <div class="message-card">
                 ${renderGroupSenderProfile(msg, isMe)}
@@ -2050,6 +2071,7 @@
               ? `<div class="attachment-message"><video src="${msg.fileUrl}" controls preload="metadata"></video></div>`
               : `<a class="attachment-message attachment-file" href="${msg.fileUrl}" target="_blank" rel="noopener">📎 ${safeName}</a>`;
           return `
+            ${dateMarkup}
             <div class="msg-row ${isMe ? 'me' : 'them'}" data-message-index="${index}">
               <div class="message-stack">
                 <div class="message-card">
@@ -2072,6 +2094,7 @@
           const callDuration = msg.duration || '00:00';
           const hasCallDuration = Number(msg.durationSeconds) > 0 || callDuration !== '00:00';
           return `
+            ${dateMarkup}
             <div class="msg-row ${isMe ? 'me' : 'them'}" data-message-index="${index}">
               <div class="message-stack">
                 <div class="message-card">
@@ -2093,6 +2116,7 @@
 
         if (msg.type === 'call-invite') {
           return `
+            ${dateMarkup}
             <div class="msg-row ${isMe ? 'me' : 'them'}" data-message-index="${index}">
               <div class="message-stack">
                 <div class="message-card">
@@ -2121,6 +2145,7 @@
         `;
 
         return `
+          ${dateMarkup}
           <div class="msg-row ${isMe ? 'me' : 'them'}" data-message-index="${index}">
             <div class="message-stack">
               <div class="message-card">
