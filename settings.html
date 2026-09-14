@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SBRYMS Finance - Settings</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 18px 14px 36px;
+      color: #eef3ff;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #071124;
+      background-image: var(--motion-gradient, linear-gradient(135deg, #141e30, #243b55));
+      background-attachment: fixed;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background: rgba(2, 7, 20, .58);
+      z-index: -1;
+    }
+    .page { width: min(100%, 560px); margin: 0 auto; }
+    .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+    .back, .icon-button {
+      width: 40px; height: 40px; border: 1px solid rgba(255,255,255,.16);
+      border-radius: 12px; background: rgba(255,255,255,.08); color: inherit;
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 20px;
+    }
+    h1 { margin: 0; font-size: 25px; }
+    .subtitle { margin: 4px 0 0; color: #aeb9ce; font-size: 13px; }
+    .section {
+      margin-top: 14px; padding: 8px 16px; border: 1px solid rgba(255,255,255,.12);
+      border-radius: 16px; background: rgba(7, 17, 36, .74); backdrop-filter: blur(12px);
+    }
+    .section-title { margin: 12px 0 4px; color: #91a1bd; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; }
+    .row {
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+      min-height: 58px; border-top: 1px solid rgba(255,255,255,.08);
+    }
+    .row:first-of-type { border-top: 0; }
+    .row strong { display: block; font-size: 14px; }
+    .row small { display: block; margin-top: 3px; color: #9aa8bf; font-size: 12px; }
+    .actions { display: flex; gap: 6px; }
+    button { font: inherit; }
+    .choice, .open-link {
+      border: 1px solid rgba(255,255,255,.18); border-radius: 9px; padding: 7px 11px;
+      color: #dce7ff; background: rgba(255,255,255,.07); cursor: pointer;
+      text-decoration: none; font-size: 12px;
+    }
+    .choice.active { color: #fff; background: #df146e; border-color: #df146e; }
+    .toggle { width: 38px; height: 22px; padding: 3px; border: 0; border-radius: 20px; background: #536077; cursor: pointer; }
+    .toggle::after { content: ""; display: block; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .2s; }
+    .toggle.on { background: #df146e; }
+    .toggle.on::after { transform: translateX(16px); }
+    .danger { width: 100%; margin-top: 16px; border: 1px solid rgba(255,90,120,.35); border-radius: 12px; padding: 11px; color: #ffb4c3; background: rgba(160,20,55,.15); cursor: pointer; }
+    body.light { color: #172033; background: #eef3fb; }
+    body.light::before { background: rgba(255,255,255,.44); }
+    body.light .section { background: rgba(255,255,255,.78); border-color: rgba(20,35,60,.12); }
+    body.light .row { border-color: rgba(20,35,60,.1); }
+    body.light .subtitle, body.light .row small, body.light .section-title { color: #647089; }
+    body.light .choice, body.light .open-link, body.light .back, body.light .icon-button { color: #283650; background: rgba(255,255,255,.72); border-color: rgba(20,35,60,.15); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <button class="back" type="button" onclick="history.back()" aria-label="Back">‹</button>
+      <div><h1>Settings</h1><p class="subtitle">Manage your app preferences</p></div>
+    </header>
+
+    <div class="section">
+      <p class="section-title">Appearance</p>
+      <div class="row">
+        <div><strong>Theme</strong><small>Choose light or dark view</small></div>
+        <div class="actions"><button class="choice" data-theme-choice="light" type="button">Light</button><button class="choice" data-theme-choice="dark" type="button">Dark</button></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <p class="section-title">Notifications</p>
+      <div class="row">
+        <div><strong>Browser notifications</strong><small>Get instant message and call alerts</small></div>
+        <button class="toggle" id="notificationToggle" type="button" aria-label="Toggle browser notifications"></button>
+      </div>
+      <div class="row">
+        <div><strong>Team Meet badge</strong><small>Show unread count on dashboard</small></div>
+        <button class="toggle" id="badgeToggle" type="button" aria-label="Toggle Team Meet badge"></button>
+      </div>
+    </div>
+
+    <div class="section">
+      <p class="section-title">Account</p>
+      <div class="row">
+        <div><strong>Security</strong><small>Password and account protection</small></div>
+        <a class="open-link" href="security.html">Open</a>
+      </div>
+      <div class="row">
+        <div><strong>Profile</strong><small>Update your name and photo</small></div>
+        <a class="open-link" href="profile.html">Open</a>
+      </div>
+    </div>
+    <button class="danger" id="logoutButton" type="button">Log out</button>
+  </main>
+  <script src="assets/background-settings.js"></script>
+  <script>
+    const theme = localStorage.getItem('theme') || 'light';
+    const applyTheme = value => {
+      localStorage.setItem('theme', value);
+      document.body.classList.toggle('light', value === 'light');
+      document.querySelectorAll('[data-theme-choice]').forEach(button => {
+        button.classList.toggle('active', button.dataset.themeChoice === value);
+      });
+    };
+    document.querySelectorAll('[data-theme-choice]').forEach(button => {
+      button.addEventListener('click', () => applyTheme(button.dataset.themeChoice));
+    });
+    const bindToggle = (id, key, defaultValue) => {
+      const button = document.getElementById(id);
+      const update = value => {
+        button.classList.toggle('on', value);
+        button.setAttribute('aria-pressed', String(value));
+      };
+      const enabled = localStorage.getItem(key) === null ? defaultValue : localStorage.getItem(key) === 'true';
+      update(enabled);
+      button.addEventListener('click', async () => {
+        const next = !button.classList.contains('on');
+        if (key === 'browserNotificationsEnabled' && next && 'Notification' in window) await Notification.requestPermission();
+        localStorage.setItem(key, String(next));
+        update(next);
+      });
+    };
+    bindToggle('notificationToggle', 'browserNotificationsEnabled', true);
+    bindToggle('badgeToggle', 'teamMeetBadgeEnabled', true);
+    document.getElementById('logoutButton').addEventListener('click', () => {
+      localStorage.removeItem('currentUserEmail');
+      localStorage.removeItem('currentUserUid');
+      window.location.href = 'index.html';
+    });
+    applyTheme(theme);
+  </script>
+</body>
+</html>

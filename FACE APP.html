@@ -1547,15 +1547,7 @@ body.custom-image-background::before {
         }
 
         function openSettings() {
-            const modal = document.getElementById('settingsModal');
-            if (modal) {
-                updateSettingsControls();
-                const email = localStorage.getItem('currentUserEmail') || 'member@sbryms.com';
-                const modalEmail = document.getElementById('modalEmail');
-                if (modalEmail) modalEmail.textContent = email;
-                modal.style.display = 'flex';
-            }
-            closeSideMenu();
+            window.location.href = 'settings.html';
         }
 
         function closeSettingsModal() {
