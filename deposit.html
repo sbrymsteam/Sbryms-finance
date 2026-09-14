@@ -776,6 +776,44 @@
             return dateValue;
         }
 
+        function getRowDueDate(row) {
+            if (!row || !row.date) return null;
+            const monthIndex = months.indexOf(String(row.date).split(' ')[0]);
+            if (monthIndex < 0 || !Number.isInteger(Number(row.year))) return null;
+            const dueDay = String(row.date).includes('16-')
+                ? getLastDayOfMonth(monthIndex, Number(row.year))
+                : 15;
+            return new Date(Number(row.year), monthIndex, dueDay);
+        }
+
+        function getCurrentFine(row) {
+            const dueDate = getRowDueDate(row);
+            if (!dueDate || row.status === 'Paid') return Number(row.fine) || 0;
+            const today = new Date();
+            const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            if (todayDate <= dueDate) return 0;
+            return Math.floor((todayDate - dueDate) / 86400000) * 5;
+        }
+
+        function getCarryOver(index) {
+            const row = depositData[index];
+            const currentDueDate = getRowDueDate(row);
+            if (!row || !currentDueDate) return { fee: 0, fine: 0, ids: [] };
+            return depositData.reduce((carry, previous, previousIndex) => {
+                if (previousIndex === index
+                    || previous.profileEmail !== row.profileEmail
+                    || previous.status === 'Paid') return carry;
+                const previousDueDate = getRowDueDate(previous);
+                if (!previousDueDate || previousDueDate >= currentDueDate) return carry;
+                const previousFine = getCurrentFine(previous);
+                if (previousFine <= 0 && new Date() <= previousDueDate) return carry;
+                carry.fee += Number(previous.fee) || 100;
+                carry.fine += previousFine;
+                carry.ids.push(previous.id);
+                return carry;
+            }, { fee: 0, fine: 0, ids: [] });
+        }
+
         function getFilteredRows() {
             const yearFilter = document.getElementById('yearFilter');
             currentYear = Number(yearFilter.value);
@@ -877,8 +915,12 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#374151"/><path d="M20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#374151"/></svg>
                     </button>`;
 
-                const payCell = row.status !== 'Paid' && Number(feeValue) > 0
-                    ? `<button class="btn-pay" onclick="goToPaymentGatewayForIndex(${index})">Pay Now</button>`
+                const carryOver = getCarryOver(index);
+                const payableFee = Number(feeValue) + carryOver.fee;
+                const payableFine = Number(depositData[index].fine) + carryOver.fine;
+                const isOverdue = getRowDueDate(row) && new Date() > getRowDueDate(row);
+                const payCell = row.status !== 'Paid' && payableFee > 0
+                    ? `<button class="btn-pay" onclick="goToPaymentGatewayForIndex(${index})">${isOverdue ? 'Pay Next Due' : 'Pay Now'}</button>`
                     : '<span class="complete-text">Complete</span>';
 
                 const statusCell = row.status !== 'Paid' && Number(depositData[index].fine) > 0
@@ -1126,14 +1168,26 @@
         function goToPaymentGatewayForIndex(index) {
             const row = depositData[index] || {};
             try {
+                const carryOver = getCarryOver(index);
+                const currentFee = Number(row.fee) || 100;
+                const currentFine = Number(row.fine) || getCurrentFine(row);
+                const payableFee = currentFee + carryOver.fee;
+                const payableFine = currentFine + carryOver.fine;
                 // Save full row to localStorage so payment page can pre-fill every field
-                localStorage.setItem('pending_payment', JSON.stringify(row));
+                localStorage.setItem('pending_payment', JSON.stringify({
+                    ...row,
+                    fee: payableFee,
+                    fine: payableFine,
+                    carriedFee: carryOver.fee,
+                    carriedFine: carryOver.fine,
+                    carriedRowIds: carryOver.ids
+                }));
                 // Also mark which profile was selected for backward compatibility
                 if (row.profileEmail) localStorage.setItem(DEPOSIT_SELECTION_KEY, row.profileEmail);
                 const params = new URLSearchParams({
                     profile: row.profileEmail || '',
-                    fee: String(row.fee || 0),
-                    fine: String(row.fine || 0),
+                    fee: String(payableFee),
+                    fine: String(payableFine),
                     id: String(row.id || ''),
                     name: row.name || '',
                     date: row.date || '',
