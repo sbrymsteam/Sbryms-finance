@@ -920,7 +920,7 @@
                 const payableFine = Number(depositData[index].fine) + carryOver.fine;
                 const isOverdue = getRowDueDate(row) && new Date() > getRowDueDate(row);
                 const payCell = row.status !== 'Paid' && payableFee > 0
-                    ? `<button class="btn-pay" onclick="goToPaymentGatewayForIndex(${index})">${isOverdue ? 'Pay Next Due' : 'Pay Now'}</button>`
+                    ? `<button class="btn-pay" onclick="${isOverdue ? `showNextDueNotice(${index})` : `goToPaymentGatewayForIndex(${index})`}">${isOverdue ? 'Pay Next Due' : 'Pay Now'}</button>`
                     : '<span class="complete-text">Complete</span>';
 
                 const statusCell = row.status !== 'Paid' && Number(depositData[index].fine) > 0
@@ -1003,6 +1003,21 @@
             } catch (e) {
                 console.error('showToast error', e);
             }
+        }
+
+        function showNextDueNotice(index) {
+            const row = depositData[index];
+            if (!row) return;
+            const carryOver = getCarryOver(index);
+            const currentFee = Number(row.fee) || 100;
+            const currentFine = Number(row.fine) || getCurrentFine(row);
+            const total = currentFee + currentFine + carryOver.fee + carryOver.fine;
+            const today = new Date().toLocaleDateString([], {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric'
+            });
+            showToast(`এই due-এর fee ও fine ${today} তারিখের পরবর্তী due-এর সঙ্গে যোগ হয়েছে। মোট: ৳ ${total}। Payment gateway খোলা হয়নি।`);
         }
 
         // Simple confirm dialog replacement (non-blocking). onConfirm/onCancel are callbacks.
