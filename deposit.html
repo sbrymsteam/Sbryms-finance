@@ -304,8 +304,14 @@
     .stat-title { font-size: 10px !important; margin-bottom: 5px !important; }
     .stat-value { font-size: 15px !important; font-weight: 600 !important; }
     .table-card { overflow-x: auto; }
-    table { font-size: 11px !important; }
-    th, td { padding: 8px 7px !important; }
+    table { width: 100% !important; table-layout: fixed !important; font-size: 10px !important; }
+    th, td { padding: 7px 4px !important; white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis; }
+    th:nth-child(1), td:nth-child(1) { width: 23%; }
+    th:nth-child(2), td:nth-child(2) { width: 15%; }
+    th:nth-child(3), td:nth-child(3) { width: 10%; text-align: center; }
+    th:nth-child(4), td:nth-child(4) { width: 15%; }
+    th:nth-child(5), td:nth-child(5) { width: 19%; }
+    th:nth-child(6), td:nth-child(6) { width: 18%; }
     th { font-size: 9px !important; letter-spacing: .05em !important; }
     input, select { font-size: 12px !important; }
     .filters label { font-size: 10px !important; margin-bottom: 5px !important; }
@@ -445,9 +451,8 @@
         // Period card helpers (show two periods each month and highlight current)
         function pad(n){ return String(n).padStart(2,'0'); }
         function renderPeriodCards(){
-            const now = new Date();
-            const day = now.getDate();
-            window.selectedPeriod = day <= 15 ? 1 : 2;
+            // Show both billing periods so the second period uses each month's real last day.
+            window.selectedPeriod = null;
         }
         function setActivePeriodCard(n){
             window.selectedPeriod = n;
