@@ -475,6 +475,10 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                     <span>মোট পেমেন্ট:</span>
                     <span id="summaryTotal">০</span>
                 </div>
+                <div class="summary-row" id="coverageRow" style="display:none;">
+                    <span>কভারকৃত due:</span>
+                    <span id="summaryCoverage">০ মাস</span>
+                </div>
             </div>
 
             <!-- Buttons -->
@@ -721,6 +725,36 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             document.getElementById('summaryFee').textContent = fee;
             document.getElementById('summaryFine').textContent = fine;
             document.getElementById('summaryTotal').textContent = total;
+
+            const coverageRow = document.getElementById('coverageRow');
+            const summaryCoverage = document.getElementById('summaryCoverage');
+            if (!coverageRow || !summaryCoverage) return;
+
+            let pendingCount = 0;
+            let pendingDates = [];
+            try {
+                const pendingRaw = localStorage.getItem('pending_payment');
+                if (pendingRaw) {
+                    const pending = JSON.parse(pendingRaw);
+                    pendingCount = Number(pending.coveredDueCount || pending.carriedDueCount || pending.carriedCount || 0) || 0;
+                    pendingDates = Array.isArray(pending.coveredDueDates) ? pending.coveredDueDates : (Array.isArray(pending.carriedDueDates) ? pending.carriedDueDates : []);
+                }
+            } catch (e) {
+                console.warn('coverage summary parse error', e);
+            }
+
+            if (pendingCount > 0) {
+                coverageRow.style.display = 'flex';
+                summaryCoverage.textContent = `${pendingCount} ${pendingCount === 1 ? 'মাস' : 'মাস'}`;
+                const noteBox = document.getElementById('notes');
+                if (noteBox && !noteBox.value.includes('কভারকৃত due')) {
+                    const labelText = pendingDates.length ? `কভারকৃত due: ${pendingCount} মাস (${pendingDates.join(', ')})` : `কভারকৃত due: ${pendingCount} মাস`;
+                    noteBox.value = labelText;
+                }
+            } else {
+                coverageRow.style.display = 'none';
+                summaryCoverage.textContent = '০ মাস';
+            }
         }
 
         function resetForm() {
