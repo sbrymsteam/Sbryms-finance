@@ -28,10 +28,14 @@
         .page-title { margin: 0; font-size: 20px; font-weight: 700; }
         .subtitle { font-size: 13px; opacity: 0.7; margin-top: 4px; }
         .content { padding: 20px; }
-        .page-header,
-        .profile-strip,
+        .page-header {
+            display: flex !important;
+        }
+        .profile-strip {
+            display: flex !important;
+        }
         .summary-card {
-            display: none !important;
+            display: block !important;
         }
         .table-card {
             background: rgba(18, 18, 18, 0.86);
@@ -76,7 +80,7 @@
             letter-spacing: 0.02em;
             color: #111827;
         }
-        .card-menu {
+        .deposit-card .card-menu {
             border: none;
             background: transparent;
             color: #374151;
@@ -104,6 +108,30 @@
             justify-content: space-between;
             gap: 10px;
             margin-top: auto;
+        }
+        .fine-row {
+            justify-content: space-between;
+            width: 100%;
+        }
+        .fine-value {
+            display: inline-block;
+            min-width: 10px;
+            color: #000000 !important;
+            font-weight: 900 !important;
+            font-variant-numeric: tabular-nums;
+            text-align: center;
+            opacity: 1 !important;
+            text-shadow: none !important;
+        }
+        .fine-row,
+        .fine-row .deposit-meta-label,
+        .fine-row .fine-value {
+            color: #111827 !important;
+        }
+        .deposit-star-row {
+            display: flex;
+            align-items: center;
+            min-height: 18px;
         }
         .star-badge {
             color: #f4b400;
@@ -393,11 +421,34 @@
     .profile-chip {
         min-width: 132px !important;
         padding: 7px 10px !important;
-        border: 0 !important;
+        border: 1px solid rgba(255, 255, 255, 0.9) !important;
         border-radius: 12px !important;
-        box-shadow: none !important;
+        box-shadow: 3px 4px 9px rgba(15, 23, 42, 0.12), -2px -2px 7px rgba(255, 255, 255, 0.75) !important;
     }
-    .profile-chip.active { border: 0 !important; box-shadow: none !important; transform: none !important; animation: none !important; }
+    .profile-chip.active {
+        border-color: rgba(129, 140, 248, 0.7) !important;
+        box-shadow: 3px 4px 9px rgba(15, 23, 42, 0.12), -2px -2px 7px rgba(255, 255, 255, 0.75) !important;
+        transform: none !important;
+        animation: none !important;
+    }
+    .profile-chip {
+        background: #eaf3fb !important;
+        border: 1px solid rgba(255, 255, 255, 0.94) !important;
+        border-radius: 18px !important;
+        box-shadow:
+            6px 7px 14px rgba(118, 145, 174, 0.3),
+            -5px -5px 12px rgba(255, 255, 255, 0.82),
+            inset 1px 1px 0 rgba(255, 255, 255, 0.5) !important;
+    }
+    .profile-chip:hover,
+    .profile-chip.active {
+        background: #eaf3fb !important;
+        border-color: rgba(255, 255, 255, 0.98) !important;
+        box-shadow:
+            7px 8px 16px rgba(118, 145, 174, 0.34),
+            -6px -6px 13px rgba(255, 255, 255, 0.88),
+            inset 1px 1px 0 rgba(255, 255, 255, 0.55) !important;
+    }
     .profile-avatar { width: 34px !important; height: 34px !important; border-radius: 10px !important; font-size: 13px !important; }
     .profile-name { font-size: 12px !important; font-weight: 600 !important; }
     .profile-email { font-size: 10px !important; }
@@ -405,10 +456,15 @@
         border: 1px solid #eef2f7 !important;
         border-radius: 12px !important;
         padding: 12px !important;
-        box-shadow: none !important;
+        box-shadow: 4px 5px 12px rgba(15, 23, 42, 0.1), -3px -3px 9px rgba(255, 255, 255, 0.75) !important;
     }
     .summary-grid { gap: 8px !important; }
-    .stat-box { padding: 11px !important; border: 0 !important; border-radius: 10px !important; }
+    .stat-box {
+        padding: 11px !important;
+        border: 1px solid rgba(226, 232, 240, 0.95) !important;
+        border-radius: 10px !important;
+        box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.8) !important;
+    }
     .stat-title { font-size: 10px !important; margin-bottom: 5px !important; }
     .stat-value { font-size: 15px !important; font-weight: 600 !important; }
     .table-card { overflow-x: auto; }
@@ -426,13 +482,311 @@
     .filters select { padding: 9px 30px 9px 11px !important; border: 1px solid #e2e8f0 !important; border-radius: 9px !important; box-shadow: none !important; }
     .row-action button, .btn-pay { padding: 5px 8px !important; border-radius: 8px !important; font-size: 10px !important; }
 </style>
+<style>
+    /* Reference card styling: keep the account controls above, restyle only deposit cards. */
+    .deposit-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 150px)) !important;
+        gap: 25px !important;
+        width: 90% !important;
+        max-width: 1000px !important;
+        margin: 0 auto !important;
+        padding: 20px !important;
+        box-sizing: border-box !important;
+        min-height: 0 !important;
+    }
+    .deposit-card {
+        width: 150px !important;
+        height: 140px !important;
+        min-height: 140px !important;
+        padding: 20px !important;
+        box-sizing: border-box !important;
+        background: #edf4f9 !important;
+        border: 1px solid rgba(163, 177, 198, 0.12) !important;
+        border-radius: 20px !important;
+        color: #111827 !important;
+        box-shadow:
+            4px 4px 12px rgba(163, 177, 198, 0.28),
+            -4px -4px 12px rgba(255, 255, 255, 0.72) !important;
+        transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    }
+    .deposit-card:hover {
+nt;
+        box-shadow:
+            3px 3px 8px rgba(163, 177, 198, 0.32),
+            -3px -3px 8px rgba(255, 255, 255, 0.78) !important;
+    }
+    .deposit-date,
+    .deposit-meta,
+    .deposit-meta-label {
+        color: #111827 !important;
+    }
+    .deposit-meta > span:last-child {
+        color: #111827 !important;
+        opacity: 1 !important;
+        font-weight: 500 !important;
+    }
+    .deposit-card .card-menu {
+        color: #111827 !important;
+        border: none !important;
+        border-width: 0 !important;
+        border-style: none !important;
+        outline: none !important;
+        background: transparent !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        width: auto !important;
+        height: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .deposit-card .card-menu:hover,
+    .deposit-card .card-menu:focus,
+    .deposit-card .card-menu:focus-visible,
+    .deposit-card .card-menu:active {
+        border: none !important;
+        outline: none !important;
+        background: transparent !important;
+        background-image: none !important;
+        box-shadow: none !important;
+    }
+    .pay-pill {
+        background: transparent !important;
+        color: #e8eaef !important;
+        border: 0 !important;
+        border-style: none !important;
+        outline: 0 !important;
+        box-shadow: none !important;
+        padding: 2px 0 !important;
+        font-weight: 700 !important;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+    }
+    .pay-pill.is-paid {
+        color: #65b32e !important;
+        background: transparent !important;
+    }
+    .star-badge {
+        color: #111827 !important;
+    }
+</style>
+<style>
+    /* Final reference finish: pale blue surface with a clean white highlight edge. */
+    body {
+        background: url('assets/bg.png') center center / cover no-repeat !important;
+    }
+    .table-card {
+        background: transparent !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+    }
+    .deposit-grid {
+        width: 100% !important;
+        max-width: 1180px !important;
+        padding: 20px 24px 28px !important;
+        gap: 28px 34px !important;
+    }
+    .deposit-card {
+        width: 150px !important;
+        height: 140px !important;
+        min-height: 140px !important;
+        padding: 22px 20px 18px !important;
+        background: #eaf3fb !important;
+        border: 1px solid rgba(255, 255, 255, 0.92) !important;
+        border-radius: 22px !important;
+        box-shadow:
+            10px 12px 18px rgba(118, 145, 174, 0.34),
+            -8px -8px 18px rgba(255, 255, 255, 0.82),
+            inset 1px 1px 0 rgba(255, 255, 255, 0.48) !important;
+    }
+    .deposit-card:hover {
+        transform: translateY(-3px) !important;
+        box-shadow:
+            12px 15px 22px rgba(118, 145, 174, 0.38),
+            -9px -9px 20px rgba(255, 255, 255, 0.88),
+            inset 1px 1px 0 rgba(255, 255, 255, 0.55) !important;
+    }
+    .deposit-date {
+       font-size: 15px !important;
+    }
+    .star-badge {
+        font-size: 13px !important;
+    }
+    .pay-pill {
+        font-size: 12px !important;
+    }
+</style>
+<style>
+    @media (max-width: 600px) {
+        .deposit-grid {
+            grid-template-columns: repeat(auto-fit, minmax(52px, 1fr)) !important;
+            gap: 5px !important;
+            width: 100% !important;
+            padding: 8px 4px 12px !important;
+        }
+        .deposit-card {
+            width: 100% !important;
+            height: auto !important;
+            min-height: 78px !important;
+            padding: 6px 4px 5px !important;
+            border-radius: 8px !important;
+            gap: 2px !important;
+            box-shadow:
+                2px 2px 5px rgba(118, 145, 174, 0.2),
+                -2px -2px 5px rgba(255, 255, 255, 0.65) !important;
+        }
+        .deposit-card:hover {
+            transform: none !important;
+            box-shadow:
+                2px 2px 5px rgba(118, 145, 174, 0.2),
+                -2px -2px 5px rgba(255, 255, 255, 0.65) !important;
+        }
+        .deposit-date {
+            font-size: 7px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+        .deposit-meta {
+            gap: 2px !important;
+            font-size: 7px !important;
+            white-space: nowrap !important;
+        }
+        .deposit-meta > span:last-child {
+            color: #111827 !important;
+            opacity: 1 !important;
+            font-weight: 600 !important;
+        }
+        .deposit-card-footer {
+            gap: 2px !important;
+            margin-top: 2px !important;
+            justify-content: flex-end !important;
+        }
+        .fine-row {
+            justify-content: space-between !important;
+        }
+        .fine-row > span {
+            display: inline-flex !important;
+            align-items: baseline !important;
+            gap: 1px !important;
+            min-width: 0 !important;
+        }
+        .fine-row .deposit-meta-label {
+            font-size: 6px !important;
+            font-weight: 700 !important;
+        }
+        .fine-value {
+            min-width: 9px !important;
+            font-size: 9px !important;
+            line-height: 1 !important;
+            font-weight: 900 !important;
+            color: #000000 !important;
+            opacity: 1 !important;
+        }
+        .deposit-star-row {
+            min-height: 12px !important;
+        }
+        .star-badge {
+            color: #111827 !important;
+            font-size: 7px !important;
+            letter-spacing: 0 !important;
+            white-space: nowrap !important;
+        }
+        .pay-pill {
+            font-size: 7px !important;
+            line-height: 1 !important;
+            border: 0 !important;
+            outline: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 2px 0 !important;
+        }
+        .card-menu {
+            font-size: 10px !important;
+        }
+    }
+</style>
+<style>
+    /* Inset neumorphic finish for the account, summary, year, and deposit surfaces. */
+    .profile-chip,
+    .summary-card,
+    .stat-box,
+    .deposit-card,
+    .filters select {
+        background-color: #e0e8f0 !important;
+        border-color: rgba(255, 255, 255, 0.72) !important;
+        box-shadow:
+            inset 6px 6px 12px rgba(163, 177, 198, 0.45),
+            inset -6px -6px 12px rgba(255, 255, 255, 0.9) !important;
+    }
+    .profile-chip:hover,
+    .profile-chip.active,
+    .deposit-card:hover {
+        transform: none !important;
+        box-shadow:
+            inset 8px 8px 14px rgba(163, 177, 198, 0.55),
+            inset -8px -8px 14px rgba(255, 255, 255, 0.95) !important;
+    }
+    .filters select {
+        background-image:
+            linear-gradient(45deg, transparent 50%, #64748b 50%),
+            linear-gradient(135deg, #64748b 50%, transparent 50%) !important;
+    }
+    @media (max-width: 600px) {
+        .profile-chip,
+        .summary-card,
+        .stat-box,
+        .filters select {
+            box-shadow:
+                inset 4px 4px 8px rgba(163, 177, 198, 0.42),
+                inset -4px -4px 8px rgba(255, 255, 255, 0.86) !important;
+        }
+        .deposit-card,
+        .deposit-card:hover {
+            box-shadow:
+                inset 3px 3px 6px rgba(163, 177, 198, 0.42),
+                inset -3px -3px 6px rgba(255, 255, 255, 0.86) !important;
+        }
+    }
+</style>
+<style>
+    .page-header {
+        min-height: 54px !important;
+        padding: 10px 16px !important;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.28) !important;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05) !important;
+    }
+    .page-header > div {
+        display: flex !important;
+        align-items: center !important;
+    }
+    .page-header > div > div {
+        margin-left: 10px !important;
+    }
+    .page-header a {
+        font-size: 20px !important;
+        line-height: 1 !important;
+    }
+    .page-title {
+        font-size: 17px !important;
+        line-height: 1.15 !important;
+    }
+    .subtitle {
+        font-size: 10px !important;
+        margin-top: 3px !important;
+    }
+</style>
 </head>
 <body>
     <div class="page-header">
         <div>
             <a href="FACE APP.html" onclick="event.preventDefault(); window.location.replace('FACE APP.html');">←</a>
             <div style="display:inline-block; vertical-align: middle; margin-left: 12px;">
-                <h1 class="page-title">Deposit Name</h1>
+                <h1 class="page-title">Deposit</h1>
                 <p class="subtitle">Manage and review monthly deposit data</p>
             </div>
         </div>
@@ -459,7 +813,7 @@
 
 
         <div class="table-card">
-            <div class="action-bar" style="display:none;">
+            <div class="action-bar">
                 <div class="filters">
                     <div>
                         <label for="yearFilter">Year</label>
@@ -543,7 +897,7 @@
             (_, index) => firstDepositYear + index
         );
         let id = 1;
-        const depositData = [];
+        let depositData = [];
         
         function getLastDayOfMonth(monthIndex, year) {
             return new Date(year, monthIndex + 1, 0).getDate();
@@ -769,7 +1123,6 @@
         }
 
         async function loadRegisteredMembers() {
-            if (!membersAuthReady) return;
             try {
                 let snapshot;
                 try {
@@ -780,7 +1133,7 @@
                 }
                 registeredMemberAccounts = snapshot.docs.map(doc => {
                     const data = doc.data() || {};
-                    const email = String(data.email || '').trim().toLowerCase();
+                    const email = String(data.email || data.emailAddress || '').trim().toLowerCase();
                     const name = data.name || data.displayName || extractNameFromEmail(email);
                     return {
                         email,
@@ -946,9 +1299,9 @@
         }
 
         function renderTable() {
-            const tbody = document.getElementById('depositBody');
+            const grid = document.getElementById('depositGrid');
             const emptyState = document.getElementById('emptyState');
-            tbody.innerHTML = '';
+            grid.innerHTML = '';
             const filteredRows = getFilteredRows();
 
             if (filteredRows.length === 0) {
@@ -957,22 +1310,17 @@
                 emptyState.style.display = 'none';
             }
 
-            filteredRows.forEach(({ row, index }, filteredIndex) => {
-                const tr = document.createElement('tr');
-
-                // Ensure fee defaults to 100 when empty and provide a Change icon to update it later
+            filteredRows.forEach(({ row, index }) => {
                 let feeValue = row.fee;
                 const feeEmpty = feeValue === '' || feeValue === null || feeValue === undefined || String(feeValue).trim() === '' || Number(feeValue) === 0;
                 if (feeEmpty) {
-                    // Persist default 100 so it shows and can be updated later
                     depositData[index] = { ...depositData[index], fee: 100 };
                     feeValue = 100;
                 }
 
-                // Compute fine dynamically and set star for overdue unpaid rows
                 (function computeFineAndStar(){
                     try {
-                        const periodLabel = row.date; // e.g. 'Jan 1-15' or 'Jan 16-31'
+                        const periodLabel = row.date;
                         const parts = periodLabel.split(' ');
                         const monthName = parts[0];
                         const monthIndex = months.indexOf(monthName);
@@ -982,7 +1330,6 @@
                         if (periodLabel.includes('16-')) dueDay = lastDay;
                         const dueDate = new Date(row.year, monthIndex, dueDay);
                         const today = new Date();
-                        // compare dates without time
                         const tzToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
                         const tzDue = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
 
@@ -990,68 +1337,58 @@
                         if (row.status !== 'Paid') {
                             if (tzToday > tzDue) {
                                 const diffMs = tzToday - tzDue;
-                                const days = Math.floor(diffMs / 86400000); // number of days overdue
+                                const days = Math.floor(diffMs / 86400000);
                                 fineCalculated = days * 5;
                             }
-                        } else {
-                            // if paid, compute fine up to paidAt (if available)
-                            if (depositData[index] && depositData[index].paidAt) {
-                                const paidAt = new Date(depositData[index].paidAt);
-                                const tzPaid = new Date(paidAt.getFullYear(), paidAt.getMonth(), paidAt.getDate());
-                                if (tzPaid > tzDue) {
-                                    const diffMs = tzPaid - tzDue;
-                                    const days = Math.floor(diffMs / 86400000);
-                                    fineCalculated = days * 5;
-                                }
+                        } else if (depositData[index] && depositData[index].paidAt) {
+                            const paidAt = new Date(depositData[index].paidAt);
+                            const tzPaid = new Date(paidAt.getFullYear(), paidAt.getMonth(), paidAt.getDate());
+                            if (tzPaid > tzDue) {
+                                const diffMs = tzPaid - tzDue;
+                                const days = Math.floor(diffMs / 86400000);
+                                fineCalculated = days * 5;
                             }
                         }
-                        // update fine
+
                         depositData[index] = { ...depositData[index], fine: fineCalculated };
-                        // set star for unpaid overdue rows
                         if (row.status !== 'Paid') {
-                            if (fineCalculated > 0) {
-                                depositData[index] = { ...depositData[index], star: 'cross' };
-                            } else {
-                                depositData[index] = { ...depositData[index], star: '' };
-                            }
+                            depositData[index] = { ...depositData[index], star: fineCalculated > 0 ? 'cross' : '' };
                         }
                     } catch (e) {
-                        // ignore compute errors
                         console.error('computeFineAndStar error', e);
                     }
                 })();
 
-                // Fee display with a small icon to open modal
-                const changeIcon = `
-                    <button title="Change fee" onclick="showFeeModal(${index})" style="border:none;background:transparent;cursor:pointer;margin-left:8px;vertical-align:middle;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" fill="#374151"/><path d="M20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#374151"/></svg>
-                    </button>`;
+                const rowFine = Number(depositData[index].fine) || 0;
+                const isPaid = row.status === 'Paid';
+                const displayStar = depositData[index].star || '';
+                const starHtml = displayStar === 'cross'
+                    ? '<span class="star-badge" style="color:#ef4444;">✕</span>'
+                    : (displayStar === '3' ? '<span class="star-badge">★★★</span>' : (displayStar === '2' ? '<span class="star-badge">★★</span>' : '<span class="star-badge">★</span>'));
 
-                const carryOver = getCarryOver(index);
-                const payableFee = Number(feeValue) + carryOver.fee;
-                const payableFine = Number(depositData[index].fine) + carryOver.fine;
-                const payCell = row.status !== 'Paid' && payableFee > 0
-                    ? `<button class="btn-pay" onclick="handleDuePayment(${index})">Pay Now</button>`
-                    : '<span class="complete-text">Complete</span>';
-
-                const statusCell = row.status !== 'Paid' && Number(depositData[index].fine) > 0
-                    ? `<span class="tag tag-missed">Unpaid</span>`
-                    : (row.status === 'Paid' ? '<span class="tag tag-paid">Paid</span>' : '<span class="tag tag-missed">Unpaid</span>');
-
-                tr.innerHTML = `
-                    <td>${getFixedDateLabel(row.date)}</td>
-                    <td>৳ ${feeValue}${changeIcon}</td>
-                    <td>${renderStar(depositData[index])}</td>
-                    <td>৳ ${depositData[index].fine || 0}</td>
-                    <td>${payCell}</td>
-                    <td>${statusCell}</td>
+                const card = document.createElement('div');
+                card.className = 'deposit-card';
+                card.innerHTML = `
+                    <div class="deposit-card-header">
+                        <p class="deposit-date">${getFixedDateLabel(row.date)}</p>
+                        <button class="card-menu" type="button" aria-label="More options">⋯</button>
+                    </div>
+                    <div class="deposit-meta"><span class="deposit-meta-label">Fee:</span> <span>${Number(feeValue) || 0}</span></div>
+                    <div class="deposit-star-row"><span class="star-badge">star: ${starHtml}</span></div>
+                    <div class="deposit-meta fine-row">
+                        <span><span class="deposit-meta-label">Fine:</span> <span class="fine-value">${rowFine}</span></span>
+                        ${isPaid
+                            ? '<button class="pay-pill is-paid" type="button" disabled>paid</button>'
+                            : '<button class="pay-pill" type="button" data-index="'+index+'">Pay</button>'}
+                    </div>
                 `;
 
-                // color row based on paid/unpaid status
-                if (row.status === 'Paid') tr.classList.add('row-paid');
-                else tr.classList.add('row-unpaid');
+                const payButton = card.querySelector('.pay-pill');
+                if (payButton && !payButton.disabled) {
+                    payButton.addEventListener('click', () => handleDuePayment(Number(payButton.dataset.index)));
+                }
 
-                tbody.appendChild(tr);
+                grid.appendChild(card);
             });
 
             updateSummary(filteredRows);
@@ -1428,7 +1765,14 @@
         renderProfileStrip();
         firebase.auth().onAuthStateChanged(user => {
             membersAuthReady = Boolean(user);
-            if (membersAuthReady) loadRegisteredMembers();
+            if (user) {
+                localStorage.setItem('currentUserEmail', user.email || '');
+                localStorage.setItem('currentUserUid', user.uid || '');
+                loadRegisteredMembers();
+            } else {
+                renderProfileStrip();
+                renderTable();
+            }
         });
         populateFilters();
         renderYearSections();
