@@ -781,6 +781,24 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                 return;
             }
 
+            function getPaymentStar(pendingPayment, paidAt) {
+                const dateLabel = String(pendingPayment.date || '');
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const monthIndex = monthNames.indexOf(dateLabel.split(' ')[0]);
+                const year = Number(pendingPayment.year);
+                if (monthIndex < 0 || !Number.isInteger(year)) return 1;
+                const dueDay = dateLabel.includes('16-')
+                    ? new Date(year, monthIndex + 1, 0).getDate()
+                    : 15;
+                const startDay = dateLabel.includes('16-') ? 16 : 1;
+                const paidDate = new Date(paidAt.getFullYear(), paidAt.getMonth(), paidAt.getDate());
+                const periodStart = new Date(year, monthIndex, startDay);
+                const dueDate = new Date(year, monthIndex, dueDay);
+                if (paidDate > dueDate) return 'cross';
+                if (paidDate < periodStart) return 2;
+                return 1;
+            }
+
             const payment = {
                 id: `PAY-${Date.now()}`,
                 timestamp: new Date().toLocaleString('bn-BD'),
@@ -812,7 +830,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                         fine: payment.fine,
                         transactionId: payment.transactionId,
                         paymentRecordId: payment.id,
-                        star: payment.star ? 1 : 0
+                        star: getPaymentStar(pending, new Date())
                     };
                     localStorage.setItem('last_completed_payment', JSON.stringify(completed));
                     // remove pending to avoid double-applying

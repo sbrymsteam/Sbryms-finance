@@ -117,7 +117,7 @@
             display: inline-block;
             min-width: 10px;
             color: #000000 !important;
-            font-weight: 900 !important;
+            font-weight: 400 !important;
             font-variant-numeric: tabular-nums;
             text-align: center;
             opacity: 1 !important;
@@ -508,6 +508,69 @@ ue {
         color: #65b32e !important;
         background: transparent !important;
     }
+.pay-pill.is-unpaid {
+    color: #dc2626 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    cursor: default !important;
+}
+.card-menu {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    outline: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #374151 !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+}
+.deposit-meta > span.pay-pill.is-unpaid {
+    color: #dc2626 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.deposit-meta > span.pay-pill.is-paid {
+    color: #15803d !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.due-review-modal {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 100000 !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 16px !important;
+    background: rgba(7, 17, 36, 0.58) !important;
+}
+.due-review-panel {
+    width: min(420px, 100%) !important;
+    max-height: 80vh !important;
+    overflow: auto !important;
+    padding: 18px !important;
+    border-radius: 14px !important;
+    background: #edf4f9 !important;
+    color: #111827 !important;
+    box-shadow: 0 16px 40px rgba(0,0,0,.25) !important;
+}
+.due-review-panel h3 { margin: 0 0 6px !important; }
+.due-review-panel p { margin: 0 0 12px !important; font-size: 12px !important; }
+.due-review-list { display: grid !important; gap: 7px !important; }
+.due-review-list div { display: flex !important; justify-content: space-between !important; gap: 10px !important; font-size: 12px !important; }
+.due-review-total { display: block !important; margin-top: 14px !important; }
+.due-review-actions { display: flex !important; justify-content: flex-end !important; gap: 8px !important; margin-top: 16px !important; }
+.due-review-actions button { padding: 8px 14px !important; border: 0 !important; border-radius: 7px !important; cursor: pointer !important; }
+.due-review-cancel { background: #dbe3ef !important; color: #111827 !important; }
+.due-review-next { background: #2563eb !important; color: #fff !important; }
     .star-badge {
         color: #111827 !important;
     }
@@ -527,12 +590,13 @@ ue {
     .deposit-grid {
         width: 100% !important;
         max-width: 1180px !important;
-        grid-template-columns: repeat(auto-fit, 140px) !important;
-        justify-content: center !important;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+        justify-content: stretch !important;
         padding: 20px 24px 28px !important;
         gap: 28px 34px !important;
     }
     .deposit-card {
+        width: auto !important;
         min-height: 130px !important;
         padding: 12px !important;
         background: #e0e8f0 !important;
@@ -617,7 +681,7 @@ ue {
             min-width: 9px !important;
             font-size: 9px !important;
             line-height: 1 !important;
-            font-weight: 900 !important;
+            font-weight: 400 !important;
             color: #000000 !important;
             opacity: 1 !important;
         }
@@ -639,10 +703,88 @@ ue {
             box-shadow: none !important;
             padding: 2px 0 !important;
         }
+        .deposit-meta > span.pay-pill.is-unpaid {
+            color: #dc2626 !important;
+            border: 0 !important;
+            background: transparent !important;
+        }
+        .deposit-meta > span.pay-pill.is-paid {
+            color: #15803d !important;
+            border: 0 !important;
+            background: transparent !important;
+        }
         .card-menu {
             font-size: 10px !important;
+            border: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
         }
     }
+    .deposit-info-button {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 34px !important;
+        height: 34px !important;
+        padding: 0 !important;
+        border: 0 !important;
+        border-radius: 50% !important;
+        background: transparent !important;
+        border-width: 0 !important;
+        border-style: none !important;
+        border-color: transparent !important;
+        outline: none !important;
+        color: #334155 !important;
+        cursor: pointer !important;
+        box-shadow: none !important;
+    }
+    .deposit-info-button:hover { color: #2563eb !important; }
+    .deposit-info-button svg { width: 22px !important; height: 22px !important; }
+    .deposit-info-modal {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 100001 !important;
+        display: grid !important;
+        place-items: center !important;
+        padding: 16px !important;
+        background: rgba(7, 17, 36, 0.58) !important;
+    }
+    .deposit-info-panel {
+        width: min(430px, 100%) !important;
+        max-height: 82vh !important;
+        overflow: auto !important;
+        padding: 20px !important;
+        border-radius: 16px !important;
+        background: #edf4f9 !important;
+        color: #111827 !important;
+        box-shadow: 0 18px 45px rgba(0,0,0,.28) !important;
+        opacity: 1 !important;
+    }
+    .deposit-info-panel h2,
+    .deposit-info-panel h3,
+    .deposit-info-panel p {
+        color: #111827 !important;
+        opacity: 1 !important;
+        text-shadow: none !important;
+    }
+    .deposit-info-panel h2 { margin: 0 0 14px !important; font-size: 19px !important; font-weight: 800 !important; }
+    .deposit-info-panel h3 { margin: 14px 0 5px !important; font-size: 14px !important; font-weight: 700 !important; }
+    .deposit-info-panel p { margin: 4px 0 !important; font-size: 12px !important; line-height: 1.55 !important; font-weight: 400 !important; }
+    .deposit-info-close {
+        float: right !important;
+        border: 0 !important;
+        background: transparent !important;
+        color: #475569 !important;
+        font-size: 22px !important;
+        line-height: 1 !important;
+        cursor: pointer !important;
+        border-width: 0 !important;
+        border-style: none !important;
+        border-color: transparent !important;
+        outline: none !important;
+        box-shadow: none !important;
+    }
+    .deposit-info-close:hover { color: #dc2626 !important; }
 </style>
 </head>
 <body>
@@ -654,6 +796,13 @@ ue {
                 <p class="subtitle">Manage and review monthly deposit data</p>
             </div>
         </div>
+        <button class="deposit-info-button" type="button" aria-label="Deposit rules" onclick="showDepositInfo()" style="border:0!important;border-width:0!important;border-style:none!important;border-color:transparent!important;outline:0!important;background:transparent!important;box-shadow:none!important;">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"></circle>
+                <path d="M12 10.5V16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+                <circle cx="12" cy="7.5" r="1" fill="currentColor"></circle>
+            </svg>
+        </button>
     </div>
 
     <div class="content">
@@ -1119,7 +1268,6 @@ ue {
                 const previousDueDate = getRowDueDate(previous);
                 if (!previousDueDate || previousDueDate >= currentDueDate) return carry;
                 const previousFine = getCurrentFine(previous);
-                if (previousFine <= 0 && new Date() <= previousDueDate) return carry;
                 carry.fee += Number(previous.fee) || 100;
                 carry.fine += previousFine;
                 carry.ids.push(previous.id);
@@ -1225,30 +1373,49 @@ ue {
 
                 const rowFine = Number(depositData[index].fine) || 0;
                 const isPaid = row.status === 'Paid';
-                const displayStar = depositData[index].star || '';
+                const dueDate = getRowDueDate(row);
+                const today = new Date();
+                const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                const isOverdue = !isPaid && dueDate && todayDate > dueDate;
+                const rowDueDate = getRowDueDate(row);
+                const rowMonthIndex = months.indexOf(String(row.date).split(' ')[0]);
+                const rowStartDay = String(row.date).includes('16-') ? 16 : 1;
+                const rowPeriodStart = rowMonthIndex >= 0
+                    ? new Date(Number(row.year), rowMonthIndex, rowStartDay)
+                    : null;
+                let displayStar = depositData[index].star || '';
+                if (row.status !== 'Paid' && rowPeriodStart && todayDate < rowPeriodStart) {
+                    displayStar = '';
+                } else if (row.status !== 'Paid' && rowDueDate && todayDate > rowDueDate) {
+                    displayStar = 'cross';
+                } else if (row.status !== 'Paid') {
+                    displayStar = '';
+                }
                 const starHtml = displayStar === 'cross'
                     ? '<span class="star-badge" style="color:#ef4444;">✕</span>'
-                    : (displayStar === '3' ? '<span class="star-badge">★★★</span>' : (displayStar === '2' ? '<span class="star-badge">★★</span>' : '<span class="star-badge">★</span>'));
+                    : (displayStar === '3' ? '<span class="star-badge">★★★</span>' : (displayStar === '2' ? '<span class="star-badge">★★</span>' : (displayStar === '1' ? '<span class="star-badge">★</span>' : '')));
 
                 const card = document.createElement('div');
                 card.className = 'deposit-card';
                 card.innerHTML = `
                     <div class="deposit-card-header">
                         <p class="deposit-date">${getFixedDateLabel(row.date)}</p>
-                        <button class="card-menu" type="button" aria-label="More options">⋯</button>
+                        <button class="card-menu" type="button" aria-label="More options" style="border:0!important;border-width:0!important;border-style:none!important;border-color:transparent!important;outline:0!important;background:transparent!important;box-shadow:none!important;">⋯</button>
                     </div>
                     <div class="deposit-meta"><span class="deposit-meta-label">Fee:</span> <span>${Number(feeValue) || 0}</span></div>
                     <div class="deposit-star-row"><span class="star-badge">star: ${starHtml}</span></div>
                     <div class="deposit-meta fine-row">
                         <span><span class="deposit-meta-label">Fine:</span> <span class="fine-value">${rowFine}</span></span>
                         ${isPaid
-                            ? '<button class="pay-pill is-paid" type="button" disabled>paid</button>'
-                            : '<button class="pay-pill" type="button" data-index="'+index+'">Pay</button>'}
+                            ? '<span class="pay-pill is-paid">paid</span>'
+                            : (isOverdue
+                                ? '<span class="pay-pill is-unpaid">Unpaid</span>'
+                                : '<button class="pay-pill" type="button" data-index="'+index+'">Pay</button>')}
                     </div>
                 `;
 
-                const payButton = card.querySelector('.pay-pill');
-                if (payButton && !payButton.disabled) {
+                const payButton = card.querySelector('button.pay-pill');
+                if (payButton) {
                     payButton.addEventListener('click', () => handleDuePayment(Number(payButton.dataset.index)));
                 }
 
@@ -1318,12 +1485,71 @@ ue {
         }
 
         function handleDuePayment(index) {
-            const previousUnpaid = getPreviousUnpaidDue(index);
-            if (previousUnpaid.length) {
-                showToast(`আগের due date (${previousUnpaid.map(previous => previous.date).join(', ')})-এর fee ও fine আগে পরিশোধ করুন। এরপর এই due কার্যকর হবে।`);
+            showDuePaymentReview(index);
+        }
+
+        function showDepositInfo() {
+            const existing = document.querySelector('.deposit-info-modal');
+            if (existing) {
+                existing.remove();
                 return;
             }
-            goToPaymentGatewayForIndex(index);
+            const modal = document.createElement('div');
+            modal.className = 'deposit-info-modal';
+            modal.innerHTML = `
+                <div class="deposit-info-panel" role="dialog" aria-modal="true" aria-labelledby="depositInfoTitle">
+                    <button class="deposit-info-close" type="button" aria-label="Close">×</button>
+                    <h2 id="depositInfoTitle">Deposit rules</h2>
+                    <h3>Payment system</h3>
+                    <p>Pay চাপলে নির্বাচিত due এবং আগের unpaid due-এর fee ও fine একসাথে review হবে। Next চাপলে সব তথ্যসহ payment gateway খুলবে।</p>
+                    <h3>Star rules</h3>
+                    <p>Period শুরু হওয়ার আগে payment হলে ★★, period চলাকালীন payment হলে ★, আর due date পার হওয়ার পরে payment হলে ✕ হবে। Payment-এর আগে star দেখাবে না।</p>
+                    <h3>Fine rules</h3>
+                    <p>Due date পার হওয়ার পর প্রতিদিনের জন্য fine যোগ হবে। সময়ের মধ্যে payment করলে fine হবে না।</p>
+                    <h3>Status</h3>
+                    <p>Payment-এর আগে Pay, overdue হলে Unpaid, আর payment complete হলে সবুজ paid দেখাবে।</p>
+                </div>`;
+            document.body.appendChild(modal);
+            modal.querySelector('.deposit-info-close').onclick = () => modal.remove();
+            modal.addEventListener('click', event => {
+                if (event.target === modal) modal.remove();
+            });
+        }
+
+        function showDuePaymentReview(index) {
+            const row = depositData[index];
+            const selectedDueDate = getRowDueDate(row);
+            if (!row || !selectedDueDate) return;
+            const selectedRows = depositData
+                .map((item, itemIndex) => ({ item, itemIndex, dueDate: getRowDueDate(item) }))
+                .filter(entry => entry.item.profileEmail === row.profileEmail
+                    && entry.item.status !== 'Paid'
+                    && entry.dueDate
+                    && entry.dueDate <= selectedDueDate)
+                .sort((a, b) => a.dueDate - b.dueDate);
+            const totalFee = selectedRows.reduce((sum, entry) => sum + (Number(entry.item.fee) || 100), 0);
+            const totalFine = selectedRows.reduce((sum, entry) => sum + getCurrentFine(entry.item), 0);
+            const modal = document.createElement('div');
+            modal.className = 'due-review-modal';
+            modal.innerHTML = `
+                <div class="due-review-panel">
+                    <h3>Payment details</h3>
+                    <p>Select করা due-গুলোর fee ও fine একসাথে পরিশোধ হবে।</p>
+                    <div class="due-review-list">
+                        ${selectedRows.map(entry => `<div><span>${entry.item.date} ${entry.item.year}</span><b>৳ ${Number(entry.item.fee) || 100} + ৳ ${getCurrentFine(entry.item)}</b></div>`).join('')}
+                    </div>
+                    <strong class="due-review-total">Total: ৳ ${totalFee + totalFine}</strong>
+                    <div class="due-review-actions">
+                        <button type="button" class="due-review-cancel">Cancel</button>
+                        <button type="button" class="due-review-next">Next</button>
+                    </div>
+                </div>`;
+            document.body.appendChild(modal);
+            modal.querySelector('.due-review-cancel').onclick = () => modal.remove();
+            modal.querySelector('.due-review-next').onclick = () => {
+                modal.remove();
+                goToPaymentGatewayForIndex(index);
+            };
         }
 
         // Simple confirm dialog replacement (non-blocking). onConfirm/onCancel are callbacks.
@@ -1494,6 +1720,18 @@ ue {
                 const currentFine = Number(row.fine) || getCurrentFine(row);
                 const payableFee = currentFee + carryOver.fee;
                 const payableFine = currentFine + carryOver.fine;
+                const carriedDueDetails = carryOver.ids
+                    .map(id => depositData.find(item => item.id === id))
+                    .filter(Boolean)
+                    .map(item => ({
+                        id: item.id,
+                        date: item.date,
+                        year: item.year,
+                        fee: Number(item.fee) || 100,
+                        fine: getCurrentFine(item),
+                        profileEmail: item.profileEmail,
+                        name: item.name
+                    }));
                 // Save full row to localStorage so payment page can pre-fill every field
                 localStorage.setItem('pending_payment', JSON.stringify({
                     ...row,
@@ -1501,7 +1739,10 @@ ue {
                     fine: payableFine,
                     carriedFee: carryOver.fee,
                     carriedFine: carryOver.fine,
-                    carriedRowIds: carryOver.ids
+                    carriedRowIds: carryOver.ids,
+                    carriedDueDetails,
+                    coveredDueCount: carriedDueDetails.length,
+                    coveredDueDates: carriedDueDetails.map(item => `${item.date} ${item.year}`)
                 }));
                 // Also mark which profile was selected for backward compatibility
                 if (row.profileEmail) localStorage.setItem(DEPOSIT_SELECTION_KEY, row.profileEmail);
@@ -1650,15 +1891,25 @@ ue {
                 // find matching row by id or by profile/date/year
                 const idx = depositData.findIndex(d => String(d.id) === String(completed.id) || (d.profileEmail === completed.profileEmail && d.date === completed.date && String(d.year) === String(completed.year)));
                 if (idx !== -1) {
-                    depositData[idx] = {
-                        ...depositData[idx],
-                        status: 'Paid',
-                        paidAt: completed.paidAt || new Date().toISOString(),
-                        fee: Number(completed.fee) || depositData[idx].fee,
-                        fine: Number(completed.fine) || depositData[idx].fine,
-                        transactionId: completed.transactionId || completed.paymentRecordId || depositData[idx].transactionId,
-                        star: completed.star || depositData[idx].star
-                    };
+                    const paidAt = completed.paidAt || new Date().toISOString();
+                    const paidIds = new Set([String(completed.id), ...(completed.carriedRowIds || []).map(String)]);
+                    depositData.forEach((item, itemIndex) => {
+                        if (!paidIds.has(String(item.id))) return;
+                        const dueDate = getRowDueDate(item);
+                        const paidDate = new Date(paidAt);
+                        const monthIndex = months.indexOf(String(item.date || '').split(' ')[0]);
+                        const startDay = String(item.date || '').includes('16-') ? 16 : 1;
+                        const periodStart = monthIndex >= 0 ? new Date(Number(item.year), monthIndex, startDay) : null;
+                        const paidDay = new Date(paidDate.getFullYear(), paidDate.getMonth(), paidDate.getDate());
+                        item.status = 'Paid';
+                        item.paidAt = paidAt;
+                        item.transactionId = completed.transactionId || completed.paymentRecordId || item.transactionId;
+                        item.star = dueDate && paidDay > dueDate ? 'cross' : (periodStart && paidDay < periodStart ? 2 : 1);
+                        if (itemIndex === idx) {
+                            item.fee = Number(completed.fee) || item.fee;
+                            item.fine = Number(completed.fine) || item.fine;
+                        }
+                    });
                     // render will pick up Paid and show Complete
                     renderTable();
                 }
