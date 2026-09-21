@@ -80,7 +80,7 @@
             letter-spacing: 0.02em;
             color: #111827;
         }
-        .deposit-card .card-menu {
+        .card-menu {
             border: none;
             background: transparent;
             color: #374151;
@@ -123,9 +123,7 @@
             opacity: 1 !important;
             text-shadow: none !important;
         }
-        .fine-row,
-        .fine-row .deposit-meta-label,
-        .fine-row .fine-value {
+ue {
             color: #111827 !important;
         }
         .deposit-star-row {
@@ -421,34 +419,11 @@
     .profile-chip {
         min-width: 132px !important;
         padding: 7px 10px !important;
-        border: 1px solid rgba(255, 255, 255, 0.9) !important;
+        border: 0 !important;
         border-radius: 12px !important;
-        box-shadow: 3px 4px 9px rgba(15, 23, 42, 0.12), -2px -2px 7px rgba(255, 255, 255, 0.75) !important;
+        box-shadow: none !important;
     }
-    .profile-chip.active {
-        border-color: rgba(129, 140, 248, 0.7) !important;
-        box-shadow: 3px 4px 9px rgba(15, 23, 42, 0.12), -2px -2px 7px rgba(255, 255, 255, 0.75) !important;
-        transform: none !important;
-        animation: none !important;
-    }
-    .profile-chip {
-        background: #eaf3fb !important;
-        border: 1px solid rgba(255, 255, 255, 0.94) !important;
-        border-radius: 18px !important;
-        box-shadow:
-            6px 7px 14px rgba(118, 145, 174, 0.3),
-            -5px -5px 12px rgba(255, 255, 255, 0.82),
-            inset 1px 1px 0 rgba(255, 255, 255, 0.5) !important;
-    }
-    .profile-chip:hover,
-    .profile-chip.active {
-        background: #eaf3fb !important;
-        border-color: rgba(255, 255, 255, 0.98) !important;
-        box-shadow:
-            7px 8px 16px rgba(118, 145, 174, 0.34),
-            -6px -6px 13px rgba(255, 255, 255, 0.88),
-            inset 1px 1px 0 rgba(255, 255, 255, 0.55) !important;
-    }
+    .profile-chip.active { border: 0 !important; box-shadow: none !important; transform: none !important; animation: none !important; }
     .profile-avatar { width: 34px !important; height: 34px !important; border-radius: 10px !important; font-size: 13px !important; }
     .profile-name { font-size: 12px !important; font-weight: 600 !important; }
     .profile-email { font-size: 10px !important; }
@@ -456,15 +431,10 @@
         border: 1px solid #eef2f7 !important;
         border-radius: 12px !important;
         padding: 12px !important;
-        box-shadow: 4px 5px 12px rgba(15, 23, 42, 0.1), -3px -3px 9px rgba(255, 255, 255, 0.75) !important;
+        box-shadow: none !important;
     }
     .summary-grid { gap: 8px !important; }
-    .stat-box {
-        padding: 11px !important;
-        border: 1px solid rgba(226, 232, 240, 0.95) !important;
-        border-radius: 10px !important;
-        box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.8) !important;
-    }
+    .stat-box { padding: 11px !important; border: 0 !important; border-radius: 10px !important; }
     .stat-title { font-size: 10px !important; margin-bottom: 5px !important; }
     .stat-value { font-size: 15px !important; font-weight: 600 !important; }
     .table-card { overflow-x: auto; }
@@ -486,7 +456,7 @@
     /* Reference card styling: keep the account controls above, restyle only deposit cards. */
     .deposit-grid {
         display: grid !important;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 150px)) !important;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
         gap: 25px !important;
         width: 90% !important;
         max-width: 1000px !important;
@@ -496,9 +466,9 @@
         min-height: 0 !important;
     }
     .deposit-card {
-        width: 150px !important;
-        height: 140px !important;
-        min-height: 140px !important;
+    width: 140px !important;
+    height: 130px !important;
+    min-height: 130px !important;
         padding: 20px !important;
         box-sizing: border-box !important;
         background: #edf4f9 !important;
@@ -511,7 +481,7 @@
         transition: transform 0.3s ease, box-shadow 0.3s ease !important;
     }
     .deposit-card:hover {
-nt;
+        transform: translateY(-2px) !important;
         box-shadow:
             3px 3px 8px rgba(163, 177, 198, 0.32),
             -3px -3px 8px rgba(255, 255, 255, 0.78) !important;
@@ -523,48 +493,18 @@ nt;
     }
     .deposit-meta > span:last-child {
         color: #111827 !important;
-        opacity: 1 !important;
-        font-weight: 500 !important;
-    }
-    .deposit-card .card-menu {
-        color: #111827 !important;
-        border: none !important;
-        border-width: 0 !important;
-        border-style: none !important;
-        outline: none !important;
-        background: transparent !important;
-        background-image: none !important;
-        box-shadow: none !important;
-        appearance: none !important;
-        -webkit-appearance: none !important;
-        width: auto !important;
-        height: auto !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    .deposit-card .card-menu:hover,
-    .deposit-card .card-menu:focus,
-    .deposit-card .card-menu:focus-visible,
-    .deposit-card .card-menu:active {
-        border: none !important;
-        outline: none !important;
-        background: transparent !important;
-        background-image: none !important;
-        box-shadow: none !important;
-    }
-    .pay-pill {
-        background: transparent !important;
-        color: #e8eaef !important;
-        border: 0 !important;
-        border-style: none !important;
-        outline: 0 !important;
-        box-shadow: none !important;
-        padding: 2px 0 !important;
-        font-weight: 700 !important;
-        appearance: none !important;
-        -webkit-appearance: none !important;
-    }
-    .pay-pill.is-paid {
+    opacity: 1 !important;
+}
+.pay-pill {
+    color: #e8eaef !important;
+    border: 0 !important;
+    border-style: none !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    padding: 2px 0 !important;
+    font-weight: 700 !important;
+}
+.pay-pill.is-paid {
         color: #65b32e !important;
         background: transparent !important;
     }
@@ -587,37 +527,41 @@ nt;
     .deposit-grid {
         width: 100% !important;
         max-width: 1180px !important;
+        grid-template-columns: repeat(auto-fit, 140px) !important;
+        justify-content: center !important;
         padding: 20px 24px 28px !important;
         gap: 28px 34px !important;
     }
     .deposit-card {
-        width: 150px !important;
-        height: 140px !important;
-        min-height: 140px !important;
-        padding: 22px 20px 18px !important;
-        background: #eaf3fb !important;
-        border: 1px solid rgba(255, 255, 255, 0.92) !important;
+        min-height: 130px !important;
+        padding: 12px !important;
+        background: #e0e8f0 !important;
+        border: 0 !important;
         border-radius: 22px !important;
         box-shadow:
-            10px 12px 18px rgba(118, 145, 174, 0.34),
-            -8px -8px 18px rgba(255, 255, 255, 0.82),
-            inset 1px 1px 0 rgba(255, 255, 255, 0.48) !important;
+            inset 6px 6px 12px rgba(163, 177, 198, 0.7),
+            inset -6px -6px 12px rgba(255, 255, 255, 0.9) !important;
     }
     .deposit-card:hover {
-        transform: translateY(-3px) !important;
+        transform: none !important;
         box-shadow:
-            12px 15px 22px rgba(118, 145, 174, 0.38),
-            -9px -9px 20px rgba(255, 255, 255, 0.88),
-            inset 1px 1px 0 rgba(255, 255, 255, 0.55) !important;
+            inset 8px 8px 14px rgba(163, 177, 198, 0.8),
+            inset -8px -8px 14px rgba(255, 255, 255, 0.95) !important;
     }
     .deposit-date {
-       font-size: 15px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        letter-spacing: 0 !important;
+    }
+    .deposit-meta {
+        font-size: 11px !important;
+        line-height: 1.2 !important;
     }
     .star-badge {
-        font-size: 13px !important;
+        font-size: 12px !important;
     }
     .pay-pill {
-        font-size: 12px !important;
+        font-size: 11px !important;
     }
 </style>
 <style>
@@ -629,21 +573,21 @@ nt;
             padding: 8px 4px 12px !important;
         }
         .deposit-card {
-            width: 100% !important;
-            height: auto !important;
+            width: auto !important;
+            height: 78px !important;
             min-height: 78px !important;
             padding: 6px 4px 5px !important;
             border-radius: 8px !important;
             gap: 2px !important;
             box-shadow:
-                2px 2px 5px rgba(118, 145, 174, 0.2),
-                -2px -2px 5px rgba(255, 255, 255, 0.65) !important;
+                inset 2px 2px 5px rgba(163, 177, 198, 0.45),
+                inset -2px -2px 5px rgba(255, 255, 255, 0.7) !important;
         }
         .deposit-card:hover {
             transform: none !important;
             box-shadow:
-                2px 2px 5px rgba(118, 145, 174, 0.2),
-                -2px -2px 5px rgba(255, 255, 255, 0.65) !important;
+                inset 2px 2px 5px rgba(163, 177, 198, 0.45),
+                inset -2px -2px 5px rgba(255, 255, 255, 0.7) !important;
         }
         .deposit-date {
             font-size: 7px !important;
@@ -656,21 +600,11 @@ nt;
             font-size: 7px !important;
             white-space: nowrap !important;
         }
-        .deposit-meta > span:last-child {
-            color: #111827 !important;
-            opacity: 1 !important;
-            font-weight: 600 !important;
-        }
         .deposit-card-footer {
             gap: 2px !important;
             margin-top: 2px !important;
-            justify-content: flex-end !important;
-        }
-        .fine-row {
-            justify-content: space-between !important;
         }
         .fine-row > span {
-            display: inline-flex !important;
             align-items: baseline !important;
             gap: 1px !important;
             min-width: 0 !important;
@@ -710,83 +644,13 @@ nt;
         }
     }
 </style>
-<style>
-    /* Inset neumorphic finish for the account, summary, year, and deposit surfaces. */
-    .profile-chip,
-    .summary-card,
-    .stat-box,
-    .deposit-card,
-    .filters select {
-        background-color: #e0e8f0 !important;
-        border-color: rgba(255, 255, 255, 0.72) !important;
-        box-shadow:
-            inset 6px 6px 12px rgba(163, 177, 198, 0.45),
-            inset -6px -6px 12px rgba(255, 255, 255, 0.9) !important;
-    }
-    .profile-chip:hover,
-    .profile-chip.active,
-    .deposit-card:hover {
-        transform: none !important;
-        box-shadow:
-            inset 8px 8px 14px rgba(163, 177, 198, 0.55),
-            inset -8px -8px 14px rgba(255, 255, 255, 0.95) !important;
-    }
-    .filters select {
-        background-image:
-            linear-gradient(45deg, transparent 50%, #64748b 50%),
-            linear-gradient(135deg, #64748b 50%, transparent 50%) !important;
-    }
-    @media (max-width: 600px) {
-        .profile-chip,
-        .summary-card,
-        .stat-box,
-        .filters select {
-            box-shadow:
-                inset 4px 4px 8px rgba(163, 177, 198, 0.42),
-                inset -4px -4px 8px rgba(255, 255, 255, 0.86) !important;
-        }
-        .deposit-card,
-        .deposit-card:hover {
-            box-shadow:
-                inset 3px 3px 6px rgba(163, 177, 198, 0.42),
-                inset -3px -3px 6px rgba(255, 255, 255, 0.86) !important;
-        }
-    }
-</style>
-<style>
-    .page-header {
-        min-height: 54px !important;
-        padding: 10px 16px !important;
-        border-bottom: 1px solid rgba(148, 163, 184, 0.28) !important;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05) !important;
-    }
-    .page-header > div {
-        display: flex !important;
-        align-items: center !important;
-    }
-    .page-header > div > div {
-        margin-left: 10px !important;
-    }
-    .page-header a {
-        font-size: 20px !important;
-        line-height: 1 !important;
-    }
-    .page-title {
-        font-size: 17px !important;
-        line-height: 1.15 !important;
-    }
-    .subtitle {
-        font-size: 10px !important;
-        margin-top: 3px !important;
-    }
-</style>
 </head>
 <body>
     <div class="page-header">
         <div>
             <a href="FACE APP.html" onclick="event.preventDefault(); window.location.replace('FACE APP.html');">←</a>
             <div style="display:inline-block; vertical-align: middle; margin-left: 12px;">
-                <h1 class="page-title">Deposit</h1>
+                <h1 class="page-title">Deposit Name</h1>
                 <p class="subtitle">Manage and review monthly deposit data</p>
             </div>
         </div>
