@@ -1,0 +1,53 @@
+name: Auto Commit Generated Files
+
+# Runs every 15 minutes and can be triggered manually or on push
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  auto-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run generation or build steps
+        run: |
+          # Replace the following with your actual generation/build commands
+          # Example: npm ci && npm run build
+          echo "No build step configured. Add your generation commands here."
+
+      - name: Commit and push changes
+        env:
+          GIT_COMMITTER_NAME: github-actions[bot]
+          GIT_COMMITTER_EMAIL: 41898282+github-actions[bot]@users.noreply.github.com
+        run: |
+          git config user.name "$GIT_COMMITTER_NAME"
+          git config user.email "$GIT_COMMITTER_EMAIL"
+          git add -A
+          # If no changes, exit successfully
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          # Commit with message that suggests CI should be skipped if supported
+          git commit -m "chore: auto-commit generated files [skip ci]"
+
+          # Push using the automatically provided token (actions/checkout sets credentials for GITHUB_TOKEN)
+          git push
+
+# Notes:
+# - This workflow uses the automatically provided GITHUB_TOKEN and requests write permission to repo contents.
+# - If your branch is protected or requires specific user/policy checks, GITHUB_TOKEN may not be allowed to push. In that case create a PAT (with repo permissions) and store it as a secret (e.g., PAT_TO_PUSH), then change the checkout step to:
+#     - uses: actions/checkout@v4
+#       with:
+#         token: ${{ secrets.PAT_TO_PUSH }}
+# - Replace the placeholder generation commands with the commands that actually create or update files you want committed.
