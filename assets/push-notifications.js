@@ -50,6 +50,9 @@
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
       throw new Error('This browser does not support web push notifications.');
     }
+    if (Notification.permission === 'denied') {
+      throw new Error('Notifications are blocked for this site. Open the browser site settings, allow Notifications, reload, then enable again.');
+    }
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') throw new Error('Notification permission was not granted.');
     await loadMessagingSdk();

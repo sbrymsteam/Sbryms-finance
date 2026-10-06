@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#081426">
     <title>SBRYMS Finance - Company Dashboard</title>
+    <script type="importmap">
+        {"imports":{"@capacitor/core":"/assets/vendor/capacitor-core/index.js"}}
+    </script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script>
@@ -86,6 +89,14 @@
         .activity-info b { display:block; font-size:12px; }
         .activity-info small { color:var(--muted); font-size:10px; }
         .amount { color:var(--mint); font-size:12px; font-weight:700; white-space:nowrap; }
+        .push-settings { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; }
+        .push-settings h2 { margin:0 0 6px; font-size:16px; }
+        .push-settings p { margin:0; color:var(--muted); font-size:12px; line-height:1.5; }
+        .push-status { margin-top:5px !important; }
+        .push-status.is-error { color:#ff9ab1; }
+        .push-toggle { flex:0 0 auto; padding:10px 15px; border:1px solid rgba(85,223,189,.4); border-radius:10px; background:rgba(85,223,189,.12); color:var(--mint); font-weight:700; cursor:pointer; }
+        .push-toggle:disabled { cursor:wait; opacity:.65; }
+        @media(max-width:560px) { .push-settings { align-items:flex-start; flex-direction:column; } }
         @media(max-width:980px) { .metrics{grid-template-columns:repeat(2,1fr)} .shell{grid-template-columns:80px minmax(0,1fr)} .sidebar{padding:22px 12px}.brand{margin:0 0 38px;justify-content:center}.brand span:not(.brand-mark),.nav-label,.nav a span:not(.nav-icon),.sidebar-footer{display:none}.nav a{justify-content:center} }
         @media(max-width:700px) { .shell{display:block}.sidebar{position:sticky;top:0;z-index:5;display:flex;flex-direction:row;align-items:center;padding:10px 14px;border-right:0;border-bottom:1px solid var(--line)}.brand{margin:0 auto 0 0}.nav-label,.sidebar-footer{display:none}.nav{display:flex}.nav a{padding:9px}.main{padding:22px 14px}.topbar{align-items:flex-start}.top-actions .icon-btn{display:none}.user-chip span{max-width:90px}.dashboard-grid{grid-template-columns:1fr}.activity-card{margin-top:20px} }
         @media(max-width:430px) { .metrics{grid-template-columns:1fr 1fr;gap:9px}.metric{padding:14px}.metric strong{font-size:19px}.topbar h1{font-size:21px}.user-chip{padding-right:7px}.user-chip span{display:none} }
@@ -110,6 +121,14 @@
                 <div><h1>Good morning, <span id="userName">Member</span> 👋</h1><p>Here is your company financial overview.</p></div>
                 <div class="top-actions"><button class="icon-btn" type="button">⌕</button><button class="icon-btn" type="button">♢</button><div class="user-chip"><span class="avatar" id="userInitial">S</span><span id="userEmail">Member</span></div></div>
             </header>
+            <section class="card push-settings" aria-labelledby="pushSettingsTitle">
+                <div>
+                    <h2 id="pushSettingsTitle">Message and call notifications</h2>
+                    <p>Enable browser notifications to receive Team Meet alerts when this site is not open.</p>
+                    <p id="pushStatus" class="push-status" aria-live="polite">Notifications are off on this device.</p>
+                </div>
+                <button class="push-toggle" id="pushToggle" type="button" onclick="togglePushNotifications()">Enable notifications</button>
+            </section>
             <section class="metrics">
                 <article class="metric"><div class="metric-head"><span>Total Balance</span><span class="metric-icon">৳</span></div><strong>৳ 8,42,500</strong><em>↗ 12.8% this month</em></article>
                 <article class="metric"><div class="metric-head"><span>Total Income</span><span class="metric-icon">↗</span></div><strong>৳ 12,40,000</strong><em>↗ 8.4% this month</em></article>
@@ -131,12 +150,56 @@
         document.getElementById('userEmail').textContent = email;
         document.getElementById('userInitial').textContent = name.charAt(0).toUpperCase();
         async function logout() {
+            if (localStorage.getItem('browserNotificationsEnabled') === 'true' && window.sbrymsPush) {
+                try {
+                    await window.sbrymsPush.disable();
+                    localStorage.setItem('browserNotificationsEnabled', 'false');
+                } catch (error) {
+                    console.error('Could not unregister push notifications during logout:', error);
+                }
+            }
             await firebase.auth().signOut();
             localStorage.removeItem('currentUserEmail');
             localStorage.removeItem('currentUserUid');
             window.location.replace('index.html');
         }
+        const pushToggle = document.getElementById('pushToggle');
+        const pushStatus = document.getElementById('pushStatus');
+        function updatePushControls() {
+            const enabled = localStorage.getItem('browserNotificationsEnabled') === 'true';
+            pushToggle.textContent = enabled ? 'Turn off notifications' : 'Enable notifications';
+            if (enabled) {
+                pushStatus.textContent = 'Notifications are enabled on this device.';
+                pushStatus.classList.remove('is-error');
+            } else if ('Notification' in window && Notification.permission === 'denied') {
+                pushStatus.textContent = 'Browser permission is blocked. Allow notifications for this site in browser settings, then enable again.';
+                pushStatus.classList.add('is-error');
+            }
+        }
+        async function togglePushNotifications() {
+            pushToggle.disabled = true;
+            pushStatus.classList.remove('is-error');
+            try {
+                if (!window.sbrymsPush) throw new Error('Notification service did not load. Reload this page and try again.');
+                const enabled = localStorage.getItem('browserNotificationsEnabled') === 'true';
+                if (enabled) {
+                    await window.sbrymsPush.disable();
+                    localStorage.setItem('browserNotificationsEnabled', 'false');
+                } else {
+                    await window.sbrymsPush.enable();
+                    localStorage.setItem('browserNotificationsEnabled', 'true');
+                }
+                updatePushControls();
+            } catch (error) {
+                pushStatus.textContent = error.message || 'Notifications could not be enabled.';
+                pushStatus.classList.add('is-error');
+            } finally {
+                pushToggle.disabled = false;
+            }
+        }
+        updatePushControls();
         document.getElementById('sideLogout').addEventListener('click', logout);
     </script>
+    <script src="assets/push-notifications.js"></script>
 </body>
 </html>
