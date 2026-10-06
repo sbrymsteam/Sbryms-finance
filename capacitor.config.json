@@ -1,0 +1,8 @@
+{
+  "appId": "com.sbryms.finance",
+  "appName": "SBRYMS Finance",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}

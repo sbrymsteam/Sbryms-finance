@@ -2,21 +2,52 @@
   "name": "sbryms-finance",
   "version": "1.0.0",
   "description": "Secure Finance App",
-  "main": "index.html",
+  "main": "desktop/main.js",
   "scripts": {
     "start": "node server.js",
-    "build": "echo 'No build step required'"
+    "build": "echo 'No build step required'",
+    "mobile:prepare": "node scripts/prepare-mobile.js",
+    "mobile:sync": "npm run mobile:prepare && npx cap sync android",
+    "mobile:open": "npx cap open android",
+    "mobile:run": "npx cap run android",
+    "mobile:apk": "node scripts/build-apk.js",
+    "desktop:build": "electron-builder --win nsis && node scripts/publish-desktop.js"
   },
   "devDependencies": {
     "@capacitor/android": "^5.0.0",
     "@capacitor/cli": "^5.0.0",
     "@capacitor/core": "^5.0.0",
-    "serve": "^14.2.6",
-    "@playwright/test": "^1.38.0"
+    "@playwright/test": "^1.38.0",
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3",
+    "serve": "^14.2.6"
   },
   "dependencies": {
+    "@capacitor/push-notifications": "^5.1.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "firebase-admin": "^13.10.0"
+  },
+  "build": {
+    "appId": "com.sbryms.finance.desktop",
+    "productName": "SBRYMS Finance",
+    "directories": {
+      "output": "desktop-build"
+    },
+    "files": [
+      "desktop/**/*",
+      "package.json"
+    ],
+    "electronDist": "node_modules/electron/dist",
+    "win": {
+      "target": "nsis",
+      "artifactName": "SBRYMS-Finance-Setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

@@ -326,6 +326,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script type="importmap">
+    {"imports":{"@capacitor/core":"/assets/vendor/capacitor-core/index.js"}}
+  </script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
@@ -685,6 +688,15 @@
           <span class="unread-badge" data-unread-email="${member.email}" aria-label="Unread messages"></span>
         </div>
       `).join('');
+      list.querySelectorAll('.member-avatar img').forEach(image => {
+        image.addEventListener('error', () => {
+          const email = image.closest('.member-card')?.getAttribute('data-email');
+          const member = members.find(item => item.email === email);
+          if (!member) return;
+          image.onerror = null;
+          image.src = createAvatarDataUrl(member.name);
+        }, { once: true });
+      });
 
       list.querySelectorAll('.member-card').forEach(card => {
         const openMemberChat = () => {
@@ -766,6 +778,15 @@
       }
     }
 
+    document.getElementById('groupBannerImage').addEventListener('error', () => {
+      const bannerImage = document.getElementById('groupBannerImage');
+      const bannerSvg = document.getElementById('groupBannerSvg');
+      if (!bannerImage || !bannerSvg) return;
+      bannerImage.removeAttribute('src');
+      bannerImage.style.display = 'none';
+      bannerSvg.style.display = 'block';
+    });
+
     function updateGroupLastMessage(messages) {
       const latest = [...(messages || [])]
         .filter(message => !message.deleted && String(message.text || '').trim())
@@ -807,7 +828,6 @@
       const reader = new FileReader();
       reader.onload = function () {
         const photoDataUrl = reader.result;
-        localStorage.setItem('selectedProfilePhoto', photoDataUrl);
         localStorage.setItem('teamGroupChatPhoto', photoDataUrl);
         updateGroupBannerPhoto(photoDataUrl);
       };
@@ -816,10 +836,10 @@
     }
 
     function openGroupChat() {
-      const savedGroupPhoto = localStorage.getItem('teamGroupChatPhoto') || localStorage.getItem('selectedProfilePhoto') || createGroupAvatarDataUrl();
       localStorage.setItem('selectedProfileName', 'Team Group Chat');
       localStorage.setItem('selectedProfileEmail', 'team-group');
-      localStorage.setItem('selectedProfilePhoto', savedGroupPhoto);
+      localStorage.removeItem('selectedProfilePhoto');
+      localStorage.removeItem('selectedProfileAvatar');
       localStorage.setItem('selectedProfileDesignation', 'Everyone');
       localStorage.setItem('selectedProfileCurrent', 'false');
       const chatUrl = new URL('team-meet-chat.html', document.baseURI);
@@ -829,7 +849,6 @@
     }
 
     async function openGroupCall(type) {
-      const savedGroupPhoto = localStorage.getItem('teamGroupChatPhoto') || createGroupAvatarDataUrl();
       const currentUserEmail = (localStorage.getItem('currentUserEmail') || 'currentuser@sbryms.com').trim().toLowerCase();
       const roomId = `group-${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const groupCallId = `group-call-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -868,6 +887,12 @@
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(error => console.error('Failed to create group call notification:', error));
+      window.sbrymsPush?.send({
+        recipient: 'all',
+        type: 'team_call',
+        title: 'Team group call',
+        body: `${type === 'video' ? 'Video' : 'Audio'} group call started`
+      });
       const storageKey = 'team_meet_group_chat';
       let messages = [];
       try {
@@ -880,7 +905,8 @@
         .catch(error => console.error('Failed to publish group call invite:', error));
       localStorage.setItem('selectedProfileName', 'Team Group Chat');
       localStorage.setItem('selectedProfileEmail', 'team-group');
-      localStorage.setItem('selectedProfilePhoto', savedGroupPhoto);
+      localStorage.removeItem('selectedProfilePhoto');
+      localStorage.removeItem('selectedProfileAvatar');
       localStorage.setItem('selectedProfileDesignation', 'Everyone');
       localStorage.setItem('selectedProfileCurrent', 'false');
       window.location.href = 'team-meet-call.html?chat=team-group&group=true&room=' + encodeURIComponent(roomId) + '&role=caller&type=' + encodeURIComponent(type);
@@ -905,6 +931,12 @@
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(error => console.error('Failed to create call notification:', error));
+      window.sbrymsPush?.send({
+        recipient: String(member.email || '').trim().toLowerCase(),
+        type: 'team_call',
+        title: `${type === 'video' ? 'Video' : 'Audio'} call`,
+        body: `${localStorage.getItem('currentUserName') || 'A member'} is calling you`
+      });
       window.location.href = 'team-meet-call.html?chat='
         + encodeURIComponent(member.email)
         + '&call=' + encodeURIComponent(callId)
@@ -972,7 +1004,7 @@
         }, error => console.error('Team group call listener failed:', error));
     }
 
-    const savedGroupPhoto = localStorage.getItem('teamGroupChatPhoto') || localStorage.getItem('selectedProfilePhoto');
+    const savedGroupPhoto = localStorage.getItem('teamGroupChatPhoto');
     if (savedGroupPhoto) {
       updateGroupBannerPhoto(savedGroupPhoto);
     }
@@ -991,5 +1023,6 @@
       }
     });
   </script>
+  <script src="assets/push-notifications.js"></script>
 </body>
 </html>

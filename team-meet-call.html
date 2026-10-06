@@ -301,6 +301,7 @@
     const savedProfileEmail = (localStorage.getItem('selectedProfileEmail') || '').trim().toLowerCase();
     const savedProfileName = localStorage.getItem('selectedProfileName') || '';
     const savedProfilePhoto = localStorage.getItem('selectedProfilePhoto') || '';
+    const selectedProfileMatchesTarget = savedProfileEmail === chatEmail.toLowerCase();
 
     const members = [
       { name: 'Md Mahdi Hasan', email: 'mdmahdihasan@gmail.com', photo: '' },
@@ -344,6 +345,11 @@
       const avatarEl = document.getElementById('avatar');
       const avatarSrc = member.photo || buildAvatarSvg(member.name);
       avatarEl.innerHTML = `<img src="${avatarSrc}" alt="${member.name}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;background:#050a12" />`;
+      const image = avatarEl.querySelector('img');
+      image?.addEventListener('error', () => {
+        image.onerror = null;
+        image.src = buildAvatarSvg(member.name);
+      }, { once: true });
     }
 
     async function loadMemberFromFirestore() {
@@ -351,7 +357,7 @@
         applyMember({
           name: savedProfileName || 'Team Group Chat',
           email: 'team-group',
-          photo: savedProfilePhoto
+          photo: localStorage.getItem('teamGroupChatPhoto') || buildAvatarSvg('Team Group Chat')
         });
         return;
       }
@@ -362,7 +368,7 @@
           const resolved = {
             name: data.name || (chatEmail ? chatEmail.split('@')[0].replace(/[._-]/g, ' ') : 'Member'),
             email: data.email || chatEmail,
-            photo: data.photo || ''
+            photo: data.photo || data.profilePhoto || data.photoURL || data.avatar || (selectedProfileMatchesTarget ? savedProfilePhoto : '')
           };
           applyMember(resolved);
           return;
@@ -372,7 +378,7 @@
       }
 
       const normalizedChatEmail = chatEmail.toLowerCase();
-      const fallbackMember = savedProfileEmail === normalizedChatEmail && savedProfileName
+      const fallbackMember = selectedProfileMatchesTarget && savedProfileName
         ? { name: savedProfileName, email: chatEmail, photo: savedProfilePhoto }
         : members.find(item => item.email.toLowerCase() === normalizedChatEmail) || members[0];
       applyMember(fallbackMember);

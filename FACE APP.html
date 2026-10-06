@@ -10,6 +10,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script type="importmap">
+        {"imports":{"@capacitor/core":"/assets/vendor/capacitor-core/index.js"}}
+    </script>
     <script>
         document.documentElement.classList.add('auth-pending');
         const mainPageFirebaseConfig = {
@@ -40,7 +43,9 @@
                         if (data.status !== 'ringing' || Date.now() - createdAt > 60000) return;
                         const callUrl = `team-meet-call.html?chat=${encodeURIComponent(data.callerId || '')}&call=${encodeURIComponent(change.doc.id)}&role=callee&type=${encodeURIComponent(data.callType || 'audio')}`;
                         const openCall = () => { window.location.href = callUrl; };
-                        if ('Notification' in window && Notification.permission === 'granted') {
+                        if (document.visibilityState === 'visible'
+                            && localStorage.getItem('browserNotificationsEnabled') === 'true'
+                            && 'Notification' in window && Notification.permission === 'granted') {
                             const notification = new Notification(data.callerName || 'Incoming call', {
                                 body: `${data.callType === 'video' ? 'Video' : 'Audio'} call`,
                                 tag: `incoming-call-${change.doc.id}`
@@ -1280,7 +1285,9 @@ body.custom-image-background::before {
 
         function showBrowserNotificationForMessage(data) {
             if (!data) return;
-            if (!('Notification' in window) || Notification.permission !== 'granted') return;
+            if (localStorage.getItem('browserNotificationsEnabled') !== 'true'
+                || document.visibilityState !== 'visible'
+                || !('Notification' in window) || Notification.permission !== 'granted') return;
             const type = data.type || 'message';
             if (type !== 'message' && type !== 'team_call') return;
             const senderName = data.fromName || (type === 'team_call' ? 'Team Meet' : 'New message');
@@ -1495,7 +1502,7 @@ body.custom-image-background::before {
 
             const notifToggle = document.getElementById('browserNotifToggle');
             if (notifToggle) {
-                const notificationsEnabled = localStorage.getItem('browserNotificationsEnabled') !== 'false';
+                const notificationsEnabled = localStorage.getItem('browserNotificationsEnabled') === 'true';
                 notifToggle.classList.toggle('on', notificationsEnabled);
             }
 
@@ -1555,13 +1562,23 @@ body.custom-image-background::before {
             if (modal) modal.style.display = 'none';
         }
 
-        function toggleBrowserNotificationSetting() {
+        async function toggleBrowserNotificationSetting() {
             const toggle = document.getElementById('browserNotifToggle');
             if (!toggle) return;
-            const isEnabled = localStorage.getItem('browserNotificationsEnabled') !== 'false';
+            const isEnabled = localStorage.getItem('browserNotificationsEnabled') === 'true';
             const nextState = !isEnabled;
-            localStorage.setItem('browserNotificationsEnabled', String(nextState));
-            toggle.classList.toggle('on', nextState);
+            try {
+                if (nextState) {
+                    if (!window.sbrymsPush) throw new Error('Push notifications are not ready. Reload the page and try again.');
+                    await window.sbrymsPush.enable();
+                } else if (window.sbrymsPush) {
+                    await window.sbrymsPush.disable();
+                }
+                localStorage.setItem('browserNotificationsEnabled', String(nextState));
+                toggle.classList.toggle('on', nextState);
+            } catch (error) {
+                window.alert(error.message || 'Notification settings could not be changed.');
+            }
         }
 
         function toggleTeamMeetBadgeSetting() {
@@ -1632,8 +1649,17 @@ body.custom-image-background::before {
             closeSettingsModal();
         }
 
-        function logout() {
+        async function logout() {
             if (confirm('Are you sure you want to logout?')) {
+                if (localStorage.getItem('browserNotificationsEnabled') === 'true'
+                    && window.sbrymsPush) {
+                    try {
+                        await window.sbrymsPush.disable();
+                        localStorage.setItem('browserNotificationsEnabled', 'false');
+                    } catch (error) {
+                        console.error('Could not unregister push notifications during logout:', error);
+                    }
+                }
                 localStorage.removeItem('currentUserEmail');
                 localStorage.removeItem('currentUserUid');
                 const redirectHome = () => {
@@ -1686,5 +1712,6 @@ body.custom-image-background::before {
     }
     </style>
 <script src="assets/background-settings.js"></script>
+<script src="assets/push-notifications.js"></script>
 </body>
 </html>

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 node_modules/
 .env.local
 .env*.local
@@ -9,15 +8,13 @@ build/
 *.log
 .vercel/
 .capacitor/
-=======
-node_modules/
-.env.local
-.env*.local
-.env
-dist/
-build/
-.DS_Store
-*.log
-.vercel/
-.capacitor/
->>>>>>> 8fceecbfbe6f3fb64c92aef170e3f711ba638301
+www/
+desktop-dist/
+desktop-build/
+android/local.properties
+android/app/google-services.json
+*service-account*.json
+.idea/
+*.apk
+*.bak
+*.deleted

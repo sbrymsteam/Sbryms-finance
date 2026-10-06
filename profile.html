@@ -189,6 +189,16 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             "sbrymsteam@gmail.com"
         ];
 
+        function normalizePhoneForLogin(value) {
+            const banglaDigits = '০১২৩৪৫৬৭৮৯';
+            let digits = String(value || '')
+                .replace(/[০-৯]/g, digit => String(banglaDigits.indexOf(digit)))
+                .replace(/\D/g, '');
+            if (digits.startsWith('00880')) digits = digits.slice(2);
+            if (digits.startsWith('0') && digits.length === 11) digits = `880${digits.slice(1)}`;
+            return digits;
+        }
+
         function createInitialsAvatar(name) {
             const initials = (name || 'U').split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'U';
             const colors = ['#2cc9f5', '#ff4db8', '#7dd3fc', '#8b5cf6', '#22c55e', '#f59e0b'];
@@ -247,11 +257,13 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
         function registerProfileAccount(email, name, photo, username, designation) {
             if (!email) return;
             const accounts = getProfileAccounts();
-            const existingIndex = accounts.findIndex(acc => acc.email === email);
+            const normalizedEmail = email.trim().toLowerCase();
+            const existingIndex = accounts.findIndex(acc => String(acc.email || '').trim().toLowerCase() === normalizedEmail);
+            const existingAccount = existingIndex >= 0 ? accounts[existingIndex] : {};
             const account = {
                 email,
                 name: name || email.split('@')[0].replace(/[._-]/g, ' '),
-                photo: photo || '',
+                photo: photo || existingAccount.photo || '',
                 username: username || email.split('@')[0],
                 designation: designation || '',
                 updatedAt: Date.now()
@@ -303,6 +315,14 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                 alert('Error toggling edit mode: ' + e.message);
             }
         }
+
+        let profilePhotoValue = '';
+        document.getElementById('profileImg').addEventListener('error', event => {
+            const image = event.currentTarget;
+            if (!(image instanceof HTMLImageElement)) return;
+            image.onerror = null;
+            image.src = createInitialsAvatar(document.getElementById('displayName').textContent || 'Member');
+        });
 
         // Get current location
         function getLocation() {
@@ -356,7 +376,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                 if (!snapshot.empty) {
                     const data = snapshot.docs[0].data();
                     const resolvedName = data.name || selectedProfileName || 'Member';
-                    const resolvedPhoto = data.photo || selectedProfilePhoto || createInitialsAvatar(resolvedName);
+                    const resolvedPhoto = data.photo || data.profilePhoto || data.photoURL || data.avatar || selectedProfilePhoto || createInitialsAvatar(resolvedName);
                     localStorage.setItem('selectedProfileName', resolvedName);
                     localStorage.setItem('selectedProfilePhoto', resolvedPhoto);
                     localStorage.setItem('selectedProfileDesignation', data.designation || selectedProfileDesignation || 'Not set');
@@ -382,7 +402,9 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
 
                 if (selectedProfileName && !selectedProfileCurrent) {
                     const activeProfileName = localStorage.getItem('selectedProfileName') || selectedProfileName;
-                    const activeProfilePhoto = localStorage.getItem('selectedProfilePhoto') || selectedProfilePhoto || createInitialsAvatar(activeProfileName);
+                    const activeProfilePhoto = selectedProfileEmail === 'team-group'
+                        ? (localStorage.getItem('teamGroupChatPhoto') || createInitialsAvatar(activeProfileName))
+                        : (localStorage.getItem('selectedProfilePhoto') || selectedProfilePhoto || createInitialsAvatar(activeProfileName));
                     const activeProfileDesignation = localStorage.getItem('selectedProfileDesignation') || selectedProfileDesignation || 'Not set';
                     const activeProfileEmail = localStorage.getItem('selectedProfileEmail') || selectedProfileEmail || 'Not available';
                     document.getElementById('topName').innerText = activeProfileName;
@@ -395,6 +417,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                     document.getElementById('displayBio').textContent = 'Not set';
                     document.getElementById('displayLocation').textContent = 'Not set';
                     document.getElementById('profileImg').src = activeProfilePhoto;
+                    profilePhotoValue = activeProfilePhoto;
                     localStorage.setItem('selectedProfilePhoto', activeProfilePhoto);
                     document.querySelector('.edit-btn').style.display = 'none';
                     document.querySelector('.profile-edit').style.display = 'none';
@@ -446,11 +469,13 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                         document.getElementById('editBirthDate').value = data.birthDate || "";
                         document.getElementById('editBio').value = data.bio || "";
                         document.getElementById('editLocation').value = data.location || "";
-                        if (data.photo) {
-                            document.getElementById('profileImg').src = data.photo;
-                            localStorage.setItem(storageKey('profile_photo'), data.photo);
+                        const storedPhoto = data.photo || data.profilePhoto || data.photoURL || data.avatar || localStorage.getItem(storageKey('profile_photo')) || '';
+                        if (storedPhoto) {
+                            profilePhotoValue = storedPhoto;
+                            document.getElementById('profileImg').src = storedPhoto;
+                            localStorage.setItem(storageKey('profile_photo'), storedPhoto);
                         }
-                        registerProfileAccount(userEmail, displayName, data.photo || '', displayUsername, data.designation || '');
+                        registerProfileAccount(userEmail, displayName, storedPhoto, displayUsername, data.designation || '');
                     } else {
                         // নতুন user - ইমেইল থেকে নাম বের করে সেটআপ করো
                         const extractedName = extractNameFromEmail(user.email);
@@ -486,6 +511,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                         db.collection("users").doc(user.uid).set({
                             name: extractedName,
                             username: user.email.split('@')[0],
+                            usernameNormalized: user.email.split('@')[0].toLowerCase(),
                             designation: '',
                             email: user.email,
                             role: currentUserRole,
@@ -506,11 +532,47 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
         });
 
         function previewImage(event) {
-            const reader = new FileReader();
-            reader.onload = function() {
-                document.getElementById('profileImg').src = reader.result;
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                alert('একটি image file নির্বাচন করুন।');
+                event.target.value = '';
+                return;
             }
-            reader.readAsDataURL(event.target.files[0]);
+
+            const reader = new FileReader();
+            reader.onerror = () => {
+                alert('ছবিটি পড়া যায়নি। আবার নির্বাচন করুন।');
+                event.target.value = '';
+            };
+            reader.onload = () => {
+                const image = new Image();
+                image.onerror = () => {
+                    alert('ছবিটি খোলা যায়নি। অন্য ছবি নির্বাচন করুন।');
+                    event.target.value = '';
+                };
+                image.onload = () => {
+                    const maxDimension = 512;
+                    const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+                    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+                    const context = canvas.getContext('2d');
+                    if (!context) {
+                        alert('ছবিটি প্রস্তুত করা যায়নি। আবার চেষ্টা করুন।');
+                        event.target.value = '';
+                        return;
+                    }
+                    context.fillStyle = '#ffffff';
+                    context.fillRect(0, 0, canvas.width, canvas.height);
+                    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                    profilePhotoValue = canvas.toDataURL('image/jpeg', 0.82);
+                    document.getElementById('profileImg').src = profilePhotoValue;
+                    event.target.value = '';
+                };
+                image.src = String(reader.result);
+            };
+            reader.readAsDataURL(file);
         }
 
         function saveProfile() {
@@ -528,20 +590,22 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             const birthDate = document.getElementById('editBirthDate').value;
             const bio = document.getElementById('editBio').value;
             const location = document.getElementById('editLocation').value;
-            const photo = document.getElementById('profileImg').src;
+            const photo = profilePhotoValue;
             
             localStorage.setItem(storageKey('profile_name'), name || 'Member');
             localStorage.setItem(storageKey('profile_username'), username || email.split('@')[0]);
             localStorage.setItem(storageKey('profile_designation'), designation || 'Member');
-            if (photo && photo.length < 1000000) {
+            if (photo) {
                 localStorage.setItem(storageKey('profile_photo'), photo);
             }
             
             const profileData = {
                 name,
                 username: username || email.split('@')[0],
+                usernameNormalized: (username || email.split('@')[0]).toLowerCase(),
                 designation,
                 phone,
+                phoneNormalized: normalizePhoneForLogin(phone),
                 email,
                 birthDate,
                 bio,
@@ -550,12 +614,15 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             };
             
-            if (photo && photo.length < 1000000) {
+            if (photo) {
                 profileData.photo = photo;
             }
             
             db.collection("users").doc(user.uid).set(profileData, { merge: true }).then(() => {
                 registerProfileAccount(email, name, photo, username, designation);
+                if (photo) {
+                    localStorage.setItem('selectedProfilePhoto', photo);
+                }
                 alert("অসাধারণ! আপনার তথ্যগুলি অনলাইনে সেভ হয়েছে।");
                 // Update display values
                 document.getElementById('displayName').textContent = name || 'Not set';

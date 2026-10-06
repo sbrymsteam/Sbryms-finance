@@ -2,137 +2,194 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EmailJS Setup Guide</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#071124">
+    <meta name="description" content="SBRYMS Finance লগইন ইমেইল চালু ও পরীক্ষা করার বাংলা EmailJS নির্দেশিকা।">
+    <title>EmailJS Setup Guide - SBRYMS Finance</title>
+    <link rel="stylesheet" href="assets/bg.css">
     <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .step { background: #f5f5f5; padding: 15px; margin: 10px 0; border-left: 4px solid #007bff; }
-        .code { background: #2d3748; color: #e2e8f0; padding: 10px; border-radius: 5px; font-family: monospace; }
-        .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; }
+        :root {
+            color-scheme: dark;
+            font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            font-synthesis: none;
+            text-rendering: optimizeLegibility;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            min-width: 320px;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px;
+            color: #e6eef6;
+            line-height: 1.7;
+        }
+
+        .guide {
+            width: min(100%, 900px);
+            margin: 0 auto;
+        }
+
+        .hero, .panel {
+            border: 1px solid rgba(180, 205, 235, .16);
+            border-radius: 16px;
+            background: rgba(7, 17, 36, .9);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, .2);
+            padding: clamp(18px, 4vw, 30px);
+            margin-block: 16px;
+        }
+
+        .hero { text-align: center; }
+        h1 { margin: 0 0 8px; font-size: clamp(1.6rem, 5vw, 2.35rem); line-height: 1.25; }
+        h2 { margin: 0 0 12px; font-size: clamp(1.15rem, 3vw, 1.4rem); }
+        h3 { margin: 18px 0 8px; font-size: 1.05rem; }
+        p, ul, ol { margin-block: 8px; }
+        ol, ul { padding-inline-start: 24px; }
+        li + li { margin-top: 6px; }
+
+        a { color: #8ee7ff; text-underline-offset: 3px; }
+        a:hover { color: #b8f1ff; }
+        a:focus-visible { outline: 3px solid #5ed5bf; outline-offset: 3px; border-radius: 3px; }
+
+        .eyebrow { color: #9db2cc; font-size: .9rem; margin: 0 0 8px; }
+        .notice {
+            border-inline-start: 4px solid #f6c453;
+            background: rgba(246, 196, 83, .1);
+            border-radius: 8px;
+            padding: 14px 16px;
+        }
+        .notice--safe { border-color: #5ed5bf; background: rgba(94, 213, 191, .1); }
+        .notice p { margin: 0; }
+
+        .code {
+            max-width: 100%;
+            overflow-x: auto;
+            padding: 16px;
+            border: 1px solid rgba(180, 205, 235, .16);
+            border-radius: 10px;
+            background: #0b1423;
+            color: #e2e8f0;
+            font: .92rem/1.65 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            tab-size: 2;
+        }
+
+        .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+        .button {
+            display: inline-flex;
+            min-height: 44px;
+            align-items: center;
+            justify-content: center;
+            padding: 9px 16px;
+            border: 1px solid rgba(142, 231, 255, .45);
+            border-radius: 10px;
+            background: rgba(6, 182, 212, .12);
+            color: #e6eef6;
+            text-decoration: none;
+        }
+        .button:hover { background: rgba(6, 182, 212, .22); }
+        .footer { padding: 4px 0 20px; text-align: center; color: #b7c5d7; font-size: .9rem; }
+
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            .hero, .panel { border-radius: 12px; margin-block: 12px; }
+            .actions { flex-direction: column; }
+            .button { width: 100%; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; }
+        }
     </style>
-<style>
-/* Global dark/translucent theme overrides applied by Copilot */
-/* Remove rounded corners and use linear borders */
-/* Remove global forced rounding; apply refined gradient borders and sensible radii */
-/* Use a transparent base border and a subtle gradient edge for better look on dark background */
-.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .icon-box, .profile-photo, .input-field, .btn-main {
-    border: 1px solid transparent !important;
-    background-image: linear-gradient(180deg, rgba(7,17,36,0.66), rgba(7,17,36,0.66)), linear-gradient(90deg, rgba(211,38,150,0.12), rgba(6,182,212,0.12));
-    background-origin: border-box;
-    background-clip: padding-box, border-box;
-    border-radius: 10px !important;
-}
-.profile-photo { border-radius: 50% !important; }
-.menu-icon, .header-action { border-radius: 12px !important; }
-.btn-main { border-radius: 999px !important; }
-.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .icon-box, .profile-photo, .input-field, .btn-main { border: 1px solid rgba(255,255,255,0.06) !important; }
-body { background-color: #071124 !important; background-image: radial-gradient(1200px 600px at 10% 20%, rgba(207,44,149,0.08), transparent 20%), radial-gradient(900px 500px at 80% 70%, rgba(4,188,212,0.06), transparent 18%), linear-gradient(180deg,#040714 0%, #071124 40%, #071726 100%); color: #e6eef6 !important; }
-.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu { background: rgba(7,17,36,0.56) !important; color: #e6eef6 !important; border-color: rgba(255,255,255,0.04) !important; box-shadow: 0 12px 30px rgba(2,6,23,0.6) !important; }
-.card h3, .container h2, .app-header h1, .app-header h2 { color: #e6eef6 !important; }
-.input-field { background: rgba(255,255,255,0.02) !important; color: #e6eef6 !important; border: 1px solid rgba(255,255,255,0.06) !important; }
-.link, a { color: rgba(255,255,255,0.95) !important; }
-.btn-main { background: linear-gradient(135deg, rgba(211,38,150,0.95) 0%, rgba(6,182,212,0.95) 100%) !important; color: #021724 !important; }
-/* small helpers */
-.auth-box { backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%); }
-#toast { background: rgba(20,22,26,0.9) !important; color: #fff !important; }
-</style>
-<style>
-/* Remove page chrome borders; keep only .icon-box borders */
-.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .auth-box, .menu-icon, .header-action, .notification-bar, .profile-photo, .input-field, .btn-main {
-  border: none !important;
-  background-image: none !important;
-  box-shadow: none !important;
-}
-.icon-box { border: 1px solid rgba(255,255,255,0.08) !important; background: transparent !important; box-shadow: none !important; }
-body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
-</style>
-<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
-<link rel="stylesheet" href="assets/bg.css">
 </head>
 <body>
-    <h1>📧 EmailJS Setup Guide - SBRYMS Login System</h1>
+    <main class="guide">
+        <header class="hero">
+            <p class="eyebrow">SBRYMS Finance · ইমেইল সেটআপ</p>
+            <h1>EmailJS সেটআপ গাইড</h1>
+            <p>Android, iPhone, ট্যাবলেট ও কম্পিউটারে লগইন/ভেরিফিকেশন ইমেইল চালু করার নির্দেশিকা।</p>
+            <div class="actions">
+                <a class="button" href="login.html">লগইন পেজ খুলুন</a>
+                <a class="button" href="Email-Delivery-Time.html">ইমেইল না এলে কী করবেন</a>
+            </div>
+        </header>
 
-    <div class="warning">
-        <strong>⚠️ গুরুত্বপূর্ণ:</strong> এই গাইড অনুসরণ করে EmailJS সেটআপ করলে আপনার লগইন সিস্টেমে আসল ইমেইল যাবে।
-    </div>
+        <section class="panel" aria-labelledby="before-title">
+            <h2 id="before-title">শুরু করার আগে</h2>
+            <div class="notice">
+                <p><strong>গুরুত্বপূর্ণ:</strong> অ্যাপের সঠিক লগইন ফাইলটি <code>login.html</code> (বড় হাতের <code>LOGIN.html</code> নয়)। এই ফাইলে EmailJS SDK ও বর্তমান Public Key, Service ID এবং Template ID আগে থেকেই যুক্ত আছে। Dashboard-এ এগুলো বদলালে তবেই ফাইলের মানগুলো মিলিয়ে আপডেট করতে হবে।</p>
+            </div>
+        </section>
 
-    <h2>📋 Step 1: EmailJS Account তৈরি করুন</h2>
-    <div class="step">
-        1. <a href="https://www.emailjs.com/" target="_blank">EmailJS.com</a> এ যান<br>
-        2. "Sign Up" করে একাউন্ট তৈরি করুন<br>
-        3. Email ভেরিফাই করুন
-    </div>
+        <section class="panel" aria-labelledby="account-title">
+            <h2 id="account-title">১. EmailJS অ্যাকাউন্ট ও ইমেইল সার্ভিস</h2>
+            <ol>
+                <li><a href="https://www.emailjs.com/" target="_blank" rel="noopener noreferrer">EmailJS</a>-এ অ্যাকাউন্ট খুলে ইমেইল ঠিকানা যাচাই করুন।</li>
+                <li>Dashboard-এর <strong>Email Services</strong> থেকে Gmail বা আপনার ব্যবহৃত মেইল সার্ভিস যুক্ত করুন।</li>
+                <li>অনুমোদিত অ্যাকাউন্ট/সংযোগ প্রক্রিয়া সম্পন্ন করে Service ID সংরক্ষণ করুন।</li>
+            </ol>
+            <div class="notice">
+                <p><strong>ইমেইল পাসওয়ার্ড দেবেন না:</strong> Gmail-এর “Less Secure Apps” সুবিধা বন্ধ। EmailJS-এ সার্ভিস যুক্ত করার সময় দেখানো অনুমোদিত সাইন-ইন/কানেকশন পদ্ধতি ব্যবহার করুন; কখনো ইমেইল পাসওয়ার্ড বা App Password ওয়েবপেজে লিখবেন না।</p>
+            </div>
+        </section>
 
-    <h2>📧 Step 2: Email Service যোগ করুন</h2>
-    <div class="step">
-        1. Dashboard এ যান<br>
-        2. "Email Services" → "Add New Service"<br>
-        3. Gmail বা আপনার ইমেইল প্রোভাইডার সিলেক্ট করুন<br>
-        4. আপনার ইমেইল এবং পাসওয়ার্ড দিন<br>
-        5. Service ID কপি করে রাখুন (যেমন: service_xxxxx)
-    </div>
+        <section class="panel" aria-labelledby="template-title">
+            <h2 id="template-title">২. ইমেইল টেমপ্লেট তৈরি করুন</h2>
+            <ol>
+                <li><strong>Email Templates</strong> থেকে নতুন Template তৈরি করুন।</li>
+                <li><strong>To Email</strong> ঘরে <code>{{to_email}}</code> এবং Subject ঘরে <code>{{subject}}</code> দিন।</li>
+                <li>ইমেইলের মূল অংশে নিচের ভেরিয়েবলগুলো রাখুন; এগুলোর নাম <code>login.html</code> থেকে পাঠানো মানের সঙ্গে মিলতে হবে।</li>
+            </ol>
+            <pre class="code"><code>প্রিয় ব্যবহারকারী,
 
-    <h2>📝 Step 3: Email Template তৈরি করুন</h2>
-    <div class="step">
-        1. "Email Templates" → "Create New Template"<br>
-        2. নিচের টেমপ্লেট কপি করে পেস্ট করুন:
-        <div class="code">
-Subject: {{subject}}
+আপনার {{type}} যাচাইকরণ কোড: {{verification_code}}
 
-Dear User,
+কোডটি লগইন পেজে প্রবেশ করুন।
 
-Your {{type}} verification code is: {{verification_code}}
+SBRYMS Finance Team</code></pre>
+            <p>Template ID সংরক্ষণ করুন। Dashboard-এর Template Test থেকে নিজের ঠিকানায় একটি পরীক্ষামূলক ইমেইল পাঠিয়ে To Email ও ভেরিয়েবলগুলো যাচাই করুন।</p>
+        </section>
 
-Please enter this code to complete the process.
+        <section class="panel" aria-labelledby="connect-title">
+            <h2 id="connect-title">৩. অ্যাপের সেটআপ মিলিয়ে দেখুন</h2>
+            <p>বর্তমান <code>login.html</code> EmailJS v3 Browser SDK ব্যবহার করে এবং <code>to_email</code>, <code>subject</code>, <code>type</code> ও <code>verification_code</code> পাঠায়। Dashboard-এ কোনো ID বদলালে ফাইলের সংশ্লিষ্ট মানগুলোর সঙ্গে নতুন ID মেলান:</p>
+            <pre class="code"><code>emailjs.init("YOUR_PUBLIC_KEY");
+await emailjs.send(
+  "YOUR_SERVICE_ID",
+  "YOUR_TEMPLATE_ID",
+  templateParams
+);</code></pre>
+            <div class="notice notice--safe">
+                <p><strong>নিরাপত্তা—প্রকাশের আগে ঠিক করুন:</strong> Browser-এ ব্যবহৃত Public Key ব্যবহারকারীরা দেখতে পারেন—এটি গোপন key নয়। EmailJS-এর অনুমোদিত domain/origin সীমাবদ্ধ করুন; Private Key বা ইমেইল পাসওয়ার্ড HTML/JavaScript-এ রাখবেন না। বর্তমান <code>login.html</code>-এ OTP ও registration password <code>localStorage</code>-এ রাখা হয়, OTP মেয়াদোত্তীর্ণ হওয়ার সময় যাচাই হয় না, এবং যাচাই browser-এই হয়। তাই ইমেইলের টেমপ্লেটে “১৫ মিনিটে মেয়াদ শেষ” লিখবেন না—এটি বর্তমানে enforce করা নেই। প্রকৃত নিরাপত্তার জন্য OTP তৈরি/যাচাই server-side করুন এবং password নিরাপদ authentication service (যেমন Firebase Authentication) দিয়ে সামলান।</p>
+            </div>
+        </section>
 
-Best regards,
-SBRYMS Finance Team
-        </div>
-        3. Template ID কপি করে রাখুন (যেমন: template_xxxxx)
-    </div>
+        <section class="panel" aria-labelledby="test-title">
+            <h2 id="test-title">৪. ওয়েব ও ফোনে পরীক্ষা করুন</h2>
+            <ol>
+                <li>Dashboard-এ Template Test সফল হয়েছে নিশ্চিত করুন।</li>
+                <li>ওয়েবসাইটটি HTTPS বা localhost-এ চালু করে <a href="login.html">লগইন পেজ</a> খুলুন। সরাসরি <code>file://</code> থেকে খোলার বদলে ওয়েব সার্ভার ব্যবহার করুন।</li>
+                <li>নিজের নিয়ন্ত্রিত ইমেইল ঠিকানা দিয়ে রেজিস্ট্রেশন/পাসওয়ার্ড রিসেট পরীক্ষা করুন; Inbox ও Spam/Junk—দুটিই দেখুন।</li>
+                <li>Android Chrome এবং কম্পিউটারের Chrome/Edge/Firefox-এ পেজটি খুলে লেখা, বাটন ও কোড ব্লক স্ক্রিনের বাইরে যাচ্ছে কি না দেখুন।</li>
+                <li>ইমেইল না এলে Browser Console এবং EmailJS Dashboard-এর error/activity log দেখুন।</li>
+            </ol>
+        </section>
 
-    <h2>🔑 Step 4: Public Key নিন</h2>
-    <div class="step">
-        1. "Account" → "General" এ যান<br>
-        2. Public Key কপি করে রাখুন (যেমন: xxxxxxxx)
-    </div>
+        <section class="panel" aria-labelledby="fallback-title">
+            <h2 id="fallback-title">বিকল্প পদ্ধতি ও সমস্যা সমাধান</h2>
+            <ul>
+                <li><strong>To Email ফাঁকা/ভুল:</strong> Template-এর To Email ঘরে <code>{{to_email}}</code> আছে কি না দেখুন।</li>
+                <li><strong>Template variable error:</strong> <code>{{verification_code}}</code>, <code>{{subject}}</code> ও <code>{{type}}</code> বানান হুবহু মিলিয়ে নিন।</li>
+                <li><strong>অনুমতি বা quota error:</strong> EmailJS service connection, অনুমোদিত domain এবং account-এর বর্তমান quota যাচাই করুন।</li>
+                <li><strong>Network error:</strong> ইন্টারনেট সংযোগ, browser extension এবং Content Security Policy/hosting configuration পরীক্ষা করুন।</li>
+            </ul>
+            <p><code>mailto:</code> ব্যবহার করলে ইমেইল স্বয়ংক্রিয়ভাবে পাঠানো হয় না—ব্যবহারকারীর ইমেইল অ্যাপ খুলে যায়। তাই এটি verification-code পাঠানোর বিকল্প নয়।</p>
+        </section>
 
-    <h2>⚙️ Step 5: LOGIN.html আপডেট করুন</h2>
-    <div class="step">
-        LOGIN.html ফাইলে এই লাইনগুলো খুঁজে আপনার তথ্য দিয়ে রিপ্লেস করুন:
-        <div class="code">
-// EmailJS ইনিশিয়ালাইজ
-emailjs.init("YOUR_PUBLIC_KEY"); // ← আপনার Public Key
-
-// EmailJS টেমপ্লেট আইডি
-await emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", templateParams);
-//                    ↑ YOUR_SERVICE_ID    ↑ YOUR_TEMPLATE_ID
-        </div>
-    </div>
-
-    <h2>🧪 Step 6: টেস্ট করুন</h2>
-    <div class="step">
-        1. LOGIN.html খুলুন<br>
-        2. রেজিস্ট্রেশন বা পাসওয়ার্ড রিসেট করুন<br>
-        3. আপনার ইমেইলে কোড আসবে কিনা চেক করুন
-    </div>
-
-    <h2>🔧 Alternative: Simple Email Setup</h2>
-    <div class="step">
-        যদি EmailJS কমপ্লেক্স লাগে, তাহলে এই সিম্পল মেথড ব্যবহার করুন:<br>
-        <div class="code">
-// sendEmailCode ফাংশনে এই লাইন রিপ্লেস করুন:
-window.open(`mailto:${email}?subject=${type} Code&body=Your verification code is: ${code}`);
-        </div>
-        এতে ইমেইল ক্লায়েন্ট খুলে যাবে এবং কোড দেখাবে।
-    </div>
-
-    <h2>❓ সমস্যা হলে?</h2>
-    <div class="step">
-        - EmailJS Dashboard এ Error Logs চেক করুন<br>
-        - Browser Console এ Error দেখুন<br>
-        - Gmail এর ক্ষেত্রে "Less Secure Apps" enable করুন<br>
-        - 2FA enabled থাকলে App Password ব্যবহার করুন
-    </div>
-<script src="assets/background-settings.js"></script>
+        <footer class="footer">সেটআপ শেষ হলে ওয়েবসাইটটি আবার প্রকাশ করে Android ও PC—দুই জায়গাতেই পরীক্ষা করুন।</footer>
+    </main>
+    <script src="assets/background-settings.js"></script>
 </body>
+</html>

@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SBRYMS Finance - Team Meet Chat</title>
+  <script type="importmap">
+    {"imports":{"@capacitor/core":"/assets/vendor/capacitor-core/index.js"}}
+  </script>
   <style>
     :root {
       --bg: #050a10;
@@ -1240,7 +1243,7 @@
     const requestedChatEmail = (params.get('chat') || hashParams.get('chat') || '').trim();
     const chatEmail = requestedChatEmail || 'team-group';
     const isGroupChat = chatEmail.toLowerCase() === 'team-group' || chatEmail.toLowerCase() === 'group';
-    const groupAvatarPhoto = localStorage.getItem('teamGroupChatPhoto') || localStorage.getItem('selectedProfilePhoto') || buildGroupAvatarSvg();
+    const groupAvatarPhoto = localStorage.getItem('teamGroupChatPhoto') || buildGroupAvatarSvg();
     let selectedMember = isGroupChat
       ? { name: 'Team Group Chat', email: 'team-group', photo: groupAvatarPhoto, role: 'Everyone' }
       : members.find(member => (member.email || '').toLowerCase() === (chatEmail || '').toLowerCase())
@@ -1287,6 +1290,14 @@
       return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
     }
 
+    document.addEventListener('error', event => {
+      const image = event.target;
+      if (!(image instanceof HTMLImageElement)
+        || !image.matches('.avatar img, .sender-avatar img, .seen-by-avatar img')) return;
+      image.onerror = null;
+      image.src = buildAvatarSvg(image.alt || 'Member');
+    }, true);
+
     function buildGroupAvatarSvg() {
       const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
@@ -1316,13 +1327,15 @@
           .get();
         const profileDoc = snapshot.docs[0] || null;
         const savedAccount = getSavedProfileAccount(chatEmail);
-        const savedName = localStorage.getItem('selectedProfileName') || savedAccount.name;
+        const selectedProfileMatchesTarget = String(localStorage.getItem('selectedProfileEmail') || '').trim().toLowerCase() === normalizedTargetEmail;
+        const savedName = (selectedProfileMatchesTarget ? localStorage.getItem('selectedProfileName') : '') || savedAccount.name;
+        const selectedPhoto = selectedProfileMatchesTarget ? localStorage.getItem('selectedProfilePhoto') : '';
         if (profileDoc) {
           const data = profileDoc.data();
           selectedMember = {
             name: data.name || data.displayName || savedName || (chatEmail ? chatEmail.split('@')[0].replace(/[._-]/g, ' ') : 'Member'),
             email: data.email || chatEmail,
-            photo: data.photo || data.profilePhoto || data.photoURL || data.avatar || localStorage.getItem('selectedProfilePhoto') || savedAccount.photo || '',
+            photo: data.photo || data.profilePhoto || data.photoURL || data.avatar || savedAccount.photo || selectedPhoto || '',
             role: data.designation || data.role || 'Member',
             status: data.status || 'offline',
             presenceStatus: data.presenceStatus || data.status || 'offline',
@@ -1331,13 +1344,15 @@
           renderProfile();
         } else {
           selectedMember.name = savedName || selectedMember.name;
-          selectedMember.photo = localStorage.getItem('selectedProfilePhoto') || savedAccount.photo || selectedMember.photo;
+          selectedMember.photo = savedAccount.photo || selectedPhoto || selectedMember.photo;
           renderProfile();
         }
       } catch (error) {
         console.error('Error loading chat profile from Firestore:', error);
         const savedAccount = getSavedProfileAccount(chatEmail);
-        if (savedAccount.photo) selectedMember.photo = savedAccount.photo;
+        const selectedProfileMatchesTarget = String(localStorage.getItem('selectedProfileEmail') || '').trim().toLowerCase() === normalizedTargetEmail;
+        const selectedPhoto = selectedProfileMatchesTarget ? localStorage.getItem('selectedProfilePhoto') : '';
+        if (savedAccount.photo || selectedPhoto) selectedMember.photo = savedAccount.photo || selectedPhoto;
       }
     }
 
@@ -1441,7 +1456,7 @@
       const name = /^(you|me)$/i.test(String(rawName).trim())
         ? currentProfile.name
         : rawName;
-      const photo = message.senderPhoto || firestoreProfile.photo || knownMember?.photo || savedAccount.photo || buildAvatarSvg(name);
+      const photo = firestoreProfile.photo || knownMember?.photo || savedAccount.photo || message.senderPhoto || buildAvatarSvg(name);
       return `
         <div class="group-message-profile sender">
           <span class="sender-avatar"><img src="${photo}" alt="${name} profile"></span>
@@ -1507,12 +1522,10 @@
     }
 
     function requestBrowserNotifications() {
-      if (!('Notification' in window)) return Promise.resolve('denied');
-      if (Notification.permission !== 'default') return Promise.resolve(Notification.permission);
-      return Notification.requestPermission().catch(error => {
-        console.error('Notification permission failed:', error);
-        return 'denied';
-      });
+      if (localStorage.getItem('browserNotificationsEnabled') !== 'true' || !('Notification' in window)) {
+        return Promise.resolve('denied');
+      }
+      return Promise.resolve(Notification.permission);
     }
 
     function playMessageTone({ frequency = 880, duration = 0.12, delay = 0, volume = 0.04, type = 'triangle', attack = 0.01, release = 0.09 } = {}) {
@@ -1707,7 +1720,9 @@
 
     function showMessageNotification(message) {
       playIncomingMessageTone();
-      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+      if (localStorage.getItem('browserNotificationsEnabled') !== 'true'
+        || document.visibilityState !== 'visible'
+        || !('Notification' in window) || Notification.permission !== 'granted') return;
       const notification = new Notification(message.senderName || selectedMember.name || 'New message', {
         body: message.deleted ? 'Message deleted' : (message.text || 'New voice message'),
         icon: selectedMember.photo || buildAvatarSvg(message.senderName || selectedMember.name || 'User'),
@@ -1805,7 +1820,7 @@
       const avatars = readers.map(reader => {
         const profile = senderProfiles.get(String(reader.email).toLowerCase()) || {};
         const name = reader.name || profile.name || 'Member';
-        const photo = reader.photo || profile.photo || buildAvatarSvg(name);
+        const photo = profile.photo || reader.photo || buildAvatarSvg(name);
         return `<span class="seen-by-avatar" title="${name}"><img src="${photo}" alt="${name}"></span>`;
       }).join('');
       const more = Object.keys(message.readBy).length - 1 > readers.length
@@ -1896,6 +1911,12 @@
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(error => console.error('Failed to create in-app notification:', error));
+      window.sbrymsPush?.send({
+        recipient,
+        type,
+        title,
+        body: message
+      });
     }
 
     function cancelReply() {
@@ -2284,7 +2305,8 @@
           if (activeIncomingCallId !== call.id) {
             activeIncomingCallId = call.id;
             requestBrowserNotifications().then(permission => {
-              if (permission === 'granted' && activeIncomingCallId === call.id) {
+              if (permission === 'granted' && document.visibilityState === 'visible'
+                && activeIncomingCallId === call.id) {
               const notification = new Notification(data.callerName || 'Incoming call', {
                 body: `${data.callType === 'video' ? 'Video' : 'Audio'} call`,
                 icon: buildAvatarSvg(data.callerName || 'Caller'),
@@ -2477,7 +2499,12 @@
     async function openCall(type) {
       localStorage.setItem('selectedProfileName', selectedMember.name || 'Member');
       localStorage.setItem('selectedProfileEmail', selectedMember.email || '');
-      localStorage.setItem('selectedProfilePhoto', selectedMember.photo || '');
+      if (isGroupChat) {
+        localStorage.removeItem('selectedProfilePhoto');
+        localStorage.removeItem('selectedProfileAvatar');
+      } else {
+        localStorage.setItem('selectedProfilePhoto', selectedMember.photo || '');
+      }
       if (isGroupChat) {
         const roomId = `group-${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const groupCallId = `group-call-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -2520,6 +2547,12 @@
         return;
       }
       const callId = `call-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      createInAppNotification({
+        to: selectedMember.email,
+        type: 'team_call',
+        title: `${type === 'video' ? 'Video' : 'Audio'} call`,
+        message: `${getCurrentSenderProfile().name} is calling you`
+      });
       const url = `team-meet-call.html?chat=${encodeURIComponent(selectedMember.email)}&call=${encodeURIComponent(callId)}&role=caller&type=${type}`;
       window.location.href = url;
     }
@@ -3109,5 +3142,6 @@
     renderProfile();
     initializeChat();
   </script>
+  <script src="assets/push-notifications.js"></script>
 </body>
 </html>

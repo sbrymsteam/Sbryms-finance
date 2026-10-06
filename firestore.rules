@@ -13,6 +13,8 @@ service cloud.firestore {
 
     match /payments/{paymentId} {
       allow create: if signedIn();
+      allow update: if signedIn()
+        && request.auth.token.email == 'sbrymsteam@gmail.com';
       allow read: if signedIn()
         && (resource.data.profileEmail == request.auth.token.email
           || request.auth.token.email == 'sbrymsteam@gmail.com');

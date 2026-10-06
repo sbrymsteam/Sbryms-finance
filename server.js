@@ -2,6 +2,11 @@ const crypto = require('crypto');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const resolveLogin = require('./api/resolve-login');
+const registerPushToken = require('./api/register-push-token');
+const sendPush = require('./api/send-push');
+const pushConfig = require('./api/push-config');
+require('dotenv').config({ path: '.env.local' });
 require('dotenv').config();
 
 const app = express();
@@ -12,7 +17,13 @@ const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname)));
+app.post('/api/resolve-login', resolveLogin);
+app.all('/api/register-push-token', registerPushToken);
+app.all('/api/send-push', sendPush);
+app.all('/api/push-config', pushConfig);
+app.get('/assets/login.html', (req, res) => {
+  res.redirect(302, '/login.html');
+});
 
 app.get('/api/cloudinary-signature', (req, res) => {
   if (!cloudName || !apiKey || !apiSecret) {
@@ -30,6 +41,11 @@ app.get('/api/cloudinary-signature', (req, res) => {
 
   res.json({ apiKey, cloudName, folder, timestamp, signature });
 });
+
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'API route not found.' });
+});
+app.use(express.static(path.join(__dirname)));
 
 if (require.main === module) {
   app.listen(port, () => {

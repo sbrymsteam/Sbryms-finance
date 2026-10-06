@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-const CACHE_NAME = 'sbryms-finance-v8';
+const CACHE_NAME = 'sbryms-finance-v12';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -11,53 +10,60 @@ const urlsToCache = [
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => Promise.all(
-        urlsToCache.map(url => fetch(url).then(response => {
-          if (response.ok) return cache.put(url, response);
-          return undefined;
-        }).catch(() => undefined))
-      ))
+    caches.open(CACHE_NAME).then(cache =>
+      Promise.all(
+        urlsToCache.map(url =>
+          fetch(url)
+            .then(response => response.ok ? cache.put(url, response) : undefined)
+            .catch(() => undefined)
+        )
+      )
+    )
   );
 });
 
-self.addEventListener('fetch', event => {
-  const request = event.request;
-  const url = new URL(request.url);
-
-  // Never intercept writes, Firebase calls, browser extensions, or other origins.
-  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
-
-  // Show cached HTML immediately and refresh it in the background.
-  if (request.mode === 'navigate' || request.destination === 'document') {
-    event.respondWith((async () => {
-      const cached = await caches.match(request);
-      const refresh = fetch(request).then(async response => {
-        if (response.ok) {
-          const cache = await caches.open(CACHE_NAME);
-          await cache.put(request, response.clone());
-        }
-        return response;
-      }).catch(() => cached || caches.match('/index.html'));
-      if (cached) {
-        event.waitUntil(refresh.catch(() => undefined));
-        return cached;
-      }
-      return refresh;
-    })());
+self.addEventListener('push', event => {
+  if (!event.data) return;
+  let payload;
+  try {
+    payload = event.data.json();
+  } catch (error) {
+    console.error('Received an unreadable push payload:', error);
     return;
   }
+  const notification = payload.notification || payload.data || {};
+  const title = notification.title || 'SBRYMS Finance';
+  const options = {
+    body: notification.body || 'You have a new message or call.',
+    icon: '/assets/team-meet-icon.png',
+    badge: '/assets/team-meet-icon.png',
+    tag: notification.tag || `sbryms-${notification.type || 'notification'}`,
+    data: { url: notification.url || payload.data?.url || '/team-meet.html' }
+  };
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    if (windows.some(client => client.visibilityState === 'visible' && client.focused)) return;
+    await self.registration.showNotification(title, options);
+  })());
+});
 
-  // Static assets are cache-first and are updated when a new version is fetched.
-  event.respondWith((async () => {
-    const cached = await caches.match(request);
-    if (cached) return cached;
-    const response = await fetch(request);
-    if (response.ok && response.type === 'basic') {
-      const cache = await caches.open(CACHE_NAME);
-      await cache.put(request, response.clone());
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const requestedPath = event.notification.data?.url;
+  const path = typeof requestedPath === 'string' && requestedPath.startsWith('/')
+    ? requestedPath
+    : '/team-meet.html';
+  const targetUrl = new URL(path, self.location.origin).href;
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of windows) {
+      if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+        await client.focus();
+        if ('navigate' in client) await client.navigate(targetUrl);
+        return;
+      }
     }
-    return response;
+    await self.clients.openWindow(targetUrl);
   })());
 });
 
@@ -65,30 +71,13 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     (async () => {
       const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map(name => {
-        if (name !== CACHE_NAME) return caches.delete(name);
-      }));
-      // Take control of all clients immediately so the new SW serves them
+      await Promise.all(
+        cacheNames
+          .filter(name => name !== CACHE_NAME)
+          .map(name => caches.delete(name))
+      );
       await self.clients.claim();
     })()
-  );
-=======
-const CACHE_NAME = 'sbryms-finance-v6';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/assets/bg.png',
-  '/assets/bg.css',
-  // Add other assets like CSS, JS if any
-];
-
-self.addEventListener('install', event => {
-  // Activate immediately and cache core assets
-  self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
   );
 });
 
@@ -96,63 +85,47 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   const url = new URL(request.url);
 
-  // Navigation requests -> try network first, fallback to cache
-  if (request.mode === 'navigate') {
+  if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+
+  if (request.mode === 'navigate' && url.pathname === '/assets/login.html') {
+    event.respondWith(Response.redirect(new URL('/login.html', self.location.origin).href, 302));
+    return;
+  }
+
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(request));
+    return;
+  }
+
+  if (request.mode === 'navigate' || request.destination === 'document') {
     event.respondWith((async () => {
+      const cached = await caches.match(request);
       try {
-        const networkResponse = await fetch(request);
-        // Update cache with fresh index.html
-        const cache = await caches.open(CACHE_NAME);
-        cache.put('/index.html', networkResponse.clone());
-        return networkResponse;
-      } catch (err) {
-        const cached = await caches.match('/index.html');
+        const response = await fetch(request);
+        if (response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(request, response.clone());
+        }
+        return response;
+      } catch (error) {
         if (cached) return cached;
-        return new Response('Offline', { status: 503, statusText: 'Offline' });
+        const fallback = await caches.match('/index.html');
+        if (fallback) return fallback;
+        throw error;
       }
     })());
     return;
   }
 
-  // HTML must be fresh so navigation never runs an outdated page script.
-  if (url.origin === location.origin && (
-    request.destination === 'document' ||
-    url.pathname.endsWith('.html')
-  )) {
-    event.respondWith(
-      fetch(request)
-        .then(response => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-          return response;
-        })
-        .catch(() => caches.match(request).then(cached => cached || caches.match('/index.html')))
-    );
-    return;
-  }
+  event.respondWith((async () => {
+    const cached = await caches.match(request);
+    if (cached) return cached;
 
-  // For other same-origin resources, try cache first then network.
-  if (url.origin === location.origin) {
-    event.respondWith(
-      caches.match(request).then(cached => cached || fetch(request))
-    );
-    return;
-  }
-
-  // For cross-origin requests just allow network fetch
-  // let browser handle it
-});
-
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    (async () => {
-      const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map(name => {
-        if (name !== CACHE_NAME) return caches.delete(name);
-      }));
-      // Take control of all clients immediately so the new SW serves them
-      await self.clients.claim();
-    })()
-  );
->>>>>>> 8fceecbfbe6f3fb64c92aef170e3f711ba638301
+    const response = await fetch(request);
+    if (response.ok && response.type === 'basic') {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put(request, response.clone());
+    }
+    return response;
+  })());
 });

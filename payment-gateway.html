@@ -617,6 +617,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
         const PAYMENT_METHOD_KEY = 'payment_selected_method';
 
         const paymentMethods = [
+            { id: 'card', name: 'Card', icon: '💳' },
             { id: 'bkash', name: 'bKash', icon: '📱' },
             { id: 'nagad', name: 'Nagad', icon: '💳' },
             { id: 'rocket', name: 'Rocket', icon: '🚀' },
@@ -816,6 +817,56 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                 star: document.getElementById('applyStar').checked
             };
 
+            if (selectedPaymentMethod === 'cash') {
+                const pendingCashPayment = {
+                    ...payment,
+                    status: 'Pending Confirmation',
+                    transactionId: payment.transactionId === 'N/A'
+                        ? `CASH-${Date.now()}`
+                        : payment.transactionId
+                };
+                savePaymentToHistory(pendingCashPayment);
+
+                const pendingRaw = localStorage.getItem('pending_payment');
+                let pending = {};
+                try {
+                    pending = pendingRaw ? JSON.parse(pendingRaw) : {};
+                } catch (error) {
+                    console.error('pending cash payment parse error', error);
+                }
+
+                if (db) {
+                    db.collection('payments').add({
+                        ...pendingCashPayment,
+                        profileEmail: pending.profileEmail || pending.profile || payment.profile,
+                        profileName: payment.profileName,
+                        status: 'Pending Confirmation',
+                        confirmationRequired: true,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }).then(() => {
+                        return db.collection('notifications').add({
+                            to: 'sbrymsteam@gmail.com',
+                            subject: `Cash payment confirmation required: ৳${payment.total}`,
+                            message: `Cash payment from ${payment.profileName} requires admin confirmation. Transaction: ${pendingCashPayment.transactionId}`,
+                            paymentId: pendingCashPayment.id,
+                            type: 'cash_payment_confirmation',
+                            read: false,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }).catch(error => {
+                        console.error('cash payment confirmation write error', error);
+                        showError('Cash payment request সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।');
+                    });
+                }
+
+                localStorage.removeItem('pending_payment');
+                showSuccess('Cash payment request জমা হয়েছে। Admin confirmation-এর পর Paid হবে।');
+                resetForm();
+                loadTransactionHistory();
+                setTimeout(() => { window.location.href = 'deposit.html'; }, 1800);
+                return;
+            }
+
             savePaymentToHistory(payment);
             // If there is a pending_payment from deposit page, mark it completed so deposit page can update
             try {
@@ -941,6 +992,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                         </div>
                         <div class="transaction-item-meta">
                             ${methodName} • ${monthName} ${payment.year} (${payment.dateRange}) • ${payment.timestamp}
+                            ${payment.status ? ` • ${payment.status}` : ''}
                         </div>
                         <div class="transaction-item-meta" style="margin-top: 4px;">
                             ID: ${payment.id}
@@ -1084,11 +1136,21 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
         }
 
         function epsSubmit(){
-            // simulate gateway success; gather selected info and call submitPayment with values
+            // Apply the method selected inside the payment widget before submitting.
             try {
                 const fee = Number(document.getElementById('epsAmount').textContent) || 0;
                 const fine = Number(document.getElementById('fine').value) || 0;
-                const transactionId = 'EPS-' + Date.now();
+                const activeTab = document.querySelector('#epsWidget .eps-tab.active');
+                const mode = activeTab ? activeTab.getAttribute('data-mode') : 'card';
+                if (mode === 'card') {
+                    selectedPaymentMethod = 'card';
+                } else if (mode === 'mobile') {
+                    selectedPaymentMethod = document.getElementById('epsMobileMethod').value;
+                } else {
+                    selectedPaymentMethod = 'bank';
+                }
+                localStorage.setItem(PAYMENT_METHOD_KEY, selectedPaymentMethod);
+                const transactionId = `${selectedPaymentMethod.toUpperCase()}-${Date.now()}`;
                 // if a pending_payment exists, populate form fields from it
                 const pendingRaw = localStorage.getItem('pending_payment');
                 if (pendingRaw) {
@@ -1106,8 +1168,6 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                 hideEPSWidget();
                 // small delay so DOM updates propagate
                 setTimeout(()=>{
-                    // ensure a payment method is selected for validation; pick cash if none
-                    if (!selectedPaymentMethod) selectPaymentMethod('cash');
                     // submit form programmatically
                     const fakeEvent = new Event('submit', {cancelable:true});
                     document.getElementById('paymentForm').dispatchEvent(fakeEvent);
