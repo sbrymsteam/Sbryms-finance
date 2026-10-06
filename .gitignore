@@ -16,5 +16,8 @@ android/app/google-services.json
 *service-account*.json
 .idea/
 *.apk
+*.aab
+*.jks
+*.keystore
 *.bak
 *.deleted

@@ -2,6 +2,12 @@
 
 Push delivery uses Firebase Cloud Messaging (FCM). Messages and team-call invitations are sent by the authenticated server API; browser and Android device tokens are stored under the signed-in user's Firestore account.
 
+## Separate web hosting from Android build files
+
+The Vercel deployment ignores the native `android/` project, desktop tooling, build scripts, and APK/AAB binaries through `.vercelignore`. The Android packaging script separately excludes server/API, Android source, and desktop/tooling files when preparing its `www/` bundle. The shared HTML/CSS/JavaScript pages and assets are intentionally included in both: the Capacitor APK displays those same app screens.
+
+Run `npm start` to serve the website locally. For the Android APK, run `npm run mobile:apk` from the repository root on Windows with JDK 17 and Android SDK installed. The build is saved at `assets/SBRYMS-Finance.apk`; Gradle's original debug APK is at `android/app/build/outputs/apk/debug/app-debug.apk`. APK/AAB files are ignored by Git and excluded from Vercel deployment.
+
 ## Web and PWA
 
 1. The Firebase Web Push public key shown in Firebase Console is configured in `api/push-config.js`; it is public and does not need to be added to Vercel. Set `FIREBASE_WEB_PUSH_CERTIFICATE_KEY` only if you rotate that key.
