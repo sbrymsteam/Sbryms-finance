@@ -14,6 +14,9 @@
       "dest": "/manifest.json"
     },
     {
+      "handle": "filesystem"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html",
       "status": 200
