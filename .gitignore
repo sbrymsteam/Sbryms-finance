@@ -16,6 +16,7 @@ android/app/google-services.json
 *service-account*.json
 .idea/
 *.apk
+!/assets/SBRYMS-Finance.apk
 *.aab
 *.jks
 *.keystore

@@ -201,6 +201,7 @@ input, select, textarea { font-size: 16px; }
     border-radius: 16px; color: #f7fbff; text-align: left; cursor: pointer; overflow: hidden;
     background: linear-gradient(145deg, rgba(31,48,85,0.86), rgba(9,21,43,0.8));
     box-shadow: 0 10px 24px rgba(0,0,0,0.2); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    text-decoration: none;
 }
 .access-card::after { content: ''; position: absolute; width: 80px; height: 80px; right: -22px; bottom: -30px; border-radius: 50%; background: rgba(44,201,245,0.16); }
 .access-card:hover { transform: translateY(-2px); border-color: rgba(94,213,191,0.8); box-shadow: 0 14px 30px rgba(0,0,0,0.3); }
@@ -228,12 +229,12 @@ input, select, textarea { font-size: 16px; }
         <strong>SBRYMS Finance Web</strong>
         <small>Use the secure web dashboard</small>
     </button>
-    <button class="access-card apk" id="downloadApkOption" type="button">
+    <a class="access-card apk" id="downloadApkOption" href="/assets/SBRYMS-Finance.apk" download="SBRYMS-Finance.apk">
         <span class="access-badge">FREE APP</span>
         <span class="access-icon" aria-hidden="true">📱</span>
         <strong>Download Mobile APK</strong>
         <small>Install on your Android phone</small>
-    </button>
+    </a>
 </div>
 
     <div id="registration-form">
@@ -367,15 +368,10 @@ const toggleLink = document.getElementById("toggle-link");
 const forgotBtn = document.getElementById("forgot-btn");
 const backToMain = document.getElementById("back-to-main");
 const openWebOption = document.getElementById('openWebOption');
-const downloadApkOption = document.getElementById('downloadApkOption');
 
 openWebOption?.addEventListener('click', () => {
     document.getElementById('email')?.focus();
     showToast('Web version selected. Please sign in below.');
-});
-
-downloadApkOption?.addEventListener('click', () => {
-    showToast('Free Android APK download will be available here soon.');
 });
 
 // Small non-blocking toast and inline error helpers
