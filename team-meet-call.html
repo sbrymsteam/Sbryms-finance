@@ -269,9 +269,10 @@
     </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="assets/push-notifications.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
@@ -282,7 +283,7 @@
       appId: "1:1087018056369:web:81bc39017385a649500090"
     };
 
-    if (!window.firebase?.apps?.length) {
+    if (!window.firebase || !window.firebase.apps || !window.firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
 
@@ -346,7 +347,7 @@
       const avatarSrc = member.photo || buildAvatarSvg(member.name);
       avatarEl.innerHTML = `<img src="${avatarSrc}" alt="${member.name}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;background:#050a12" />`;
       const image = avatarEl.querySelector('img');
-      image?.addEventListener('error', () => {
+      if (image) image.addEventListener('error', () => {
         image.onerror = null;
         image.src = buildAvatarSvg(member.name);
       }, { once: true });
@@ -754,6 +755,16 @@
         status: 'ringing',
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
+      if (window.sbrymsPush) window.sbrymsPush.send({
+        recipient: chatEmail.toLowerCase(),
+        type: 'team_call',
+        title: `${callType === 'video' ? 'Video' : 'Audio'} call`,
+        body: `${localStorage.getItem('currentUserName') || 'A member'} is calling you`,
+        callId: directCallId,
+        chat: chatEmail.toLowerCase(),
+        callType,
+        callerName: localStorage.getItem('currentUserName') || 'SBRYMS member'
+      });
       db.collection('notifications').add({
         to: chatEmail.toLowerCase(),
         from: authenticatedUser.email.trim().toLowerCase(),
@@ -770,11 +781,11 @@
       subscribeToDirectCandidates(directCallRef, 'receiverCandidates');
       directCallUnsubscribe = directCallRef.onSnapshot(async snapshot => {
         const data = snapshot.data();
-        if (data?.status === 'ended') {
+        if (data && data.status === 'ended') {
           handleRemoteCallEnded();
           return;
         }
-        if (data?.answer && !peerConnection.currentRemoteDescription) {
+        if (data && data.answer && !peerConnection.currentRemoteDescription) {
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
           stopConnectingTone();
           stopIncomingTone();
@@ -793,7 +804,7 @@
       directCallRef = db.collection('calls').doc(directCallId);
       const snapshot = await directCallRef.get();
       const data = snapshot.data();
-      if (!snapshot.exists || !data?.offer) throw new Error('Call request not found.');
+      if (!snapshot.exists || !data || !data.offer) throw new Error('Call request not found.');
       await preparePeerConnection(directCallRef);
       peerConnection.onicecandidate = event => {
         if (event.candidate) directCallRef.collection('receiverCandidates').add(event.candidate.toJSON());
@@ -807,7 +818,8 @@
         status: 'connected'
       });
       directCallUnsubscribe = directCallRef.onSnapshot(snapshot => {
-        if (snapshot.data()?.status === 'ended') handleRemoteCallEnded();
+        const data = snapshot.data();
+        if (data && data.status === 'ended') handleRemoteCallEnded();
       }, error => console.error('Remote call status listener failed:', error));
       stopConnectingTone();
       stopIncomingTone();
@@ -897,7 +909,7 @@
       subscribeToCandidates(roomRef, 'receiverCandidates');
       roomUnsubscribe = roomRef.onSnapshot(async snapshot => {
         const data = snapshot.data();
-        if (data?.answer && !peerConnection.currentRemoteDescription) {
+        if (data && data.answer && !peerConnection.currentRemoteDescription) {
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
           document.getElementById('callStatus').textContent = 'Connecting...';
         }
@@ -915,7 +927,7 @@
       roomRef = db.collection('rooms').doc(id);
       const snapshot = await roomRef.get();
       const data = snapshot.data();
-      if (!snapshot.exists || !data?.offer) {
+      if (!snapshot.exists || !data || !data.offer) {
         document.getElementById('roomInfo').textContent = 'Room not found.';
         return;
       }
@@ -1002,6 +1014,24 @@
       localStorage.setItem('currentUserEmail', currentUserEmail);
       localStorage.setItem('currentUserUid', authenticatedUser.uid || '');
       loadMemberFromFirestore();
+
+      if (params.get('action') === 'decline' && directCallId) {
+        stopConnectingTone();
+        stopIncomingTone();
+        try {
+          await db.collection('calls').doc(directCallId).update({
+            status: 'ended',
+            endedReason: 'declined'
+          });
+          document.getElementById('callStatus').textContent = 'Call declined';
+          setTimeout(() => window.location.replace('team-meet.html'), 700);
+        } catch (error) {
+          console.error('Could not decline the incoming call:', error);
+          document.getElementById('callStatus').textContent = 'Could not decline the call';
+          document.getElementById('roomInfo').textContent = error.message || 'Please try again.';
+        }
+        return;
+      }
 
       if (!isGroupCall && directCallId) {
         if (callRole !== 'caller') startIncomingTone();

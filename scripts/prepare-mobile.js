@@ -61,17 +61,19 @@ for (const entry of fs.readdirSync(root)) {
 
 const capacitorVendor = path.join(target, 'assets', 'vendor');
 const coreSource = path.join(root, 'node_modules', '@capacitor', 'core', 'dist', 'index.js');
+const capacitorRuntimeSource = path.join(root, 'node_modules', '@capacitor', 'core', 'dist', 'capacitor.js');
 const pushPluginPackage = path.join(root, 'node_modules', '@capacitor', 'push-notifications', 'package.json');
-if (!fs.existsSync(coreSource) || !fs.existsSync(pushPluginPackage)) {
+if (!fs.existsSync(coreSource) || !fs.existsSync(capacitorRuntimeSource) || !fs.existsSync(pushPluginPackage)) {
   throw new Error('Capacitor push notification dependencies are missing. Run npm install before preparing the Android app.');
 }
 fs.mkdirSync(path.join(capacitorVendor, 'capacitor-core'), { recursive: true });
 fs.copyFileSync(coreSource, path.join(capacitorVendor, 'capacitor-core', 'index.js'));
+fs.copyFileSync(capacitorRuntimeSource, path.join(capacitorVendor, 'capacitor-core', 'capacitor.js'));
 const pushPluginTarget = path.join(capacitorVendor, 'capacitor-push');
 fs.mkdirSync(pushPluginTarget, { recursive: true });
 fs.writeFileSync(
   path.join(pushPluginTarget, 'index.js'),
-  "import { registerPlugin } from '@capacitor/core';\nexport const PushNotifications = registerPlugin('PushNotifications', {});\n"
+  "export const PushNotifications = window.Capacitor.Plugins.PushNotifications;\n"
 );
 
 for (const requiredFile of ['index.html', 'login.html', 'manifest.json']) {

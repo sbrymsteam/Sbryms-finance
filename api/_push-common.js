@@ -38,6 +38,7 @@ function applyPushCors(req, res) {
   const origin = req.headers.origin;
   const allowedOrigins = new Set([
     'https://sbryms.vercel.app',
+    'http://localhost',
     'http://localhost:5000',
     'http://127.0.0.1:5000',
     'https://localhost',

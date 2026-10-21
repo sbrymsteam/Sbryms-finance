@@ -1,14 +1,28 @@
 (function () {
-  const nativePlatform = Boolean(window.Capacitor && window.Capacitor.isNativePlatform());
+  let nativePlatform = false;
   let nativePush = null;
   let nativeReady = Promise.resolve();
   let registrationWaiter = null;
   let registrationListenersAttached = false;
 
   function getApiBase() {
-    return window.location.protocol === 'capacitor:' || window.location.protocol === 'ionic:'
+    return nativePlatform
       ? 'https://sbryms.vercel.app'
       : window.location.origin;
+  }
+
+  function loadNativeCapacitorRuntime() {
+    if (window.Capacitor || window.location.protocol !== 'http:'
+      || window.location.hostname !== 'localhost' || window.location.port) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = '/assets/vendor/capacitor-core/capacitor.js';
+      script.onload = resolve;
+      script.onerror = () => reject(new Error('Android app runtime could not be loaded.'));
+      document.head.appendChild(script);
+    });
   }
 
   async function getCurrentUser() {
@@ -39,7 +53,7 @@
     if (firebase.messaging) return;
     await new Promise((resolve, reject) => {
       const script = document.createElement('script');
-      script.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js';
+      script.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js';
       script.onload = resolve;
       script.onerror = () => reject(new Error('Firebase Messaging could not be loaded.'));
       document.head.appendChild(script);
@@ -98,7 +112,8 @@
       else console.error('Android push registration failed:', error);
     });
     await nativePush.addListener('pushNotificationActionPerformed', event => {
-      const target = event.notification?.data?.url;
+      const notificationData = event.notification && event.notification.data;
+      const target = notificationData && notificationData.url;
       if (typeof target === 'string' && target.startsWith('/')) {
         window.location.href = target;
       } else if (typeof target === 'string' && /^team-meet(?:-chat)?\.html(?:\?|$)/.test(target)) {
@@ -109,16 +124,17 @@
   }
 
   async function enable() {
+    await nativeReady;
+    await getCurrentUser();
     if (!nativePlatform) {
       await registerWebToken();
       return;
     }
-    await nativeReady;
     const permission = await nativePush.requestPermissions();
     if (permission.receive !== 'granted') throw new Error('Android notification permission was not granted.');
 
     const registration = new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Android push registration timed out.')), 20_000);
+      const timeout = setTimeout(() => reject(new Error('Android push registration timed out.')), 20000);
       registrationWaiter = {
         resolve: () => { clearTimeout(timeout); registrationWaiter = null; resolve(); },
         reject: error => { clearTimeout(timeout); registrationWaiter = null; reject(error); }
@@ -129,9 +145,9 @@
   }
 
   async function disable() {
+    await nativeReady;
     await getCurrentUser();
     if (nativePlatform) {
-      await nativeReady;
       const token = localStorage.getItem('nativePushToken');
       if (token) {
         await apiRequest('/api/register-push-token', {
@@ -179,15 +195,17 @@
     }
   }
 
-  if (nativePlatform) {
-    nativeReady = attachNativeListeners();
-    nativeReady.catch(error => console.error('Android push plugin could not be loaded:', error));
-  }
-  if (window.firebase && firebase.auth) {
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) restoreIfEnabled().catch(error => console.error('Could not restore push registration:', error));
-    });
-  }
+  nativeReady = (async () => {
+    await loadNativeCapacitorRuntime();
+    nativePlatform = Boolean(window.Capacitor && window.Capacitor.isNativePlatform());
+    if (nativePlatform) await attachNativeListeners();
+    if (window.firebase && firebase.auth) {
+      firebase.auth().onAuthStateChanged(user => {
+        if (user) restoreIfEnabled().catch(error => console.error('Could not restore push registration:', error));
+      });
+    }
+  })();
+  nativeReady.catch(error => console.error('Capacitor push setup could not start:', error));
 
   window.sbrymsPush = { enable, disable, send };
 })();

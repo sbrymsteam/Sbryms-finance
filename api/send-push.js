@@ -69,9 +69,20 @@ module.exports = async function sendPush(req, res) {
     const type = typeof req.body?.type === 'string' ? req.body.type : '';
     const title = typeof req.body?.title === 'string' ? req.body.title.trim().slice(0, 100) : '';
     const body = typeof req.body?.body === 'string' ? req.body.body.trim().slice(0, 240) : '';
+    const callId = typeof req.body?.callId === 'string' ? req.body.callId.trim().slice(0, 120) : '';
+    const roomId = typeof req.body?.roomId === 'string' ? req.body.roomId.trim().slice(0, 120) : '';
+    const chat = typeof req.body?.chat === 'string' ? req.body.chat.trim().slice(0, 254).toLowerCase() : '';
+    const callType = req.body?.callType === 'video' ? 'video' : 'audio';
+    const groupCall = req.body?.groupCall === true;
+    const callerName = typeof req.body?.callerName === 'string' ? req.body.callerName.trim().slice(0, 80) : '';
     if ((!recipient || (recipient !== 'all' && !recipient.includes('@')))
       || !allowedTypes.has(type) || !title || !body) {
       res.status(400).json({ error: 'A valid recipient, type, title, and message are required.' });
+      return;
+    }
+    if (type === 'team_call' && ((!groupCall && (!callId || !chat.includes('@')))
+      || (groupCall && !roomId))) {
+      res.status(400).json({ error: 'Call notifications require valid call details.' });
       return;
     }
     if (recipient === String(user.email || '').trim().toLowerCase()) {
@@ -83,12 +94,30 @@ module.exports = async function sendPush(req, res) {
     let sent = 0;
     for (let index = 0; index < targets.length; index += 500) {
       const batch = targets.slice(index, index + 500);
+      const notificationData = {
+        url: '/team-meet.html',
+        type,
+        title,
+        body
+      };
+      if (type === 'team_call') {
+        Object.assign(notificationData, {
+          callId,
+          roomId,
+          chat: groupCall ? 'team-group' : chat,
+          callType,
+          groupCall: String(groupCall),
+          callerName: callerName || String(user.name || user.email || 'SBRYMS member').slice(0, 80)
+        });
+      }
       const result = await services.messaging.sendEachForMulticast({
         tokens: batch.map(target => target.token),
-        notification: { title, body },
-        data: { url: '/team-meet.html', type },
-        webpush: { notification: { tag: `sbryms-${type}` } },
-        android: { priority: 'high' }
+        data: notificationData,
+        webpush: {
+          notification: { title, body, tag: `sbryms-${type}` },
+          headers: { Urgency: 'high' }
+        },
+        android: { priority: 'high', ttl: 600_000 }
       });
       sent += result.successCount;
       const staleTokens = [];

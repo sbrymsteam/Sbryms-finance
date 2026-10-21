@@ -323,9 +323,9 @@
     </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script type="importmap">
     {"imports":{"@capacitor/core":"/assets/vendor/capacitor-core/index.js"}}
   </script>
@@ -339,10 +339,11 @@
       appId: "1:1087018056369:web:81bc39017385a649500090"
     };
 
-    if (!window.firebase?.apps?.length) {
+    if (!window.firebase || !window.firebase.apps || !window.firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
 
+    firebase.firestore().settings({ experimentalForceLongPolling: true });
     const db = firebase.firestore();
     let presenceTimer = null;
     const PRESENCE_TIMEOUT_MS = 90000;
@@ -476,7 +477,11 @@
     function getLatestMessage(messages) {
       return [...(messages || [])]
         .filter(message => !message.deleted && String(message.text || '').trim())
-        .sort((a, b) => (getMessageDate(a)?.getTime() || 0) - (getMessageDate(b)?.getTime() || 0))
+        .sort((a, b) => {
+          const aDate = getMessageDate(a);
+          const bDate = getMessageDate(b);
+          return (aDate ? aDate.getTime() : 0) - (bDate ? bDate.getTime() : 0);
+        })
         .pop() || null;
     }
 
@@ -668,8 +673,10 @@
         member.lastMessageAge = latestMessage ? formatMessageAge(latestMessage) : '';
       });
       members.sort((a, b) => {
-        const aTime = getMessageDate(a.latestActivity)?.getTime() || 0;
-        const bTime = getMessageDate(b.latestActivity)?.getTime() || 0;
+        const aDate = getMessageDate(a.latestActivity);
+        const bDate = getMessageDate(b.latestActivity);
+        const aTime = aDate ? aDate.getTime() : 0;
+        const bTime = bDate ? bDate.getTime() : 0;
         return bTime - aTime;
       });
       list.innerHTML = members.map(member => `
@@ -690,7 +697,8 @@
       `).join('');
       list.querySelectorAll('.member-avatar img').forEach(image => {
         image.addEventListener('error', () => {
-          const email = image.closest('.member-card')?.getAttribute('data-email');
+          const card = image.closest('.member-card');
+          const email = card ? card.getAttribute('data-email') : '';
           const member = members.find(item => item.email === email);
           if (!member) return;
           image.onerror = null;
@@ -887,11 +895,16 @@
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(error => console.error('Failed to create group call notification:', error));
-      window.sbrymsPush?.send({
+      if (window.sbrymsPush) window.sbrymsPush.send({
         recipient: 'all',
         type: 'team_call',
         title: 'Team group call',
-        body: `${type === 'video' ? 'Video' : 'Audio'} group call started`
+        body: `${type === 'video' ? 'Video' : 'Audio'} group call started`,
+        callId: groupCallId,
+        roomId,
+        groupCall: true,
+        callType: type,
+        callerName: localStorage.getItem('currentUserName') || 'SBRYMS member'
       });
       const storageKey = 'team_meet_group_chat';
       let messages = [];
@@ -931,12 +944,6 @@
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(error => console.error('Failed to create call notification:', error));
-      window.sbrymsPush?.send({
-        recipient: String(member.email || '').trim().toLowerCase(),
-        type: 'team_call',
-        title: `${type === 'video' ? 'Video' : 'Audio'} call`,
-        body: `${localStorage.getItem('currentUserName') || 'A member'} is calling you`
-      });
       window.location.href = 'team-meet-call.html?chat='
         + encodeURIComponent(member.email)
         + '&call=' + encodeURIComponent(callId)
