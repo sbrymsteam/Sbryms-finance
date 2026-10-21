@@ -11,6 +11,7 @@ build/
 desktop-build/
 desktop-dist/
 *.apk
+!assets/SBRYMS-Finance.apk
 *.aab
 *.jks
 *.keystore
