@@ -12,11 +12,12 @@ import java.util.Map;
 
 final class IncomingCallNotifier {
     static final String EXTRA_CALL_URL = "com.sbryms.finance.CALL_URL";
+    static final String EXTRA_TARGET_URL = "com.sbryms.finance.TARGET_URL";
     static final String EXTRA_TITLE = "com.sbryms.finance.CALL_TITLE";
     static final String EXTRA_CALL_TYPE = "com.sbryms.finance.CALL_TYPE";
     static final String EXTRA_NOTIFICATION_ID = "com.sbryms.finance.NOTIFICATION_ID";
     static final String CHANNEL_CALLS = "sbryms_incoming_calls";
-    static final String CHANNEL_MESSAGES = "sbryms_messages";
+    static final String CHANNEL_MESSAGES = "sbryms_messages_v2";
     private static final String ACTION_DECLINE = "com.sbryms.finance.DECLINE_CALL";
 
     private IncomingCallNotifier() {}
@@ -32,7 +33,10 @@ final class IncomingCallNotifier {
         String callerName = value(data.get("callerName"), "SBRYMS member");
         String title = call ? callerName : value(data.get("title"), "SBRYMS Finance");
         String body = value(data.get("body"), call ? "Incoming call" : "You have a new message");
-        int notificationId = value(data.get("callId"), body).hashCode() & 0x7fffffff;
+        String notificationKey = call
+            ? value(data.get("callId"), callerName)
+            : value(data.get("messageId"), body + System.currentTimeMillis());
+        int notificationId = notificationKey.hashCode() & 0x7fffffff;
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         createChannel(manager, call);
 
@@ -53,6 +57,7 @@ final class IncomingCallNotifier {
             );
         } else {
             openIntent = new Intent(context, MainActivity.class)
+                .putExtra(EXTRA_TARGET_URL, value(data.get("url"), "team-meet.html"))
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         }
 
@@ -131,7 +136,7 @@ final class IncomingCallNotifier {
         NotificationChannel channel = new NotificationChannel(
             channelId,
             call ? "Incoming calls" : "Messages",
-            call ? NotificationManager.IMPORTANCE_HIGH : NotificationManager.IMPORTANCE_DEFAULT
+            NotificationManager.IMPORTANCE_HIGH
         );
         channel.setLockscreenVisibility(call ? android.app.Notification.VISIBILITY_PUBLIC : android.app.Notification.VISIBILITY_PRIVATE);
         if (call) {
@@ -139,6 +144,10 @@ final class IncomingCallNotifier {
             channel.enableVibration(true);
             channel.setVibrationPattern(new long[] { 0, 500, 250, 500 });
             channel.setBypassDnd(false);
+        } else {
+            channel.setDescription("SBRYMS chat message alerts");
+            channel.enableVibration(true);
+            channel.setVibrationPattern(new long[] { 0, 180 });
         }
         manager.createNotificationChannel(channel);
     }

@@ -20,25 +20,38 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(android.os.Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        openCallFromIntent(getIntent());
+        openNotificationTarget(getIntent());
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-        openCallFromIntent(intent);
+        openNotificationTarget(intent);
     }
 
-    private void openCallFromIntent(Intent intent) {
+    private void openNotificationTarget(Intent intent) {
         if (intent == null) return;
-        String callUrl = intent.getStringExtra(IncomingCallNotifier.EXTRA_CALL_URL);
-        if (callUrl == null || callUrl.isEmpty()) return;
+        String target = intent.getStringExtra(IncomingCallNotifier.EXTRA_CALL_URL);
+        if (target == null || target.isEmpty()) {
+            target = intent.getStringExtra(IncomingCallNotifier.EXTRA_TARGET_URL);
+        }
+        if (target == null || target.isEmpty()) return;
 
-        Uri uri = Uri.parse("http://localhost/" + callUrl);
-        if (!"localhost".equals(uri.getHost()) || !"/team-meet-call.html".equals(uri.getPath())) return;
+        Uri requested = Uri.parse(target.startsWith("/") ? target : "/" + target);
+        String path = requested.getPath();
+        if (!"/team-meet-call.html".equals(path)
+            && !"/team-meet-chat.html".equals(path)
+            && !"/team-meet.html".equals(path)) return;
+        Uri uri = new Uri.Builder()
+            .scheme("http")
+            .authority("localhost")
+            .path(path)
+            .encodedQuery(requested.getEncodedQuery())
+            .build();
 
-        WebView webView = getBridge().getWebView();
+        WebView webView = getBridge() == null ? null : getBridge().getWebView();
+        if (webView == null) return;
         webView.postDelayed(() -> webView.loadUrl(uri.toString()), 700);
     }
 }

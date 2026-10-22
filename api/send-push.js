@@ -117,8 +117,10 @@ module.exports = async function sendPush(req, res) {
           answerUrl
         });
       } else {
+        const messageId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
         const messageChat = recipient === 'all' ? 'team-group' : senderEmail;
         Object.assign(notificationData, {
+          messageId,
           chat: messageChat,
           url: `/team-meet-chat.html?chat=${encodeURIComponent(messageChat)}`
         });
@@ -132,8 +134,7 @@ module.exports = async function sendPush(req, res) {
             body,
             tag: type === 'team_call'
               ? `sbryms-call-${callId || roomId}`
-              : messageTag,
-            requireInteraction: type === 'team_call',
+              : `sbryms-message-${notificationData.messageId || messageTag}`,`n            requireInteraction: type === 'team_call',
             renotify: type === 'team_call'
           },
           headers: { Urgency: 'high' }
