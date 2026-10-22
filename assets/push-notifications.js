@@ -5,7 +5,6 @@
   let registrationWaiter = null;
   let registrationListenersAttached = false;
   let foregroundMessageListenerAttached = false;
-  let foregroundMessageListenerAttached = false;
 
   function getApiBase() {
     return nativePlatform

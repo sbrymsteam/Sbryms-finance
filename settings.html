@@ -138,7 +138,8 @@
     <button class="danger" id="logoutButton" type="button">Log out</button>
   </main>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>  <script src="assets/background-settings.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="assets/background-settings.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
@@ -214,7 +215,8 @@
       }
     };
     window.addEventListener('sbrymsPushReady', refreshNotificationStatus);
-    window.addEventListener('sbrymsPushStatusChange', refreshNotificationStatus);    const bindToggle = (id, key, defaultValue) => {
+    window.addEventListener('sbrymsPushStatusChange', refreshNotificationStatus);
+    const bindToggle = (id, key, defaultValue) => {
       const button = document.getElementById(id);
       const update = value => {
         button.classList.toggle('on', value);

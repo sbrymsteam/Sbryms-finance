@@ -134,7 +134,8 @@ module.exports = async function sendPush(req, res) {
             body,
             tag: type === 'team_call'
               ? `sbryms-call-${callId || roomId}`
-              : `sbryms-message-${notificationData.messageId || messageTag}`,`n            requireInteraction: type === 'team_call',
+              : `sbryms-message-${notificationData.messageId || messageTag}`,
+            requireInteraction: type === 'team_call',
             renotify: type === 'team_call'
           },
           headers: { Urgency: 'high' }
