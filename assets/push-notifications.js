@@ -89,33 +89,6 @@
     });
   }
 
-  async function showWebNotification(payload) {
-    const data = payload.data || {};
-    const notification = payload.notification || {};
-    const isCall = data.type === 'team_call';
-    const callId = data.callId || '';
-    const title = notification.title || data.title || 'SBRYMS Finance';
-    const body = notification.body || data.body || 'You have a new message or call.';
-    const url = data.url || notification.url || '/team-meet.html';
-    const answerUrl = data.answerUrl || '';
-    const eventId = data.messageId || data.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const registration = await navigator.serviceWorker.ready;
-    await registration.showNotification(title, {
-      body,
-      icon: '/assets/team-meet-icon.png',
-      badge: '/assets/team-meet-icon.png',
-      tag: isCall && callId
-        ? `sbryms-call-${callId}`
-        : `sbryms-${data.type || 'notification'}-${eventId}`,
-      requireInteraction: isCall,
-      renotify: isCall,
-      vibrate: isCall ? [0, 500, 250, 500] : [0, 150],
-      actions: isCall
-        ? [{ action: 'answer', title: 'Answer' }, { action: 'dismiss', title: 'Dismiss' }]
-        : [{ action: 'open', title: 'Open chat' }],
-      data: { url, answerUrl }
-    });
-  }
   async function registerWebToken() {
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
       throw new Error('This browser does not support web push notifications.');
@@ -137,14 +110,6 @@
     const worker = await navigator.serviceWorker.register('/sw.js');
     await navigator.serviceWorker.ready;
     const messaging = firebase.messaging();
-    if (!foregroundMessageListenerAttached) {
-      messaging.onMessage(payload => {
-        showWebNotification(payload).catch(error => {
-          console.error('Could not show the foreground push notification:', error);
-        });
-      });
-      foregroundMessageListenerAttached = true;
-    }
     if (!foregroundMessageListenerAttached) {
       messaging.onMessage(payload => {
         showWebNotification(payload).catch(error => {
