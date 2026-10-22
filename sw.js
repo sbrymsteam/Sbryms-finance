@@ -35,7 +35,7 @@ self.addEventListener('push', event => {
   const notification = payload.notification || {};
   const isCall = data.type === 'team_call';
   const callId = data.callId || '';
-  const eventId = data.messageId || data.id || `-`;
+  const eventId = data.messageId || data.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const title = notification.title || data.title || 'SBRYMS Finance';
   const options = {
     body: notification.body || data.body || 'You have a new message or call.',
