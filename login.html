@@ -200,26 +200,6 @@ input, select, textarea { font-size: 16px; }
 
 #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20,22,26,0.9); color: #fff; padding: 10px 14px; border-radius: 8px; display: none; z-index: 9999; font-size: 14px; opacity: 0; transition: opacity 0.25s ease; pointer-events: none; }
 
-.access-heading { margin: 4px 0 12px; color: rgba(255,255,255,0.68); font-size: 12px; letter-spacing: 0.04em; }
-.access-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 0 18px; }
-.access-card {
-    position: relative; min-height: 112px; padding: 15px 12px; border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 16px; color: #f7fbff; text-align: left; cursor: pointer; overflow: hidden;
-    background: linear-gradient(145deg, rgba(31,48,85,0.86), rgba(9,21,43,0.8));
-    box-shadow: 0 10px 24px rgba(0,0,0,0.2); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
-    text-decoration: none;
-}
-.access-card::after { content: ''; position: absolute; width: 80px; height: 80px; right: -22px; bottom: -30px; border-radius: 50%; background: rgba(44,201,245,0.16); }
-.access-card:hover { transform: translateY(-2px); border-color: rgba(94,213,191,0.8); box-shadow: 0 14px 30px rgba(0,0,0,0.3); }
-.access-card.apk { background: linear-gradient(145deg, rgba(104,42,117,0.9), rgba(24,22,62,0.86)); }
-.access-card.apk::after { background: rgba(255,77,184,0.2); }
-.access-icon { display: grid; place-items: center; width: 34px; height: 34px; margin-bottom: 10px; border-radius: 11px; background: rgba(255,255,255,0.13); font-size: 18px; }
-.access-card strong { display: block; font-size: 13px; }
-.access-card small { display: block; margin-top: 5px; color: rgba(255,255,255,0.62); font-size: 10px; line-height: 1.35; }
-.access-card .access-badge { position: absolute; top: 10px; right: 9px; z-index: 1; padding: 3px 6px; border-radius: 999px; background: rgba(94,213,191,0.16); color: #80f1d8; font-size: 9px; font-weight: 700; }
-.access-card.apk .access-badge { background: rgba(255,119,199,0.16); color: #ff9ed8; }
-@media (max-width: 360px) { .access-options { grid-template-columns: 1fr; } .access-card { min-height: 96px; } }
-
 </style>
 <link rel="stylesheet" href="assets/bg.css">
 </head>
@@ -227,21 +207,6 @@ input, select, textarea { font-size: 16px; }
 
 <div class="auth-box">
 <h2 id="auth-title" style="color: #5ed5bf;">SBRYMS Login</h2>
-<p class="access-heading">Choose how you want to use SBRYMS Finance</p>
-<div class="access-options" aria-label="SBRYMS access options">
-    <button class="access-card" id="openWebOption" type="button">
-        <span class="access-badge">ONLINE</span>
-        <span class="access-icon" aria-hidden="true">🌐</span>
-        <strong>SBRYMS Finance Web</strong>
-        <small>Use the secure web dashboard</small>
-    </button>
-    <a class="access-card apk" id="downloadApkOption" href="/assets/SBRYMS-Finance.apk" download="SBRYMS-Finance.apk">
-        <span class="access-badge">FREE APP</span>
-        <span class="access-icon" aria-hidden="true">📱</span>
-        <strong>Download Mobile APK</strong>
-        <small>Install on your Android phone</small>
-    </a>
-</div>
 
     <div id="registration-form">
         <select id="email" class="input-field" autocomplete="username" aria-label="Email Address">
@@ -387,15 +352,6 @@ const newPasswordForm = document.getElementById("new-password-form");
 const toggleLink = document.getElementById("toggle-link");
 const forgotBtn = document.getElementById("forgot-btn");
 const backToMain = document.getElementById("back-to-main");
-const openWebOption = document.getElementById('openWebOption');
-
-if (openWebOption) {
-    openWebOption.addEventListener('click', () => {
-        const emailField = document.getElementById('email');
-        if (emailField) emailField.focus();
-        showToast('Web version selected. Please sign in below.');
-    });
-}
 
 // Small non-blocking toast and inline error helpers
 function ensureToast() {
