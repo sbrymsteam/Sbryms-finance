@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sbryms-finance-v16';
+const CACHE_NAME = 'sbryms-finance-v17';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -35,12 +35,15 @@ self.addEventListener('push', event => {
   const notification = payload.notification || {};
   const isCall = data.type === 'team_call';
   const callId = data.callId || '';
+  const eventId = data.messageId || data.id || `-`;
   const title = notification.title || data.title || 'SBRYMS Finance';
   const options = {
     body: notification.body || data.body || 'You have a new message or call.',
     icon: '/assets/team-meet-icon.png',
     badge: '/assets/team-meet-icon.png',
-    tag: notification.tag || (isCall && callId ? `sbryms-call-${callId}` : `sbryms-${data.type || 'notification'}`),
+    tag: isCall && callId
+      ? `sbryms-call-${callId}`
+      : (notification.tag || `sbryms-${data.type || 'notification'}-${eventId}`),
     requireInteraction: isCall,
     renotify: isCall,
     vibrate: isCall ? [0, 500, 250, 500] : [0, 150],
@@ -53,8 +56,6 @@ self.addEventListener('push', event => {
     }
   };
   event.waitUntil((async () => {
-    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    if (windows.some(client => client.visibilityState === 'visible' && client.focused)) return;
     await self.registration.showNotification(title, options);
   })());
 });
