@@ -7,10 +7,16 @@
 <meta name="theme-color" content="#071124">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">="apple-mobile-web-e" content="SBRYMS">a name="description" content="S Finance - Secure Financial Management App">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SBRYMS">
+<meta name="description" content="SBRYMS Finance - Secure Financial Management App">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" sizes="192x192" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23071224' width='192' height='192'/></svg>">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23071224' width='1kit-touch-callout: none;
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 192 192%22%3E%3Crect fill=%22%23071224%22 width=%22192%22 height=%22192%22/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 180 180%22%3E%3Crect fill=%22%23071224%22 width=%22180%22 height=%22180%22/%3E%3C/svg%3E">
+<style>
+* {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
 }
@@ -320,7 +326,10 @@ import {
     getAuth,
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    browserLocalPersistence,
+    setPersistence,
+    onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 // 🔐 Firebase Config
@@ -358,6 +367,17 @@ let isLoginMode = true;
 let currentEmail = '';
 let currentCode = '';
 let resetEmail = '';
+let suppressSignedInRedirect = false;
+
+onAuthStateChanged(
+    auth,
+    user => {
+        if (user && !suppressSignedInRedirect) {
+            window.location.replace("FACE APP.html");
+        }
+    },
+    error => console.error("Could not check the saved login session:", error)
+);
 
 const title = document.getElementById("auth-title");
 const registrationForm = document.getElementById("registration-form");
@@ -369,10 +389,13 @@ const forgotBtn = document.getElementById("forgot-btn");
 const backToMain = document.getElementById("back-to-main");
 const openWebOption = document.getElementById('openWebOption');
 
-openWebOption?.addEventListener('click', () => {
-    document.getElementById('email')?.focus();
-    showToast('Web version selected. Please sign in below.');
-});
+if (openWebOption) {
+    openWebOption.addEventListener('click', () => {
+        const emailField = document.getElementById('email');
+        if (emailField) emailField.focus();
+        showToast('Web version selected. Please sign in below.');
+    });
+}
 
 // Small non-blocking toast and inline error helpers
 function ensureToast() {
@@ -567,6 +590,7 @@ document.getElementById("auth-btn").addEventListener("click", async () => {
         document.getElementById("auth-btn").disabled = true;
 
         try {
+            await setPersistence(auth, browserLocalPersistence);
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
             localStorage.setItem('currentUserEmail', userCredential.user.email);
             localStorage.setItem('currentUserUid', userCredential.user.uid);
@@ -630,6 +654,7 @@ document.getElementById("verify-btn").addEventListener("click", async () => {
 
     document.getElementById("verify-btn").disabled = true;
 
+    suppressSignedInRedirect = true;
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         localStorage.setItem('currentUserEmail', userCredential.user.email);
@@ -650,6 +675,7 @@ document.getElementById("verify-btn").addEventListener("click", async () => {
         // প্রোফাইল সেটআপ পেজে যান
         window.location.replace("profile.html");
     } catch (error) {
+        suppressSignedInRedirect = false;
         if (error.code === "auth/email-already-in-use") {
             alert("এই ইমেইল দিয়ে ইতিমধ্যে একাউন্ট আছে। লগইন করুন।");
             isLoginMode = true;
