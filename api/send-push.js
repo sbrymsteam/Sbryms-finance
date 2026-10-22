@@ -94,27 +94,47 @@ module.exports = async function sendPush(req, res) {
     let sent = 0;
     for (let index = 0; index < targets.length; index += 500) {
       const batch = targets.slice(index, index + 500);
+      const senderEmail = String(user.email || '').trim().toLowerCase();
       const notificationData = {
-        url: '/team-meet.html',
         type,
         title,
         body
       };
       if (type === 'team_call') {
+        const callChat = groupCall ? 'team-group' : senderEmail;
+        const answerUrl = groupCall
+          ? `/team-meet-call.html?chat=team-group&group=true&room=${encodeURIComponent(roomId)}&call=${encodeURIComponent(callId)}&role=callee&type=${encodeURIComponent(callType)}`
+          : `/team-meet-call.html?chat=${encodeURIComponent(senderEmail)}&call=${encodeURIComponent(callId)}&role=callee&type=${encodeURIComponent(callType)}`;
         Object.assign(notificationData, {
           callId,
           roomId,
-          chat: groupCall ? 'team-group' : chat,
+          chat: callChat,
           callType,
           groupCall: String(groupCall),
-          callerName: callerName || String(user.name || user.email || 'SBRYMS member').slice(0, 80)
+          callerName: callerName || String(user.name || user.email || 'SBRYMS member').slice(0, 80),
+          url: `/team-meet-chat.html?chat=${encodeURIComponent(callChat)}`,
+          answerUrl
+        });
+      } else {
+        const messageChat = recipient === 'all' ? 'team-group' : senderEmail;
+        Object.assign(notificationData, {
+          chat: messageChat,
+          url: `/team-meet-chat.html?chat=${encodeURIComponent(messageChat)}`
         });
       }
       const result = await services.messaging.sendEachForMulticast({
         tokens: batch.map(target => target.token),
         data: notificationData,
         webpush: {
-          notification: { title, body, tag: `sbryms-${type}` },
+          notification: {
+            title,
+            body,
+            tag: type === 'team_call'
+              ? `sbryms-call-${callId || roomId}`
+              : `sbryms-${type}`,
+            requireInteraction: type === 'team_call',
+            renotify: type === 'team_call'
+          },
           headers: { Urgency: 'high' }
         },
         android: { priority: 'high', ttl: 600_000 }

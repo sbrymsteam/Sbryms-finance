@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sbryms-finance-v12';
+const CACHE_NAME = 'sbryms-finance-v16';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -31,14 +31,26 @@ self.addEventListener('push', event => {
     console.error('Received an unreadable push payload:', error);
     return;
   }
-  const notification = payload.notification || payload.data || {};
-  const title = notification.title || 'SBRYMS Finance';
+  const data = payload.data || payload;
+  const notification = payload.notification || {};
+  const isCall = data.type === 'team_call';
+  const callId = data.callId || '';
+  const title = notification.title || data.title || 'SBRYMS Finance';
   const options = {
-    body: notification.body || 'You have a new message or call.',
+    body: notification.body || data.body || 'You have a new message or call.',
     icon: '/assets/team-meet-icon.png',
     badge: '/assets/team-meet-icon.png',
-    tag: notification.tag || `sbryms-${notification.type || 'notification'}`,
-    data: { url: notification.url || payload.data?.url || '/team-meet.html' }
+    tag: notification.tag || (isCall && callId ? `sbryms-call-${callId}` : `sbryms-${data.type || 'notification'}`),
+    requireInteraction: isCall,
+    renotify: isCall,
+    vibrate: isCall ? [0, 500, 250, 500] : [0, 150],
+    actions: isCall
+      ? [{ action: 'answer', title: 'Answer' }, { action: 'dismiss', title: 'Dismiss' }]
+      : [{ action: 'open', title: 'Open chat' }],
+    data: {
+      url: data.url || notification.url || '/team-meet.html',
+      answerUrl: data.answerUrl || ''
+    }
   };
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
@@ -49,21 +61,31 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const requestedPath = event.notification.data?.url;
-  const path = typeof requestedPath === 'string' && requestedPath.startsWith('/')
-    ? requestedPath
-    : '/team-meet.html';
-  const targetUrl = new URL(path, self.location.origin).href;
+  const notificationData = event.notification.data;
+  if (event.action === 'dismiss') return;
+  const requestedPath = event.action === 'answer'
+    ? notificationData && notificationData.answerUrl
+    : notificationData && notificationData.url;
+  const targetUrl = new URL(
+    typeof requestedPath === 'string' && requestedPath.startsWith('/')
+      ? requestedPath
+      : '/team-meet.html',
+    self.location.origin
+  );
+  if (targetUrl.origin !== self.location.origin) {
+    targetUrl.pathname = '/team-meet.html';
+    targetUrl.search = '';
+  }
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const client of windows) {
       if (client.url.startsWith(self.location.origin) && 'focus' in client) {
         await client.focus();
-        if ('navigate' in client) await client.navigate(targetUrl);
+        if ('navigate' in client) await client.navigate(targetUrl.href);
         return;
       }
     }
-    await self.clients.openWindow(targetUrl);
+    await self.clients.openWindow(targetUrl.href);
   })());
 });
 

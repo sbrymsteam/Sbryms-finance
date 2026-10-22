@@ -1911,7 +1911,7 @@
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(error => console.error('Failed to create in-app notification:', error));
-      window.sbrymsPush?.send({
+      if (type === 'message' && window.sbrymsPush) window.sbrymsPush.send({
         recipient,
         type,
         title,
@@ -2541,6 +2541,17 @@
         }).catch(error => {
           console.error('Failed to publish group call:', error);
           throw error;
+        });
+        if (window.sbrymsPush) window.sbrymsPush.send({
+          recipient: 'all',
+          type: 'team_call',
+          title: 'Team group call',
+          body: `${type === 'video' ? 'Video' : 'Audio'} group call started`,
+          callId: groupCallId,
+          roomId,
+          groupCall: true,
+          callType: type,
+          callerName: getCurrentSenderProfile().name
         });
         const url = `team-meet-call.html?chat=team-group&group=true&room=${encodeURIComponent(roomId)}&role=caller&type=${type}`;
         window.location.href = url;
