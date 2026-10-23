@@ -12,6 +12,7 @@ import java.util.Map;
 
 final class IncomingCallNotifier {
     static final String EXTRA_CALL_URL = "com.sbryms.finance.CALL_URL";
+    static final String EXTRA_CHAT_URL = "com.sbryms.finance.CHAT_URL";
     static final String EXTRA_TARGET_URL = "com.sbryms.finance.TARGET_URL";
     static final String EXTRA_TITLE = "com.sbryms.finance.CALL_TITLE";
     static final String EXTRA_CALL_TYPE = "com.sbryms.finance.CALL_TYPE";
@@ -46,6 +47,7 @@ final class IncomingCallNotifier {
         if (call) {
             openIntent = new Intent(context, IncomingCallActivity.class)
                 .putExtra(EXTRA_CALL_URL, callUrl)
+                .putExtra(EXTRA_CHAT_URL, value(data.get("url"), "team-meet.html"))
                 .putExtra(EXTRA_TITLE, title)
                 .putExtra(EXTRA_CALL_TYPE, value(data.get("callType"), "audio"))
                 .putExtra(EXTRA_NOTIFICATION_ID, notificationId);

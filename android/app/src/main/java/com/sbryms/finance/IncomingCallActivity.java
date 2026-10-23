@@ -4,17 +4,21 @@ import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 public class IncomingCallActivity extends Activity {
+    private float answerTouchStartY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,100 +47,227 @@ public class IncomingCallActivity extends Activity {
     }
 
     private void renderCallScreen() {
-        String title = getIntent().getStringExtra(IncomingCallNotifier.EXTRA_TITLE);
-        String type = getIntent().getStringExtra(IncomingCallNotifier.EXTRA_CALL_TYPE);
-        boolean video = "video".equals(type);
+        String callerName = getIntent().getStringExtra(IncomingCallNotifier.EXTRA_TITLE);
+        String callType = getIntent().getStringExtra(IncomingCallNotifier.EXTRA_CALL_TYPE);
+        boolean video = "video".equals(callType);
 
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setGravity(Gravity.CENTER);
-        root.setPadding(dp(28), dp(36), dp(28), dp(36));
+        FrameLayout root = new FrameLayout(this);
         root.setBackground(new GradientDrawable(
-            GradientDrawable.Orientation.TOP_BOTTOM,
-            new int[] { Color.rgb(8, 20, 38), Color.rgb(4, 9, 20) }
+            GradientDrawable.Orientation.TL_BR,
+            new int[] { Color.rgb(8, 20, 31), Color.rgb(12, 27, 40), Color.rgb(3, 11, 20) }
         ));
 
-        TextView label = new TextView(this);
-        label.setText(video ? "INCOMING VIDEO CALL" : "INCOMING AUDIO CALL");
-        label.setTextColor(Color.rgb(68, 220, 202));
-        label.setTextSize(13);
-        label.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        label.setGravity(Gravity.CENTER);
+        TextView name = new TextView(this);
+        name.setText(callerName == null ? "SBRYMS member" : callerName);
+        name.setTextColor(Color.WHITE);
+        name.setTextSize(26);
+        name.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        name.setGravity(Gravity.CENTER);
+        FrameLayout.LayoutParams nameParams = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.TOP | Gravity.CENTER_HORIZONTAL
+        );
+        nameParams.setMargins(dp(24), dp(82), dp(24), 0);
+        root.addView(name, nameParams);
+
+        TextView callInfo = new TextView(this);
+        callInfo.setText(video ? "Incoming video call" : "Incoming audio call");
+        callInfo.setTextColor(Color.rgb(179, 193, 205));
+        callInfo.setTextSize(15);
+        callInfo.setGravity(Gravity.CENTER);
+        FrameLayout.LayoutParams infoParams = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.TOP | Gravity.CENTER_HORIZONTAL
+        );
+        infoParams.setMargins(dp(24), dp(122), dp(24), 0);
+        root.addView(callInfo, infoParams);
 
         TextView avatar = new TextView(this);
-        avatar.setText(initials(title));
+        avatar.setText(initials(callerName));
         avatar.setTextColor(Color.WHITE);
-        avatar.setTextSize(30);
+        avatar.setTextSize(44);
         avatar.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         avatar.setGravity(Gravity.CENTER);
         GradientDrawable avatarBackground = new GradientDrawable(
             GradientDrawable.Orientation.TL_BR,
-            new int[] { Color.rgb(68, 220, 202), Color.rgb(41, 103, 185) }
+            new int[] { Color.rgb(52, 194, 163), Color.rgb(33, 104, 151) }
         );
         avatarBackground.setShape(GradientDrawable.OVAL);
+        avatarBackground.setStroke(dp(3), 0x66FFFFFF);
         avatar.setBackground(avatarBackground);
-        LinearLayout.LayoutParams avatarLayout = new LinearLayout.LayoutParams(dp(132), dp(132));
-        avatarLayout.setMargins(0, dp(38), 0, dp(24));
-        avatar.setLayoutParams(avatarLayout);
-
-        TextView caller = new TextView(this);
-        caller.setText(title == null ? "SBRYMS call" : title);
-        caller.setTextColor(Color.WHITE);
-        caller.setTextSize(26);
-        caller.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        caller.setGravity(Gravity.CENTER);
-        caller.setPadding(0, 0, 0, 10);
+        FrameLayout.LayoutParams avatarParams = new FrameLayout.LayoutParams(dp(172), dp(172), Gravity.CENTER);
+        avatarParams.bottomMargin = dp(12);
+        root.addView(avatar, avatarParams);
 
         TextView hint = new TextView(this);
-        hint.setText("Tap Answer to join");
-        hint.setTextColor(Color.rgb(169, 184, 201));
-        hint.setTextSize(15);
+        hint.setText("Swipe up to answer");
+        hint.setTextColor(Color.rgb(205, 214, 222));
+        hint.setTextSize(14);
         hint.setGravity(Gravity.CENTER);
-        hint.setPadding(0, 0, 0, dp(72));
+        FrameLayout.LayoutParams hintParams = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL
+        );
+        hintParams.setMargins(dp(20), 0, dp(20), dp(132));
+        root.addView(hint, hintParams);
 
-        Button answer = new Button(this);
-        answer.setText("Answer");
-        answer.setAllCaps(false);
-        answer.setTextSize(18);
-        answer.setTextColor(Color.WHITE);
-        answer.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.rgb(20, 174, 115)));
+        LinearLayout actions = new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setGravity(Gravity.CENTER);
+        FrameLayout.LayoutParams actionsParams = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL
+        );
+        actionsParams.setMargins(dp(14), 0, dp(14), dp(28));
+        root.addView(actions, actionsParams);
+
+        actions.addView(createAction(
+            "Decline",
+            Color.rgb(231, 0, 59),
+            android.R.drawable.sym_action_call,
+            135,
+            this::finishCall
+        ), actionWeight());
+
+        FrameLayout answer = createAction(
+            "Answer",
+            Color.rgb(25, 171, 103),
+            android.R.drawable.sym_action_call,
+            0,
+            null
+        );
+        answer.setContentDescription("Swipe up to answer the call");
         answer.setOnClickListener(view -> answerCall());
+        answer.setOnTouchListener((view, event) -> {
+            switch (event.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    answerTouchStartY = event.getRawY();
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+                    float distance = event.getRawY() - answerTouchStartY;
+                    view.setTranslationY(Math.max(-dp(72), Math.min(0, distance)));
+                    if (distance < -dp(28)) hint.setText("Release to answer");
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    float swipeDistance = event.getRawY() - answerTouchStartY;
+                    view.animate().translationY(0).setDuration(140).start();
+                    if (swipeDistance <= -dp(64)) {
+                        view.performClick();
+                    } else {
+                        hint.setText("Swipe up to answer");
+                    }
+                    return true;
+                case MotionEvent.ACTION_CANCEL:
+                    view.animate().translationY(0).setDuration(140).start();
+                    hint.setText("Swipe up to answer");
+                    return true;
+                default:
+                    return true;
+            }
+        });
+        actions.addView(answer, actionWeight());
 
-        Button decline = new Button(this);
-        decline.setText("Decline");
-        decline.setAllCaps(false);
-        decline.setTextSize(18);
-        decline.setTextColor(Color.WHITE);
-        decline.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.rgb(211, 54, 74)));
-        decline.setOnClickListener(view -> finishCall());
+        FrameLayout message = createMessageAction();
+        message.setOnClickListener(view -> openMessages());
+        actions.addView(message, actionWeight());
 
-        root.addView(label, matchWidth());
-        root.addView(avatar);
-        root.addView(caller, matchWidth());
-        root.addView(hint, matchWidth());
-        root.addView(answer, buttonHeight());
-        root.addView(decline, buttonHeight());
         setContentView(root);
     }
 
-    private LinearLayout.LayoutParams matchWidth() {
-        return new LinearLayout.LayoutParams(
+    private FrameLayout createAction(
+        String label,
+        int color,
+        int iconResource,
+        float rotation,
+        Runnable action
+    ) {
+        LinearLayout item = new LinearLayout(this);
+        item.setOrientation(LinearLayout.VERTICAL);
+        item.setGravity(Gravity.CENTER);
+
+        FrameLayout circle = new FrameLayout(this);
+        circle.setBackground(circleBackground(color));
+        circle.setContentDescription(label);
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(iconResource);
+        icon.setColorFilter(Color.WHITE);
+        icon.setRotation(rotation);
+        FrameLayout.LayoutParams iconParams = new FrameLayout.LayoutParams(dp(32), dp(32), Gravity.CENTER);
+        circle.addView(icon, iconParams);
+        item.addView(circle, new LinearLayout.LayoutParams(dp(72), dp(72)));
+
+        TextView caption = new TextView(this);
+        caption.setText(label);
+        caption.setTextColor(Color.rgb(199, 207, 217));
+        caption.setTextSize(12);
+        caption.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams captionParams = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         );
+        captionParams.topMargin = dp(8);
+        item.addView(caption, captionParams);
+
+        if (action != null) {
+            circle.setOnClickListener(view -> action.run());
+            item.setOnClickListener(view -> action.run());
+        }
+        return wrapActionItem(item);
     }
 
-    private LinearLayout.LayoutParams buttonHeight() {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+    private FrameLayout wrapActionItem(LinearLayout item) {
+        FrameLayout wrapper = new FrameLayout(this);
+        wrapper.addView(item, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.WRAP_CONTENT,
+            Gravity.CENTER
+        ));
+        return wrapper;
+    }
+
+    private FrameLayout createMessageAction() {
+        LinearLayout item = new LinearLayout(this);
+        item.setOrientation(LinearLayout.VERTICAL);
+        item.setGravity(Gravity.CENTER);
+
+        TextView icon = new TextView(this);
+        icon.setText("\u2026");
+        icon.setTextColor(Color.WHITE);
+        icon.setTextSize(32);
+        icon.setGravity(Gravity.CENTER);
+        icon.setBackground(circleBackground(Color.rgb(43, 54, 64)));
+        item.addView(icon, new LinearLayout.LayoutParams(dp(72), dp(72)));
+
+        TextView caption = new TextView(this);
+        caption.setText("Message");
+        caption.setTextColor(Color.rgb(199, 207, 217));
+        caption.setTextSize(12);
+        caption.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams captionParams = new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
-            dp(64)
+            LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        params.setMargins(0, dp(12), 0, dp(12));
-        return params;
+        captionParams.topMargin = dp(8);
+        item.addView(caption, captionParams);
+
+        FrameLayout wrapper = wrapActionItem(item);
+        wrapper.setContentDescription("Open chat");
+        return wrapper;
     }
 
-    private int dp(int value) {
-        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
+    private GradientDrawable circleBackground(int color) {
+        GradientDrawable background = new GradientDrawable();
+        background.setShape(GradientDrawable.OVAL);
+        background.setColor(color);
+        return background;
+    }
+
+    private LinearLayout.LayoutParams actionWeight() {
+        return new LinearLayout.LayoutParams(0, dp(112), 1);
     }
 
     private String initials(String name) {
@@ -148,9 +279,8 @@ public class IncomingCallActivity extends Activity {
     }
 
     private void answerCall() {
+        dismissCallNotification();
         String callUrl = getIntent().getStringExtra(IncomingCallNotifier.EXTRA_CALL_URL);
-        int notificationId = getIntent().getIntExtra(IncomingCallNotifier.EXTRA_NOTIFICATION_ID, 0);
-        ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).cancel(notificationId);
         Intent intent = new Intent(this, MainActivity.class)
             .putExtra(IncomingCallNotifier.EXTRA_CALL_URL, callUrl)
             .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -159,8 +289,7 @@ public class IncomingCallActivity extends Activity {
     }
 
     private void finishCall() {
-        int notificationId = getIntent().getIntExtra(IncomingCallNotifier.EXTRA_NOTIFICATION_ID, 0);
-        ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).cancel(notificationId);
+        dismissCallNotification();
         String callUrl = getIntent().getStringExtra(IncomingCallNotifier.EXTRA_CALL_URL);
         if (callUrl != null) {
             Intent intent = new Intent(this, MainActivity.class)
@@ -169,5 +298,27 @@ public class IncomingCallActivity extends Activity {
             startActivity(intent);
         }
         finish();
+    }
+
+    private void openMessages() {
+        String chatUrl = getIntent().getStringExtra(IncomingCallNotifier.EXTRA_CHAT_URL);
+        if (chatUrl == null || chatUrl.trim().isEmpty()) {
+            String callUrl = getIntent().getStringExtra(IncomingCallNotifier.EXTRA_CALL_URL);
+            chatUrl = callUrl == null ? "team-meet.html" : callUrl.replaceFirst("team-meet-call\\.html", "team-meet-chat.html");
+        }
+        Intent intent = new Intent(this, MainActivity.class)
+            .putExtra(IncomingCallNotifier.EXTRA_TARGET_URL, chatUrl)
+            .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    private void dismissCallNotification() {
+        int notificationId = getIntent().getIntExtra(IncomingCallNotifier.EXTRA_NOTIFICATION_ID, 0);
+        ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).cancel(notificationId);
+    }
+
+    private int dp(int value) {
+        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
     }
 }
