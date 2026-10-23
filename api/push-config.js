@@ -16,7 +16,7 @@ module.exports = function pushConfig(req, res) {
     res.status(405).json({ error: 'Method not allowed.' });
     return;
   }
-  const vapidKey = process.env.FIREBASE_WEB_PUSH_CERTIFICATE_KEY || firebaseWebPushPublicKey;
+  const vapidKey = firebaseWebPushPublicKey;
   res.setHeader('Cache-Control', 'public, max-age=3600');
   res.status(200).json({ vapidKey });
 };

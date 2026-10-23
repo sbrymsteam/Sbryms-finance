@@ -45,12 +45,6 @@ module.exports = async function registerPushToken(req, res) {
       return;
     }
 
-    const tokenOwners = await services.db.collectionGroup('pushTokens')
-      .where('token', '==', token)
-      .get();
-    await Promise.all(tokenOwners.docs
-      .filter(document => document.ref.parent.parent?.id !== user.uid)
-      .map(document => document.ref.delete()));
     await tokenRef.set({
       token,
       platform,
