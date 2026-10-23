@@ -1114,7 +1114,7 @@
             <path d="M21.44 11.05 12.25 20.24a5.5 5.5 0 1 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95L9.4 17.4a1.5 1.5 0 0 1-2.12-2.12l8.49-8.49"/>
           </svg>
         </button>
-        <input id="attachmentFileInput" type="file" hidden>
+        <input id="attachmentFileInput" type="file" accept="image/*,video/*" hidden>
       </div>
       <div class="composer-input">
         <div class="attachment-sheet" id="attachmentSheet" aria-label="Attachment options">
@@ -2950,17 +2950,29 @@
       showAttachmentNotice('ফাইল আপলোড হচ্ছে...');
       try {
         const safeFileName = file.name.replace(/[^\w.\-]+/g, '_');
-        const uploadServerOrigin = window.location.port === '5000' ? '' : 'http://localhost:5000';
-        const signatureResponse = await fetch(`${uploadServerOrigin}/api/cloudinary-signature`);
-        if (!signatureResponse.ok) throw new Error('Could not create Cloudinary upload signature.');
+        const signatureResponse = await fetch('/api/cloudinary-signature', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${await uploadUser.getIdToken()}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({})
+        });
         const signature = await signatureResponse.json();
+        if (!signatureResponse.ok) {
+          throw new Error(signature.error || 'Could not create Cloudinary upload signature.');
+        }
         const formData = new FormData();
         formData.append('file', file);
         formData.append('api_key', signature.apiKey);
         formData.append('timestamp', String(signature.timestamp));
         formData.append('folder', signature.folder);
         formData.append('signature', signature.signature);
-        const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
+        const resourceType = file.type.startsWith('image/')
+          ? 'image'
+          : file.type.startsWith('video/')
+            ? 'video'
+            : 'raw';
         const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${encodeURIComponent(signature.cloudName)}/${resourceType}/upload`, {
           method: 'POST',
           body: formData
@@ -2999,9 +3011,7 @@
         showAttachmentNotice('ফাইল সফলভাবে পাঠানো হয়েছে');
       } catch (error) {
         console.error('Failed to upload attachment:', error);
-        showAttachmentNotice(error.message.includes('403')
-          ? 'Cloudinary API Secret ভুল বা পুরোনো—নতুন Secret বসান'
-          : `ফাইল পাঠানো যায়নি: ${error.message}`);
+        showAttachmentNotice(`ফাইল পাঠানো যায়নি: ${error.message}`);
       }
     }
 
@@ -3016,7 +3026,7 @@
         if (type === 'document' || type === 'gallery') {
           attachmentFileInput.accept = type === 'gallery'
             ? 'image/*,video/*'
-            : '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt';
+            : '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.apk';
           attachmentFileInput.click();
           setAttachmentSheet(false);
           return;
