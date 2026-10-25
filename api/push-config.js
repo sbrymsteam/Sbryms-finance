@@ -1,7 +1,5 @@
 const { applyPushCors } = require('./_push-common');
 
-const firebaseWebPushPublicKey = 'BMECM_GS24fWXTR51Ikid8J5uoYsfIN2CNwwCBKh0M7LVbpGuvz2TFWpJSsgzJZ05z5g442GpItROuv5ChhRPjo';
-
 module.exports = function pushConfig(req, res) {
   if (!applyPushCors(req, res)) {
     res.status(403).json({ error: 'Origin is not allowed.' });
@@ -16,7 +14,11 @@ module.exports = function pushConfig(req, res) {
     res.status(405).json({ error: 'Method not allowed.' });
     return;
   }
-  const vapidKey = firebaseWebPushPublicKey;
-  res.setHeader('Cache-Control', 'public, max-age=3600');
+  const vapidKey = process.env.FIREBASE_WEB_PUSH_CERTIFICATE_KEY?.trim();
+  if (!vapidKey) {
+    res.status(503).json({ error: 'Web push public key is not configured.' });
+    return;
+  }
+  res.setHeader('Cache-Control', 'no-store');
   res.status(200).json({ vapidKey });
 };
