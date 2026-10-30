@@ -15,7 +15,7 @@
       --panel-soft: rgba(25, 34, 39, 0.95);
       --accent: #5ae1d7;
       --accent-2: #4cc9f0;
-      --highlight: #3ed7a7;
+      --highlight: #2d0076;
       --text: #edf6ff;
       --muted: #9bb0c9;
       --bubble-me: linear-gradient(135deg, #49caa2, #3fb9a0);
@@ -66,15 +66,34 @@
     }
     .incoming-call {
       display: none;
-      margin: 10px 14px 0;
+      position: fixed;
+      top: max(12px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(560px, calc(100vw - 20px));
+      margin: 0;
       padding: 10px 12px;
-      border: 1px solid rgba(90,225,215,0.35);
-      border-radius: 12px;
-      background: rgba(90,225,215,0.1);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      background: rgba(15, 24, 34, 0.98);
       color: var(--text);
       align-items: center;
       gap: 8px;
       font-size: 12px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+      z-index: 1000;
+      backdrop-filter: blur(18px);
+    }
+    .incoming-call-avatar {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      color: #fff;
+      background: linear-gradient(135deg, #36c7a2, #2675a8);
+      font-size: 18px;
     }
     .incoming-call button {
       border: none;
@@ -999,7 +1018,7 @@
     }
     .send-btn {
       border: none;
-      background: linear-gradient(135deg, var(--highlight), #3cbf7c);
+      background: linear-gradient(135deg, var(--highlight), #19824c);
       color: #032d22;
       border-radius: 18px;
       min-width: 52px;
@@ -1058,6 +1077,7 @@
       </div>
     </div>
     <div class="incoming-call" id="incomingCall">
+      <span class="incoming-call-avatar" aria-hidden="true">☎</span>
       <span id="incomingCallText">Incoming call</span>
       <div class="incoming-call-actions">
         <button class="accept-call" type="button" id="acceptIncomingCall">Accept</button>
@@ -1206,9 +1226,10 @@
     </div>
   </div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="assets/native-presence.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
@@ -1219,11 +1240,15 @@
       appId: "1:1087018056369:web:81bc39017385a649500090"
     };
 
-    if (!window.firebase?.apps?.length) {
+    if (!window.firebase || !window.firebase.apps || !window.firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
     }
 
     const db = firebase.firestore();
+    db.settings({
+      experimentalAutoDetectLongPolling: true,
+      merge: true
+    });
     db.enablePersistence({ synchronizeTabs: true }).catch(error => {
       if (error.code !== 'failed-precondition' && error.code !== 'unimplemented') {
         console.error('Firestore offline persistence could not start:', error);
@@ -1256,6 +1281,8 @@
         };
     const normalizedTargetEmail = (chatEmail || selectedMember.email || '').trim().toLowerCase();
     const currentUserEmail = (localStorage.getItem('currentUserEmail') || '').trim().toLowerCase();
+    let currentUserUid = localStorage.getItem('currentUserUid') || '';
+    let chatPresenceTimer = null;
     const isSelfChat = !isGroupChat && currentUserEmail === normalizedTargetEmail;
     const storageKey = isGroupChat
       ? 'team_meet_group_chat'
@@ -1264,7 +1291,6 @@
       ? 'team_group_chat'
       : [currentUserEmail, normalizedTargetEmail].filter(Boolean).sort().join('__');
     const conversationRef = db.collection('team_meet_conversations').doc(conversationId);
-    const messageCollectionRef = conversationRef.collection('messages');
 
     function initials(name) {
       return (name || 'U').split(/\s+/).filter(Boolean).slice(0,2).map(part => part[0]).join('').toUpperCase() || 'U';
@@ -1319,18 +1345,13 @@
       return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
     }
 
-    async function loadSelectedMemberFromFirestore() {
+    function watchSelectedMemberFromFirestore() {
       if (isGroupChat) return;
-      try {
-        const snapshot = await db.collection('users')
-          .where('email', '==', normalizedTargetEmail)
-          .limit(1)
-          .get();
-        const profileDoc = snapshot.docs[0] || null;
-        const savedAccount = getSavedProfileAccount(chatEmail);
-        const selectedProfileMatchesTarget = String(localStorage.getItem('selectedProfileEmail') || '').trim().toLowerCase() === normalizedTargetEmail;
-        const savedName = (selectedProfileMatchesTarget ? localStorage.getItem('selectedProfileName') : '') || savedAccount.name;
-        const selectedPhoto = selectedProfileMatchesTarget ? localStorage.getItem('selectedProfilePhoto') : '';
+      const savedAccount = getSavedProfileAccount(chatEmail);
+      const selectedProfileMatchesTarget = String(localStorage.getItem('selectedProfileEmail') || '').trim().toLowerCase() === normalizedTargetEmail;
+      const savedName = (selectedProfileMatchesTarget ? localStorage.getItem('selectedProfileName') : '') || savedAccount.name;
+      const selectedPhoto = selectedProfileMatchesTarget ? localStorage.getItem('selectedProfilePhoto') : '';
+      const applyProfile = profileDoc => {
         if (profileDoc) {
           const data = profileDoc.data();
           selectedMember = {
@@ -1342,19 +1363,66 @@
             presenceStatus: data.presenceStatus || data.status || 'offline',
             lastSeen: data.lastSeen || data.lastActive || data.updatedAt || null
           };
-          renderProfile();
         } else {
           selectedMember.name = savedName || selectedMember.name;
           selectedMember.photo = savedAccount.photo || selectedPhoto || selectedMember.photo;
-          renderProfile();
         }
-      } catch (error) {
-        console.error('Error loading chat profile from Firestore:', error);
-        const savedAccount = getSavedProfileAccount(chatEmail);
-        const selectedProfileMatchesTarget = String(localStorage.getItem('selectedProfileEmail') || '').trim().toLowerCase() === normalizedTargetEmail;
-        const selectedPhoto = selectedProfileMatchesTarget ? localStorage.getItem('selectedProfilePhoto') : '';
-        if (savedAccount.photo || selectedPhoto) selectedMember.photo = savedAccount.photo || selectedPhoto;
+        renderProfile();
+      };
+
+      db.collection('users')
+        .where('email', '==', normalizedTargetEmail)
+        .limit(1)
+        .onSnapshot(snapshot => {
+          applyProfile(snapshot.docs[0] || null);
+        }, error => {
+          console.error('Error watching chat profile from Firestore:', error);
+          applyProfile(null);
+        });
+    }
+
+    function updateChatPresence(status) {
+      if (!currentUserUid) return Promise.resolve();
+      return db.collection('users').doc(currentUserUid).set({
+        status,
+        presenceStatus: status,
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true }).catch(error => {
+        console.error('Could not update chat presence:', error);
+      });
+    }
+
+    function startChatPresence(user) {
+      currentUserUid = user.uid;
+      localStorage.setItem('currentUserUid', currentUserUid);
+      if (chatPresenceTimer) clearInterval(chatPresenceTimer);
+      const nativePresence = window.sbrymsPresence && window.sbrymsPresence.isAvailable();
+      if (nativePresence) {
+        window.sbrymsPresence.start(user, firebaseConfig).catch(error => {
+          console.error('Could not start background presence service:', error);
+          updateChatPresence(navigator.onLine ? 'online' : 'offline');
+          chatPresenceTimer = setInterval(() => {
+            if (navigator.onLine) updateChatPresence('online');
+          }, 30000);
+        });
+        return;
       }
+      updateChatPresence(navigator.onLine ? 'online' : 'offline');
+      chatPresenceTimer = setInterval(() => {
+        if (navigator.onLine) updateChatPresence('online');
+      }, 30000);
+    }
+
+    window.addEventListener('online', () => updateChatPresence('online'));
+    window.addEventListener('offline', () => updateChatPresence('offline'));
+
+    function refreshProfilePresence() {
+      if (isGroupChat || isSelfChat) return;
+      const statusElement = document.querySelector('#profileChip .profile-status');
+      if (!statusElement) return;
+      const status = formatPresence(selectedMember || {});
+      statusElement.textContent = status;
+      statusElement.classList.toggle('online', status === 'Online');
     }
 
     function getSavedProfileAccount(email) {
@@ -1397,7 +1465,7 @@
       const lastSeen = getPresenceDate(member.lastSeen);
       if (member.presenceStatus === 'online'
         && lastSeen
-        && Date.now() - lastSeen.getTime() <= 90000
+        && Date.now() - lastSeen.getTime() <= 75000
         && navigator.onLine) return 'Online';
       if (!lastSeen) return 'Offline';
       const minutes = Math.max(0, Math.floor((Date.now() - lastSeen.getTime()) / 60000));
@@ -1414,8 +1482,8 @@
       const fallbackName = isGroupChat
         ? 'Team Group Chat'
         : (localStorage.getItem('selectedProfileName') || chatEmail.split('@')[0] || 'Member');
-      const memberName = String(selectedMember?.name || fallbackName).trim() || fallbackName;
-      const avatarSrc = selectedMember?.photo || buildAvatarSvg(memberName);
+      const memberName = String((selectedMember && selectedMember.name) || fallbackName).trim() || fallbackName;
+      const avatarSrc = (selectedMember && selectedMember.photo) || buildAvatarSvg(memberName);
       const avatar = `<img src="${avatarSrc}" alt="${memberName}">`;
       const profileName = isSelfChat ? `${memberName} <span class="you-badge">You</span>` : memberName;
 
@@ -1452,12 +1520,12 @@
       const currentProfile = getCurrentSenderProfile();
       const messageName = String(message.senderName || '').trim();
       const rawName = !messageName || /^(you|me|member)$/i.test(messageName)
-        ? (firestoreProfile.name || knownMember?.name || savedAccount.name || emailName || message.sender || 'Member')
+        ? (firestoreProfile.name || (knownMember && knownMember.name) || savedAccount.name || emailName || message.sender || 'Member')
         : messageName;
       const name = /^(you|me)$/i.test(String(rawName).trim())
         ? currentProfile.name
         : rawName;
-      const photo = firestoreProfile.photo || knownMember?.photo || savedAccount.photo || message.senderPhoto || buildAvatarSvg(name);
+      const photo = firestoreProfile.photo || (knownMember && knownMember.photo) || savedAccount.photo || message.senderPhoto || buildAvatarSvg(name);
       return `
         <div class="group-message-profile sender">
           <span class="sender-avatar"><img src="${photo}" alt="${name} profile"></span>
@@ -1504,11 +1572,38 @@
           return getDefaultMessages();
         }
         const messages = JSON.parse(stored);
-        return Array.isArray(messages) ? messages : getDefaultMessages();
+        return Array.isArray(messages) ? sortMessages(messages) : getDefaultMessages();
       } catch (error) {
         console.error('Could not read saved messages:', error);
         return getDefaultMessages();
       }
+    }
+
+    function getMessageTimestamp(message = {}) {
+      const value = message.createdAt || message.timestamp || message.date;
+      if (value && typeof value.toMillis === 'function') return value.toMillis();
+      if (value && typeof value.toDate === 'function') return value.toDate().getTime();
+      if (value) {
+        const parsed = new Date(value).getTime();
+        if (!Number.isNaN(parsed)) return parsed;
+      }
+      const idTimestamp = String(message.id || '').match(/(?:^|[-_])(\d{13})(?:[-_]|$)/);
+      return idTimestamp ? Number(idTimestamp[1]) : 0;
+    }
+
+    function sortMessages(messages) {
+      return messages
+        .map((message, index) => ({ message, index, timestamp: getMessageTimestamp(message) }))
+        .sort((left, right) => {
+          if (left.timestamp !== right.timestamp) return left.timestamp - right.timestamp;
+          const leftId = String(left.message.id || '');
+          const rightId = String(right.message.id || '');
+          if (left.timestamp && right.timestamp && leftId !== rightId) {
+            return leftId < rightId ? -1 : 1;
+          }
+          return left.index - right.index;
+        })
+        .map(item => item.message);
     }
 
     function getMessageDate(message = {}) {
@@ -1519,6 +1614,8 @@
         const parsed = new Date(value);
         if (!Number.isNaN(parsed.getTime())) return parsed;
       }
+      const timestamp = getMessageTimestamp(message);
+      if (timestamp) return new Date(timestamp);
       return new Date();
     }
 
@@ -1744,7 +1841,6 @@
         changed = true;
         return { ...message, status: 'seen', readAt: message.readAt || now };
       });
-      if (changed) saveMessages(updated);
       return updated;
     }
 
@@ -1781,7 +1877,6 @@
         return { ...message, readBy };
       });
       if (!changed) return updated;
-      saveMessages(updated);
       return updated;
     }
 
@@ -1808,7 +1903,6 @@
         return { ...message, readBy };
       });
       if (!changed) return updated;
-      saveMessages(updated);
       return updated;
     }
 
@@ -1841,12 +1935,13 @@
           ...localMessages.filter(message => !firestoreIds.has(message.id))
         ];
         if (mergedMessages.length) {
-          localStorage.setItem(storageKey, JSON.stringify(mergedMessages));
-          if (mergedMessages.length > firestoreMessages.length) saveMessages(mergedMessages);
-          return mergedMessages;
+          const orderedMessages = sortMessages(mergedMessages);
+          localStorage.setItem(storageKey, JSON.stringify(orderedMessages));
+          if (orderedMessages.length > firestoreMessages.length) saveMessages(orderedMessages);
+          return orderedMessages;
         }
 
-        const fallbackMessages = getMessages();
+        const fallbackMessages = sortMessages(getMessages());
         await conversationRef.set({
           conversationId,
           participants: [currentUserEmail, selectedMember.email].filter(Boolean),
@@ -1863,41 +1958,25 @@
 
     let messageWriteQueue = Promise.resolve();
     function saveMessages(messages) {
-      localStorage.setItem(storageKey, JSON.stringify(messages));
+      const orderedMessages = sortMessages(messages);
+      localStorage.setItem(storageKey, JSON.stringify(orderedMessages));
       messageWriteQueue = messageWriteQueue
         .catch(error => console.error('Previous message write failed:', error))
         .then(() => db.runTransaction(async transaction => {
           const snapshot = await transaction.get(conversationRef);
           const latest = snapshot.exists ? (snapshot.data().messages || []) : [];
-          const desiredById = new Map(messages.map(message => [message.id, message]));
+          const desiredById = new Map(orderedMessages.map(message => [message.id, message]));
           const latestById = new Map(latest.map(message => [message.id, message]));
           desiredById.forEach((message, id) => latestById.set(id, message));
           transaction.set(conversationRef, {
             conversationId,
             participants: [currentUserEmail, selectedMember.email].filter(Boolean),
-            messages: Array.from(latestById.values()),
+            messages: sortMessages(Array.from(latestById.values())),
             updatedAt: new Date()
           }, { merge: true });
         }))
         .catch(error => console.error('Failed to save messages to Firestore:', error));
       return messageWriteQueue;
-    }
-
-    function saveNewMessage(message) {
-      localStorage.setItem(storageKey, JSON.stringify([...getMessages(), message]));
-      messageCollectionRef.doc(message.id).set({
-          ...message,
-          conversationId,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        })
-        .catch(error => {
-          console.warn('Realtime message path failed; using conversation fallback:', error);
-          return saveMessages([...getMessages(), message])
-            .catch(fallbackError => {
-              console.error('Failed to deliver new message:', fallbackError);
-              showAttachmentNotice('Message could not be delivered. Please try again.');
-            });
-        });
     }
 
     function createInAppNotification({ to, type, title, message, from }) {
@@ -1916,6 +1995,8 @@
         recipient,
         type,
         title,
+        senderName: getCurrentSenderProfile().name,
+        senderPhoto: getCurrentSenderProfile().photo,
         body: message
       });
     }
@@ -2062,6 +2143,7 @@
 
     function renderMessages(messages = getMessages()) {
       const messagesEl = document.getElementById('messages');
+      messages = sortMessages(messages);
       let previousDateKey = '';
       messagesEl.innerHTML = messages.map((msg, index) => {
         const isMe = isMessageFromCurrentUser(msg);
@@ -2279,6 +2361,11 @@
 
     function listenForIncomingCalls() {
       if (!currentUserEmail) return;
+      const isNativeApp = Boolean(
+        window.Capacitor
+        && typeof window.Capacitor.isNativePlatform === 'function'
+        && window.Capacitor.isNativePlatform()
+      );
       const showIncomingCall = (call, isGroupCall) => {
           if (call.data().callerId === currentUserEmail) return;
           const banner = document.getElementById('incomingCall');
@@ -2301,11 +2388,11 @@
             banner.style.display = 'none';
             return;
           }
-          banner.style.display = 'flex';
-          startIncomingCallTone();
+          banner.style.display = isNativeApp ? 'none' : 'flex';
+          if (!isNativeApp) startIncomingCallTone();
           if (activeIncomingCallId !== call.id) {
             activeIncomingCallId = call.id;
-            requestBrowserNotifications().then(permission => {
+            if (!isNativeApp) requestBrowserNotifications().then(permission => {
               if (permission === 'granted' && document.visibilityState === 'visible'
                 && activeIncomingCallId === call.id) {
               const notification = new Notification(data.callerName || 'Incoming call', {
@@ -2332,6 +2419,8 @@
           document.getElementById('incomingCallText').textContent = isGroupCall
             ? `${data.callerName || 'A member'} started a Team Group ${data.callType === 'video' ? 'video' : 'audio'} call`
             : `${data.callerName || data.callerId || 'Someone'} is calling`;
+          const avatar = document.querySelector('.incoming-call-avatar');
+          if (avatar) avatar.textContent = (data.callerName || 'S').trim().charAt(0).toUpperCase();
           document.getElementById('acceptIncomingCall').onclick = () => {
             stopIncomingCallTone();
             const groupParams = isGroupCall
@@ -2371,23 +2460,7 @@
     }
 
     let lastRenderedMessageIds = new Set();
-    const pendingMessageIds = new Set();
     function listenForMessages() {
-      messageCollectionRef.onSnapshot(snapshot => {
-        const localMessages = getMessages();
-        const incomingMessages = snapshot.docs.map(item => item.data());
-        const merged = [...localMessages];
-        incomingMessages.forEach(message => {
-          const index = merged.findIndex(item => item.id === message.id);
-          if (index >= 0) merged[index] = { ...merged[index], ...message };
-          else merged.push(message);
-        });
-        const nextMessages = markPrivateMessagesSeen(markGroupMessagesSeen(markIncomingMessagesRead(merged)));
-        localStorage.setItem(storageKey, JSON.stringify(nextMessages));
-        lastRenderedMessageIds = new Set(nextMessages.map(message => message.id));
-        renderMessages(nextMessages);
-      }, error => console.error('Realtime message collection listener failed:', error));
-
       conversationRef.onSnapshot((doc) => {
         if (!doc.exists) {
           const fallbackMessages = getMessages();
@@ -2399,16 +2472,19 @@
         const localMessages = getMessages();
         const firestoreMessageIds = new Set(firestoreMessages.map(message => message.id));
         const localOnlyMessages = localMessages.filter(message => !firestoreMessageIds.has(message.id));
-        firestoreMessages = [...firestoreMessages, ...localOnlyMessages];
-        firestoreMessageIds.forEach(id => pendingMessageIds.delete(id));
+        firestoreMessages = sortMessages([...firestoreMessages, ...localOnlyMessages]);
         const newIncoming = firestoreMessages.filter(message =>
           !isMessageFromCurrentUser(message) &&
           !lastRenderedMessageIds.has(message.id) &&
           message.status !== 'seen'
         );
+        const messagesBeforeReadUpdates = JSON.stringify(firestoreMessages);
         firestoreMessages = markIncomingMessagesRead(firestoreMessages);
         firestoreMessages = markGroupMessagesSeen(firestoreMessages);
         firestoreMessages = markPrivateMessagesSeen(firestoreMessages);
+        if (JSON.stringify(firestoreMessages) !== messagesBeforeReadUpdates) {
+          saveMessages(firestoreMessages);
+        }
         newIncoming.forEach(showMessageNotification);
         lastRenderedMessageIds = new Set(firestoreMessages.map(message => message.id));
         localStorage.setItem(storageKey, JSON.stringify(firestoreMessages));
@@ -2482,8 +2558,7 @@
       playSendTone();
       updateTypingIndicator(false);
       const nextMessages = [...messages, message];
-      pendingMessageIds.add(message.id);
-      saveNewMessage(message);
+      saveMessages(nextMessages);
       createInAppNotification({
         to: isGroupChat ? 'all' : selectedMember.email,
         type: 'message',
@@ -2521,6 +2596,7 @@
           callType: type,
           roomId,
           text: `${type === 'video' ? 'Video' : 'Audio'} group call started`,
+          createdAt: new Date().toISOString(),
           time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
           reactions: {}
         };
@@ -2559,12 +2635,6 @@
         return;
       }
       const callId = `call-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      createInAppNotification({
-        to: selectedMember.email,
-        type: 'team_call',
-        title: `${type === 'video' ? 'Video' : 'Audio'} call`,
-        message: `${getCurrentSenderProfile().name} is calling you`
-      });
       const url = `team-meet-call.html?chat=${encodeURIComponent(selectedMember.email)}&call=${encodeURIComponent(callId)}&role=caller&type=${type}`;
       window.location.href = url;
     }
@@ -2707,7 +2777,8 @@
     let activeVoicePlaybackTimer = null;
 
     function updateVoicePlaybackTimer(audio, button) {
-      const durationEl = button.closest('.bubble.voice-bubble')?.querySelector('.voice-duration');
+      const bubble = button.closest('.bubble.voice-bubble');
+      const durationEl = bubble ? bubble.querySelector('.voice-duration') : null;
       if (!durationEl || !audio) return;
       const elapsed = Number.isFinite(audio.currentTime) ? audio.currentTime : 0;
       const display = formatVoiceTime(Math.max(0, Math.floor(elapsed)));
@@ -2735,7 +2806,7 @@
         activeButton.textContent = '▶';
         activeButton.setAttribute('aria-label', 'Play voice message');
         const bubble = activeButton.closest('.bubble.voice-bubble');
-        const durationEl = bubble?.querySelector('.voice-duration');
+        const durationEl = bubble ? bubble.querySelector('.voice-duration') : null;
         if (durationEl) {
           durationEl.textContent = activeButton.dataset.durationLabel || activeButton.dataset.duration || '00:05';
         }
@@ -2770,7 +2841,7 @@
       activeVoiceAudio = audio;
 
       const durationLabel = button.dataset.durationLabel || button.dataset.duration || '00:05';
-      const durationEl = bubble?.querySelector('.voice-duration');
+      const durationEl = bubble ? bubble.querySelector('.voice-duration') : null;
       if (durationEl) {
         durationEl.textContent = '00:00';
       }
@@ -2839,6 +2910,7 @@
         durationSeconds: rawSeconds,
         text: 'Voice message',
         audioDataUrl: voiceRecordedDataUrl,
+        createdAt: new Date().toISOString(),
         time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
       };
       const nextMessages = [...messages, voiceMessage];
@@ -2955,13 +3027,20 @@
       showAttachmentNotice('ফাইল আপলোড হচ্ছে...');
       try {
         const safeFileName = file.name.replace(/[^\w.\-]+/g, '_');
-        const signatureResponse = await fetch('/api/cloudinary-signature', {
-          method: 'POST',
-          headers: {
+        let fileUrl;
+        const isNativeApp = Boolean(
+          window.Capacitor
+          && typeof window.Capacitor.isNativePlatform === 'function'
+          && window.Capacitor.isNativePlatform()
+        );
+        const uploadApiBase = isNativeApp ? 'https://sbryms.vercel.app' : window.location.origin;
+        const signatureResponse = await fetch(`${uploadApiBase}/api/cloudinary-signature`, {
+            method: 'POST',
+            headers: {
             'Authorization': `Bearer ${await uploadUser.getIdToken()}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({})
+              'Content-Type': 'application/json'
+            },
+          body: JSON.stringify({ purpose: 'team-meet-attachment' })
         });
         const signature = await signatureResponse.json();
         if (!signatureResponse.ok) {
@@ -2993,7 +3072,7 @@
           throw new Error(`Cloudinary upload failed (${uploadResponse.status}).${cloudinaryError}`);
         }
         const uploaded = await uploadResponse.json();
-        const fileUrl = uploaded.secure_url;
+        fileUrl = uploaded.secure_url;
         const message = {
           id: `attachment-${Date.now()}-${Math.random().toString(16).slice(2)}`,
           sender: 'me',
@@ -3007,6 +3086,7 @@
           fileName: safeFileName,
           fileType: file.type,
           fileSize: file.size,
+          createdAt: new Date().toISOString(),
           time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
           reactions: {}
         };
@@ -3041,7 +3121,7 @@
         time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
         reactions: {}
       };
-      const nextMessages = [...getMessages(), message];
+      const nextMessages = sortMessages([...getMessages(), message]);
       saveMessages(nextMessages);
       renderMessages(nextMessages);
       showAttachmentNotice('অফিসিয়াল SBRYMS APK লিংক পাঠানো হয়েছে');
@@ -3168,10 +3248,16 @@
           resolve(user);
         });
       });
+      if (!authenticatedUser && window.sbrymsPresence) {
+        window.sbrymsPresence.stop().catch(error => {
+          console.error('Could not stop background presence service:', error);
+        });
+      }
       const authenticatedEmail = authenticatedUser && authenticatedUser.email
         ? authenticatedUser.email.trim().toLowerCase()
         : '';
       if (authenticatedEmail && authenticatedEmail !== currentUserEmail) {
+        renderMessages([]);
         localStorage.setItem('currentUserEmail', authenticatedEmail);
         localStorage.setItem('currentUserUid', authenticatedUser.uid || '');
         window.location.reload();
@@ -3181,22 +3267,34 @@
         window.location.replace('index.html');
         return;
       }
+      if (authenticatedUser) startChatPresence(authenticatedUser);
       const cachedMessages = getMessages();
       renderMessages(cachedMessages);
       lastRenderedMessageIds = new Set(cachedMessages.map(message => message.id));
       const profileLoad = loadSenderProfiles();
-      const memberLoad = loadSelectedMemberFromFirestore();
-      const messageLoad = loadMessagesFromFirestore();
-      renderMessages(cachedMessages);
+      watchSelectedMemberFromFirestore();
       renderProfile();
-      const [, , initialMessages] = await Promise.all([profileLoad, memberLoad, messageLoad]);
-      renderMessages(initialMessages);
-      lastRenderedMessageIds = new Set(initialMessages.map(message => message.id));
+      setInterval(refreshProfilePresence, 1000);
       requestBrowserNotifications();
       listenForMessages();
       listenForIncomingCalls();
+      const initialMessages = await loadMessagesFromFirestore();
+      const currentMessages = getMessages();
+      const mergedMessages = new Map(initialMessages.map(message => [message.id, message]));
+      currentMessages.forEach(message => {
+        mergedMessages.set(message.id, { ...mergedMessages.get(message.id), ...message });
+      });
+      const messages = Array.from(mergedMessages.values());
+      renderMessages(messages);
+      lastRenderedMessageIds = new Set(messages.map(message => message.id));
+      profileLoad.then(() => renderMessages(getMessages()));
     }
 
+    if (currentUserEmail && localStorage.getItem('currentUserUid')) {
+      const cachedMessages = getMessages();
+      renderMessages(cachedMessages);
+      lastRenderedMessageIds = new Set(cachedMessages.map(message => message.id));
+    }
     renderProfile();
     initializeChat();
   </script>

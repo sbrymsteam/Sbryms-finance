@@ -8,8 +8,9 @@
     <script type="importmap">
         {"imports":{"@capacitor/core":"/assets/vendor/capacitor-core/index.js"}}
     </script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="assets/native-presence.js"></script>
     <script>
         document.documentElement.classList.add('auth-pending');
         const firebaseConfig = {
@@ -21,21 +22,57 @@
             appId: "1:1087018056369:web:81bc39017385a649500090"
         };
         firebase.initializeApp(firebaseConfig);
+        function showDashboardAuthRecovery(message) {
+            document.documentElement.classList.add('auth-timeout');
+            const status = document.getElementById('dashboardAuthStatus');
+            const actions = document.getElementById('dashboardAuthActions');
+            if (status) status.textContent = message;
+            if (actions) actions.style.display = 'flex';
+        }
+        const dashboardAuthLoadingTimer = setTimeout(() => {
+            if (!document.documentElement.classList.contains('auth-pending')) return;
+            showDashboardAuthRecovery('Login check is taking longer than expected. Check your internet connection.');
+        }, 12000);
         firebase.auth().onAuthStateChanged((user) => {
             if (!user) {
+                clearTimeout(dashboardAuthLoadingTimer);
                 window.location.replace('index.html');
                 return;
             }
             localStorage.setItem('currentUserEmail', user.email || '');
             localStorage.setItem('currentUserUid', user.uid);
+            clearTimeout(dashboardAuthLoadingTimer);
             document.documentElement.classList.remove('auth-pending');
+        }, (error) => {
+            console.error('Could not verify the saved login session:', error);
+            clearTimeout(dashboardAuthLoadingTimer);
+            showDashboardAuthRecovery('Could not check your login. Check your connection and try again.');
         });
     </script>
     <style>
         :root { --bg:#081426; --panel:#101f35; --panel-2:#142842; --text:#edf6ff; --muted:#8fa4bc; --line:rgba(255,255,255,.09); --mint:#55dfbd; --blue:#55a8ff; --orange:#ffbd65; --danger:#ff7898; }
         * { box-sizing:border-box; }
         html, body { margin:0; min-height:100%; }
-        html.auth-pending body { visibility:hidden; }
+        html.auth-pending body > :not(#dashboardAuthLoading) { visibility:hidden; }
+        #dashboardAuthLoading { display:none; }
+        html.auth-pending #dashboardAuthLoading {
+            position:fixed; top:0; right:0; bottom:0; left:0; z-index:20000; display:flex; flex-direction:column;
+            align-items:center; justify-content:center; gap:14px; padding:24px;
+            color:var(--text); background:var(--bg); font-size:15px; text-align:center;
+        }
+        #dashboardAuthLoading::before {
+            width:30px; height:30px; border:3px solid rgba(85,223,189,.25);
+            border-top-color:var(--mint); border-radius:50%;
+            animation:dashboard-auth-spin .8s linear infinite; content:'';
+        }
+        html.auth-timeout #dashboardAuthLoading::before { display:none; }
+        #dashboardAuthActions { gap:12px; flex-wrap:wrap; justify-content:center; }
+        #dashboardAuthActions button, #dashboardAuthActions a {
+            padding:10px 14px; border:1px solid var(--line); border-radius:10px;
+            color:var(--text); background:var(--panel); text-decoration:none; cursor:pointer;
+            font:inherit; font-weight:700;
+        }
+        @keyframes dashboard-auth-spin { to { transform:rotate(360deg); } }
         body { color:var(--text); background:radial-gradient(900px 500px at 0 -10%,rgba(67,127,255,.2),transparent 60%),radial-gradient(700px 400px at 100% 100%,rgba(38,201,166,.12),transparent 60%),var(--bg); font-family:Inter,'Segoe UI',sans-serif; }
         button { font:inherit; }
         .shell { display:grid; grid-template-columns:248px minmax(0,1fr); min-height:100vh; }
@@ -103,6 +140,13 @@
     </style>
 </head>
 <body>
+    <div id="dashboardAuthLoading" role="status" aria-live="polite">
+        <span id="dashboardAuthStatus">Checking your login...</span>
+        <div id="dashboardAuthActions" style="display:none;">
+            <button type="button" onclick="window.location.reload()">Try again</button>
+            <a href="index.html">Back to login</a>
+        </div>
+    </div>
     <div class="shell">
         <aside class="sidebar">
             <div class="brand"><span class="brand-mark">S</span><span>SBRYMS Finance</span></div>
@@ -156,6 +200,13 @@
                     localStorage.setItem('browserNotificationsEnabled', 'false');
                 } catch (error) {
                     console.error('Could not unregister push notifications during logout:', error);
+                }
+            }
+            if (window.sbrymsPresence) {
+                try {
+                    await window.sbrymsPresence.stop();
+                } catch (error) {
+                    console.error('Could not stop background presence service:', error);
                 }
             }
             await firebase.auth().signOut();

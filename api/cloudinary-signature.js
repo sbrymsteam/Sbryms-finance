@@ -56,7 +56,9 @@ module.exports = async function cloudinarySignature(req, res) {
     }
 
     const timestamp = Math.floor(Date.now() / 1000);
-    const folder = 'team-meet-attachments';
+    const folder = req.body?.purpose === 'profile-photo'
+      ? `profile-photos/${user.uid}`
+      : 'team-meet-attachments';
     const signature = crypto
       .createHash('sha1')
       .update(`folder=${folder}&timestamp=${timestamp}${apiSecret}`)

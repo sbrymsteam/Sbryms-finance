@@ -10,7 +10,127 @@
     <link rel="preconnect" href="https://firebase.googleapis.com" crossorigin>
     <link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
     <title>SBRYMS Finance Web</title>
+    <script>
+        if ((window.location.protocol === 'http:' || window.location.protocol === 'https:')
+            && window.location.hostname === 'localhost'
+            && (!window.location.port || window.location.port === '80' || window.location.port === '443')) {
+            document.documentElement.classList.add('native-auth-pending');
+            window.__nativeAuthFallbackTimer = setTimeout(() => {
+                document.documentElement.classList.remove('native-auth-pending');
+            }, 10000);
+        }
+    </script>
     <style>
+        html.native-auth-pending,
+        html.native-auth-pending body {
+            min-height: 100%;
+            background: #050505;
+        }
+        html.native-auth-pending body { margin: 0; padding: 0; overflow: hidden; }
+        .native-launch-splash { display: none; }
+        html.native-auth-pending .native-launch-splash {
+            position: fixed;
+            z-index: 20;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 20px max(28px, env(safe-area-inset-bottom));
+            overflow: hidden;
+            color: #fff;
+            background:
+                radial-gradient(ellipse at 50% 46%, rgba(236, 167, 46, .10), transparent 38%),
+                #050505;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            text-align: center;
+        }
+        .native-launch-content { display: flex; flex-direction: column; align-items: center; transform: translateY(-18px); }
+        .native-launch-logo {
+            display: block;
+            width: min(68vw, 310px);
+            height: auto;
+            margin-bottom: 30px;
+            animation: launch-logo 1.8s ease-in-out infinite;
+            filter: drop-shadow(0 0 22px rgba(236, 167, 46, .18));
+        }
+        .native-launch-title {
+            margin: 0;
+            color: #f5bb55;
+            font-size: clamp(25px, 7vw, 34px);
+            font-weight: 800;
+            letter-spacing: .12em;
+            animation: launch-title 1.8s ease-in-out infinite;
+        }
+        .native-launch-status {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-top: 20px;
+            color: rgba(255,255,255,.72);
+            font-size: 13px;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+        .native-launch-dots { display: inline-flex; gap: 4px; }
+        .native-launch-dots span {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: #eca72e;
+            animation: launch-dot 1s ease-in-out infinite;
+        }
+        .native-launch-dots span:nth-child(2) { animation-delay: .16s; }
+        .native-launch-dots span:nth-child(3) { animation-delay: .32s; }
+        .native-launch-track {
+            width: min(48vw, 190px);
+            height: 2px;
+            margin-top: 22px;
+            overflow: hidden;
+            border-radius: 999px;
+            background: rgba(255,255,255,.14);
+        }
+        .native-launch-track::after {
+            display: block;
+            width: 42%;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, transparent, #eca72e, #ffe2a1, transparent);
+            animation: launch-progress 1.35s ease-in-out infinite;
+            content: '';
+        }
+        .native-launch-brand {
+            position: absolute;
+            right: 20px;
+            bottom: max(20px, env(safe-area-inset-bottom));
+            left: 20px;
+            color: rgba(255,255,255,.57);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+        }
+        @keyframes launch-logo {
+            0%, 100% { transform: translateY(0) scale(.98); opacity: .84; }
+            50% { transform: translateY(-5px) scale(1); opacity: 1; }
+        }
+        @keyframes launch-title {
+            0%, 100% { opacity: .72; text-shadow: 0 0 4px rgba(236,167,46,.18); }
+            50% { opacity: 1; text-shadow: 0 0 18px rgba(236,167,46,.55); }
+        }
+        @keyframes launch-dot {
+            0%, 80%, 100% { transform: translateY(0); opacity: .38; }
+            40% { transform: translateY(-4px); opacity: 1; }
+        }
+        @keyframes launch-progress {
+            from { transform: translateX(-130%); }
+            to { transform: translateX(250%); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .native-launch-logo, .native-launch-title, .native-launch-dots span,
+            .native-launch-track::after { animation-duration: 3s; }
+        }
+        html.native-auth-pending .site { display: none; }
         :root { color-scheme: dark; --mint: #5ed5bf; --cyan: #06b6d4; --pink: #d32696; --muted: #aab7c9; }
         * { box-sizing: border-box; }
         body {
@@ -62,6 +182,18 @@
     </style>
 </head>
 <body>
+    <section class="native-launch-splash" aria-label="SBRYMS Finance app is opening" aria-live="polite">
+        <div class="native-launch-content">
+            <img class="native-launch-logo" src="assets/app-icon.svg" alt="">
+            <h1 class="native-launch-title">SBRYMS Finance</h1>
+            <div class="native-launch-status">
+                <span>Opening app</span>
+                <span class="native-launch-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+            </div>
+            <div class="native-launch-track" aria-hidden="true"></div>
+        </div>
+        <div class="native-launch-brand">By SBRYMS &bull; EST-2022</div>
+    </section>
     <main class="site">
         <header class="topbar">
             <div class="brand"><span class="brand-mark">S</span><span>SBRYMS Finance Web</span></div>
@@ -93,6 +225,53 @@
             <article class="info-card"><h2>Secure Access</h2><strong>100%</strong><p>শুধু login করা সদস্যরাই dashboard ব্যবহার করতে পারবেন।</p></article>
         </section>
     </main>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
+            authDomain: "sbryms-finance.firebaseapp.com",
+            projectId: "sbryms-finance",
+            storageBucket: "sbryms-finance.appspot.com",
+            messagingSenderId: "1087018056369",
+            appId: "1:1087018056369:web:81bc39017385a649500090"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const isNativeLaunch = document.documentElement.classList.contains('native-auth-pending');
+        const nativeLaunchMinimumMs = 1100;
+        const nativeLaunchStartedAt = Date.now();
+        let startupAuthHandled = false;
+
+        function redirectToFaceApp() {
+            const targetUrl = new URL('FACE%20APP.html', window.location.href).toString();
+            window.location.replace(targetUrl);
+        }
+
+        auth.onAuthStateChanged(
+            user => {
+                if (startupAuthHandled) return;
+                startupAuthHandled = true;
+                clearTimeout(window.__nativeAuthFallbackTimer);
+                if (user) {
+                    localStorage.setItem('currentUserEmail', user.email || '');
+                    localStorage.setItem('currentUserUid', user.uid);
+                    const waitForLaunchAnimation = isNativeLaunch
+                        ? Math.max(0, nativeLaunchMinimumMs - (Date.now() - nativeLaunchStartedAt))
+                        : 0;
+                    setTimeout(redirectToFaceApp, waitForLaunchAnimation);
+                    return;
+                }
+                document.documentElement.classList.remove('native-auth-pending');
+            },
+            error => {
+                startupAuthHandled = true;
+                clearTimeout(window.__nativeAuthFallbackTimer);
+                console.error("Could not check the saved login session:", error);
+                document.documentElement.classList.remove('native-auth-pending');
+            }
+        );
+    </script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

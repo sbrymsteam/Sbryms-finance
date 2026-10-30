@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sbryms-finance-v17';
+const CACHE_NAME = 'sbryms-finance-v21';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -39,7 +39,8 @@ self.addEventListener('push', event => {
   const title = notification.title || data.title || 'SBRYMS Finance';
   const options = {
     body: notification.body || data.body || 'You have a new message or call.',
-    icon: '/assets/team-meet-icon.png',
+    icon: isCall ? '/assets/team-meet-icon.png' : (data.senderPhoto || '/assets/team-meet-icon.png'),
+    image: !isCall && data.senderPhoto ? data.senderPhoto : undefined,
     badge: '/assets/team-meet-icon.png',
     tag: isCall && callId
       ? `sbryms-call-${callId}`
@@ -48,11 +49,12 @@ self.addEventListener('push', event => {
     renotify: isCall,
     vibrate: isCall ? [0, 500, 250, 500] : [0, 150],
     actions: isCall
-      ? [{ action: 'answer', title: 'Answer' }, { action: 'dismiss', title: 'Dismiss' }]
+      ? [{ action: 'answer', title: 'Answer' }, { action: 'decline', title: 'Decline' }]
       : [{ action: 'open', title: 'Open chat' }],
     data: {
       url: data.url || notification.url || '/team-meet.html',
-      answerUrl: data.answerUrl || ''
+      answerUrl: data.answerUrl || '',
+      chatUrl: data.chatUrl || ''
     }
   };
   event.waitUntil((async () => {
@@ -63,9 +65,10 @@ self.addEventListener('push', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
   const notificationData = event.notification.data;
-  if (event.action === 'dismiss') return;
-  const requestedPath = event.action === 'answer'
+  const requestedPath = event.action === 'answer' || event.action === 'decline'
     ? notificationData && notificationData.answerUrl
+    : event.action === 'message'
+      ? notificationData && notificationData.chatUrl
     : notificationData && notificationData.url;
   const targetUrl = new URL(
     typeof requestedPath === 'string' && requestedPath.startsWith('/')
@@ -77,6 +80,7 @@ self.addEventListener('notificationclick', event => {
     targetUrl.pathname = '/team-meet.html';
     targetUrl.search = '';
   }
+  if (event.action === 'decline') targetUrl.searchParams.set('action', 'decline');
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const client of windows) {
@@ -132,9 +136,14 @@ self.addEventListener('fetch', event => {
         return response;
       } catch (error) {
         if (cached) return cached;
-        const fallback = await caches.match('/index.html');
-        if (fallback) return fallback;
-        throw error;
+        if (url.pathname === '/' || url.pathname === '/index.html') {
+          const fallback = await caches.match('/index.html');
+          if (fallback) return fallback;
+        }
+        return new Response(
+          '<!doctype html><html lang="bn"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline</title><body><h1>ইন্টারনেট সংযোগ নেই</h1><p>এই পেজটি আগে খোলা হয়নি। সংযোগ ফিরে এলে আবার চেষ্টা করুন।</p></body></html>',
+          { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+        );
       }
     })());
     return;

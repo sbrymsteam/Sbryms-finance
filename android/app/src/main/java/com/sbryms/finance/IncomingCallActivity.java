@@ -40,6 +40,12 @@ public class IncomingCallActivity extends Activity {
                 | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
                 | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
         );
+        getWindow().getDecorView().setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        );
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true);
             setTurnScreenOn(true);
@@ -72,7 +78,7 @@ public class IncomingCallActivity extends Activity {
         root.addView(name, nameParams);
 
         TextView callInfo = new TextView(this);
-        callInfo.setText(video ? "Incoming video call" : "Incoming audio call");
+        callInfo.setText(video ? "Ringing... Incoming video call" : "Ringing... Incoming audio call");
         callInfo.setTextColor(Color.rgb(179, 193, 205));
         callInfo.setTextSize(15);
         callInfo.setGravity(Gravity.CENTER);

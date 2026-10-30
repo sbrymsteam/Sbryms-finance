@@ -75,6 +75,13 @@ module.exports = async function sendPush(req, res) {
     const callType = req.body?.callType === 'video' ? 'video' : 'audio';
     const groupCall = req.body?.groupCall === true;
     const callerName = typeof req.body?.callerName === 'string' ? req.body.callerName.trim().slice(0, 80) : '';
+    const senderName = typeof req.body?.senderName === 'string'
+      ? req.body.senderName.trim().slice(0, 80)
+      : '';
+    const senderPhoto = typeof req.body?.senderPhoto === 'string'
+      && req.body.senderPhoto.startsWith('https://')
+      ? req.body.senderPhoto.slice(0, 1500)
+      : '';
     if ((!recipient || (recipient !== 'all' && !recipient.includes('@')))
       || !allowedTypes.has(type) || !title || !body) {
       res.status(400).json({ error: 'A valid recipient, type, title, and message are required.' });
@@ -96,9 +103,13 @@ module.exports = async function sendPush(req, res) {
     for (let index = 0; index < targets.length; index += 500) {
       const batch = targets.slice(index, index + 500);
       const senderEmail = String(user.email || '').trim().toLowerCase();
+      const titleSenderName = title.replace(/^new message from\s+/i, '').trim();
+      const messageSenderName = senderName
+        || titleSenderName
+        || String(user.name || user.email || 'SBRYMS member').trim().slice(0, 80);
       const notificationData = {
         type,
-        title,
+        title: type === 'message' ? messageSenderName : title,
         body
       };
       if (type === 'team_call') {
@@ -113,13 +124,16 @@ module.exports = async function sendPush(req, res) {
           callType,
           groupCall: String(groupCall),
           callerName: callerName || String(user.name || user.email || 'SBRYMS member').slice(0, 80),
-          url: `/team-meet-chat.html?chat=${encodeURIComponent(callChat)}`,
+          url: answerUrl,
+          chatUrl: `/team-meet-chat.html?chat=${encodeURIComponent(callChat)}`,
           answerUrl
         });
       } else {
         const messageId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
         const messageChat = recipient === 'all' ? 'team-group' : senderEmail;
         Object.assign(notificationData, {
+          senderName: messageSenderName,
+          senderPhoto,
           messageId,
           chat: messageChat,
           url: `/team-meet-chat.html?chat=${encodeURIComponent(messageChat)}`
@@ -130,8 +144,11 @@ module.exports = async function sendPush(req, res) {
         data: notificationData,
         webpush: {
           notification: {
-            title,
+            title: notificationData.title,
             body,
+            ...(type === 'message' && senderPhoto
+              ? { icon: senderPhoto, image: senderPhoto }
+              : {}),
             tag: type === 'team_call'
               ? `sbryms-call-${callId || roomId}`
               : `sbryms-message-${notificationData.messageId || messageTag}`,

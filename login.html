@@ -334,11 +334,16 @@ let currentCode = '';
 let resetEmail = '';
 let suppressSignedInRedirect = false;
 
+function redirectToFaceApp() {
+    const targetUrl = new URL('FACE%20APP.html', window.location.href).toString();
+    window.location.replace(targetUrl);
+}
+
 onAuthStateChanged(
     auth,
     user => {
         if (user && !suppressSignedInRedirect) {
-            window.location.replace("FACE APP.html");
+            redirectToFaceApp();
         }
     },
     error => console.error("Could not check the saved login session:", error)
@@ -557,7 +562,7 @@ document.getElementById("auth-btn").addEventListener("click", async () => {
             localStorage.removeItem('selectedProfileCurrent');
             localStorage.setItem(`user_${userCredential.user.uid}_profile_name`, extractNameFromEmail(userCredential.user.email));
             showToast("Login successful!");
-            setTimeout(()=>{ window.location.replace("FACE APP.html"); }, 700);
+            setTimeout(() => { redirectToFaceApp(); }, 700);
         } catch (error) {
             if (error.code === "auth/user-not-found") {
                         showToast("No account found for this email. Please register first.");

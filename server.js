@@ -11,6 +11,7 @@ require('dotenv').config();
 
 const app = express();
 const port = Number(process.env.PORT || 5000);
+
 app.use(cors());
 app.use(express.json());
 app.post('/api/resolve-login', resolveLogin);

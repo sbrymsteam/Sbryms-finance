@@ -19,7 +19,14 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(android.os.Bundle savedInstanceState) {
+        registerPlugin(DeviceSettingsPlugin.class);
+        registerPlugin(PresencePlugin.class);
         super.onCreate(savedInstanceState);
+        if (savedInstanceState == null
+            && Intent.ACTION_MAIN.equals(getIntent().getAction())
+            && getIntent().hasCategory(Intent.CATEGORY_LAUNCHER)) {
+            getWindow().getDecorView().postDelayed(() -> StartupTune.play(this), 350);
+        }
         openNotificationTarget(getIntent());
     }
 

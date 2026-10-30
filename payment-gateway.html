@@ -497,9 +497,9 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script>
         // Initialize Firebase (matches other pages)
         const firebaseConfig = {
@@ -804,7 +804,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                 id: `PAY-${Date.now()}`,
                 timestamp: new Date().toLocaleString('bn-BD'),
                 profile: selectedProfile,
-                profileName: profiles.find(p => p.email === selectedProfile)?.name || 'Unknown',
+                profileName: (profiles.find(p => p.email === selectedProfile) || {}).name || 'Unknown',
                 paymentMethod: selectedPaymentMethod,
                 dateRange: document.getElementById('dateRange').value,
                 year: Number(document.getElementById('year').value),
@@ -982,7 +982,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             }
 
             historyContainer.innerHTML = history.slice(0, 20).map(payment => {
-                const methodName = paymentMethods.find(m => m.id === payment.paymentMethod)?.name || 'Unknown';
+                const methodName = (paymentMethods.find(m => m.id === payment.paymentMethod) || {}).name || 'Unknown';
                 const monthName = months[payment.month - 1];
                 return `
                     <div class="transaction-item">

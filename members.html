@@ -85,9 +85,10 @@ body { background-color: #071124 !important; background-image: radial-gradient(1
     </div>
 
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="assets/native-presence.js"></script>
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
@@ -241,7 +242,14 @@ body { background-color: #071124 !important; background-image: radial-gradient(1
             window.location.href = 'team-meet.html';
         }
 
-        function logout() {
+        async function logout() {
+            if (window.sbrymsPresence) {
+                try {
+                    await window.sbrymsPresence.stop();
+                } catch (error) {
+                    console.error('Could not stop background presence service:', error);
+                }
+            }
             auth.signOut().then(() => {
                 localStorage.removeItem('currentUserEmail');
                 localStorage.removeItem('currentUserUid');

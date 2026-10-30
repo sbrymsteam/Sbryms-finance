@@ -6,9 +6,9 @@
     <title>SBRYMS - Edit Profile</title>
     
     <!-- ১. Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
     <style>
         body { background-color: #071124; color: #e6eef6; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
@@ -539,6 +539,9 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                 event.target.value = '';
                 return;
             }
+            if (auth.currentUser) {
+                localStorage.removeItem(`profilePhotoCloudinary_${auth.currentUser.uid}`);
+            }
 
             const reader = new FileReader();
             reader.onerror = () => {
@@ -648,7 +651,8 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             document.body.classList.toggle('dark-mode', darkMode);
             document.body.style.filter = `brightness(${brightness})`;
             document.querySelectorAll('.nav-item').forEach(item => {
-                const page = item.getAttribute('data-page')?.toLowerCase();
+                const pageValue = item.getAttribute('data-page');
+                const page = pageValue ? pageValue.toLowerCase() : '';
                 const current = window.location.pathname.split('/').pop().toLowerCase();
                 item.classList.toggle('active', page === current || (!current && page === 'profile.html'));
             });

@@ -4,4 +4,10 @@
     <string name="title_activity_main">SBRYMS Finance</string>
     <string name="package_name">com.sbryms.finance</string>
     <string name="custom_url_scheme">com.sbryms.finance</string>
+    <string name="notification_now">now</string>
+    <string name="sender_profile_photo">Sender profile photo</string>
+    <string name="presence_channel_name">Background availability</string>
+    <string name="presence_channel_description">Keeps your team presence online while SBRYMS Finance is in the background.</string>
+    <string name="presence_notification_title">SBRYMS Finance is active</string>
+    <string name="presence_notification_text">Keeping your team status available in the background.</string>
 </resources>

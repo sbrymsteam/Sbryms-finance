@@ -1,0 +1,169 @@
+OCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Fee Cards</title>
+    <style>
+        body {
+            background-color: #e0e8f0; /* একটি হালকা ব্যাকগ্রাউন্ড, যা নিউমর্ফিক ইফেক্ট ফুটিয়ে তোলে */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            width: 90%;
+            max-width: 1000px;
+            padding: 20px;
+        }
+
+        /* প্রথম ছবির স্টাইল অনুসারী মূল কার্ড ডিজাইন */
+        .fee-card {
+            background: #e0e8f0;
+            border-radius: 20px; /* সুন্দর রাউন্ডেড কর্নার */
+            padding: 20px;
+            position: relative;
+            box-sizing: border-box;
+            
+            /* প্রথম কোডের মতো সফট ইনার ও আউটার শ্যাডো বর্ডার ইফেক্ট */
+            box-shadow: 7px 7px 15px rgba(163, 177, 198, 0.6), 
+                        -7px -7px 15px rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        /* কার্ডের ওপর মাউস নিলে হালকা থ্রিডি বর্ডার রেসপন্স */
+        .fee-card:hover {
+            box-shadow: 4px 4px 10px rgba(163, 177, 198, 0.5), 
+                        -4px -4px 10px rgba(255, 255, 255, 0.9);
+            transform: translateY(-2px);
+        }
+
+        /* কার্ডের ভেতরের কন্টেন্ট সাজানো */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .date {
+            font-weight: 700;
+            color: #4a5568;
+            font-size: 1.1rem;
+        }
+
+        .menu-dot {
+            color: #a0aec0;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .details {
+            font-size: 0.95rem;
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .details div {
+            margin: 4px 0;
+        }
+
+        .highlight-text {
+            font-weight: 600;
+            color: #334155;
+        }
+
+        /* ফুটারে রেটিং এবং অ্যাকশন বাটন */
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .stars {
+            color: #ffb800;
+            font-size: 1.1rem;
+        }
+        
+        .cross-mark {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        /* অ্যাকশন টেক্সট স্টাইল */
+        .status-btn {
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        .pay { color: #3182ce; }
+        .unpaid { color: #e53e3e; }
+        .paid { color: #38a169; }
+    </style>
+</head>
+<body>
+
+    <div class="card-container">
+        
+        <!-- কার্ড ১: নরমাল বা পে অপশন -->
+        <div class="fee-card">
+            <div class="card-header">
+                <span class="date">JAN 1-15</span>
+                <span class="menu-dot">•••</span>
+            </div>
+            <div class="details">
+                <div>Fee: <span class="highlight-text">100</span></div>
+                <div>Fine: <span class="highlight-text">30</span></div>
+            </div>
+            <div class="card-footer">
+                <span class="stars">⭐⭐</span>
+                <span class="status-btn pay">pay</span>
+            </div>
+        </div>
+
+        <!-- কার্ড ২: আনপেইড অপশন -->
+        <div class="fee-card">
+            <div class="card-header">
+                <span class="date">JAN 16-30</span>
+                <span class="menu-dot">•••</span>
+            </div>
+            <div class="details">
+                <div>Fee: <span class="highlight-text">100</span></div>
+                <div>Fine: <span class="highlight-text">30</span></div>
+            </div>
+            <div class="card-footer">
+                <span class="cross-mark">❌</span>
+                <span class="status-btn unpaid">Unpaid</span>
+            </div>
+        </div>
+
+        <!-- কার্ড ৩: পেইড অপশন -->
+        <div class="fee-card">
+            <div class="card-header">
+                <span class="date">JAN 1-15</span>
+                <span class="menu-dot">•••</span>
+            </div>
+            <div class="details">
+                       <div>Fine: <span class="highlight-text">30</span></div>
+            </div>
+            <div class="card-footer">
+                <span class="stars">⭐⭐</span>
+                <span class="status-btn paid">paid</span>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

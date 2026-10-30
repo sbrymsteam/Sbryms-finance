@@ -218,6 +218,13 @@
     }
     .room-tools input { flex: 1; min-width: 0; }
     .room-tools button { cursor: pointer; }
+    .call-result-actions { display: flex; justify-content: center; gap: 10px; margin-top: 14px; }
+    .call-result-actions[hidden] { display: none; }
+    .call-result-actions button {
+      border: 1px solid rgba(255,255,255,0.16); border-radius: 999px;
+      padding: 9px 16px; background: rgba(255,255,255,0.08); color: var(--text);
+      font: inherit; font-weight: 700; cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -232,6 +239,10 @@
       <h1 class="name" id="targetName">Member</h1>
       <p class="status" id="callStatus">Dialing...</p>
       <div class="timer" id="timer">00:00</div>
+      <div class="call-result-actions" id="callResultActions" hidden>
+        <button type="button" id="retryCallButton">Try again</button>
+        <button type="button" id="messageAfterCallButton">Message</button>
+      </div>
     </div>
     <div class="video-grid" id="videoGrid">
       <video id="localVideo" autoplay muted playsinline></video>
@@ -341,7 +352,10 @@
       document.body.classList.toggle('video-call', callType === 'video');
       document.getElementById('targetName').textContent = member.name;
       document.getElementById('callTypeBadge').textContent = callType === 'video' ? 'Video' : 'Audio';
-      document.getElementById('callStatus').textContent = callType === 'video' ? 'Connecting video call...' : 'Connecting audio call...';
+      const callStatus = document.getElementById('callStatus');
+      if (callStatus.textContent === 'Dialing...') {
+        callStatus.textContent = callRole === 'caller' ? 'Calling...' : 'Ringing...';
+      }
       document.getElementById('callModeText').textContent = callType;
       const avatarEl = document.getElementById('avatar');
       const avatarSrc = member.photo || buildAvatarSvg(member.name);
@@ -562,7 +576,7 @@
       }
     }
 
-    function handleRemoteCallEnded() {
+    function handleRemoteCallEnded(endedReason = '') {
       if (callEnding) return;
       callEnding = true;
       stopConnectingTone();
@@ -592,6 +606,12 @@
         window.screenShareStream.getTracks().forEach(track => track.stop());
         window.screenShareStream = null;
       }
+      if (endedReason === 'declined') {
+        document.getElementById('callStatus').textContent = 'Call rejected';
+        document.getElementById('roomInfo').textContent = 'The other person rejected the call. Try again or send a message.';
+        document.getElementById('callResultActions').hidden = false;
+        return;
+      }
       document.getElementById('callStatus').textContent = 'Call ended';
       setTimeout(() => {
         window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
@@ -599,10 +619,17 @@
     }
 
     async function autoEndUnansweredCall() {
+      callEnding = true;
       stopConnectingTone();
       stopIncomingTone();
       stopUnansweredCallTimer();
       document.getElementById('callStatus').textContent = 'No answer';
+      document.getElementById('roomInfo').textContent = 'No answer. You can try again or send a message.';
+      document.getElementById('callResultActions').hidden = false;
+      if (directCallUnsubscribe) {
+        directCallUnsubscribe();
+        directCallUnsubscribe = null;
+      }
       if (directCallRef) {
         await directCallRef.update({ status: 'ended', endedReason: 'timeout' }).catch(error => {
           console.error('Failed to end unanswered call:', error);
@@ -619,7 +646,7 @@
       }
       setTimeout(() => {
         window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
-      }, 700);
+      }, 3000);
     }
 
     async function openUserMedia() {
@@ -694,7 +721,11 @@
       };
       peerConnection.onconnectionstatechange = () => {
         const state = peerConnection.connectionState;
-        document.getElementById('callStatus').textContent = state === 'connected' ? 'Connected' : `Call ${state}...`;
+        if (state === 'connected') {
+          document.getElementById('callStatus').textContent = 'Connected';
+        } else if (['failed', 'disconnected', 'closed'].includes(state)) {
+          document.getElementById('callStatus').textContent = `Call ${state}...`;
+        }
         if (state === 'connected') {
           showConnectedVideoLayout();
           stopConnectingTone();
@@ -782,10 +813,11 @@
       directCallUnsubscribe = directCallRef.onSnapshot(async snapshot => {
         const data = snapshot.data();
         if (data && data.status === 'ended') {
-          handleRemoteCallEnded();
+          handleRemoteCallEnded(data.endedReason || '');
           return;
         }
         if (data && data.answer && !peerConnection.currentRemoteDescription) {
+          document.getElementById('callStatus').textContent = 'Connecting...';
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
           stopConnectingTone();
           stopIncomingTone();
@@ -800,7 +832,6 @@
 
     async function answerDirectCall() {
       if (peerConnection || !directCallId) return;
-      startIncomingTone();
       directCallRef = db.collection('calls').doc(directCallId);
       const snapshot = await directCallRef.get();
       const data = snapshot.data();
@@ -918,7 +949,6 @@
 
     async function joinRoom() {
       if (peerConnection) return;
-      if (isGroupCall) startIncomingTone();
       const id = document.getElementById('roomIdInput').value.trim();
       if (!id) {
         document.getElementById('roomInfo').textContent = 'Enter a Room ID first.';
@@ -984,6 +1014,20 @@
       if (localStream) localStream.getTracks().forEach(track => track.stop());
       window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
     });
+    document.getElementById('retryCallButton').addEventListener('click', () => {
+      const nextCallId = `call-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const retryUrl = new URL('team-meet-call.html', window.location.href);
+      retryUrl.search = new URLSearchParams({
+        chat: chatEmail,
+        call: nextCallId,
+        role: 'caller',
+        type: callType
+      }).toString();
+      window.location.replace(retryUrl.href);
+    });
+    document.getElementById('messageAfterCallButton').addEventListener('click', () => {
+      window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
+    });
 
     if (initialRoomId) {
       document.getElementById('roomIdInput').value = initialRoomId;
@@ -1034,7 +1078,11 @@
       }
 
       if (!isGroupCall && directCallId) {
-        if (callRole !== 'caller') startIncomingTone();
+        if (callRole === 'caller') {
+          document.getElementById('callStatus').textContent = 'Calling...';
+        } else {
+          document.getElementById('callStatus').textContent = 'Answering...';
+        }
         const directAction = callRole === 'caller' ? startDirectCall() : answerDirectCall();
         directAction.catch(error => {
         console.error('Direct call setup failed:', error);

@@ -273,7 +273,7 @@
 <body>
   <div class="app">
     <div class="topbar">
-      <button class="page-back" type="button" aria-label="Back" onclick="window.location.href='FACE APP.html'">←</button>
+      <button class="page-back" type="button" aria-label="Back" onclick="window.location.href='FACE%20APP.html'">←</button>
       <div>
         <h1>Team Meet</h1>
         <div class="subtitle">Connect with your team through chat, profile, and call screens.</div>
@@ -326,6 +326,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="assets/native-presence.js"></script>
   <script type="importmap">
     {"imports":{"@capacitor/core":"/assets/vendor/capacitor-core/index.js"}}
   </script>
@@ -346,7 +347,7 @@
     firebase.firestore().settings({ experimentalForceLongPolling: true });
     const db = firebase.firestore();
     let presenceTimer = null;
-    const PRESENCE_TIMEOUT_MS = 90000;
+    const PRESENCE_TIMEOUT_MS = 75000;
 
     function initials(name) {
       return (name || 'U').split(/\s+/).filter(Boolean).slice(0,2).map(part => part[0]).join('').toUpperCase() || 'U';
@@ -397,6 +398,7 @@
     const unreadListeners = new Map();
     let membersLoaded = false;
     let currentUserEmail = (localStorage.getItem('currentUserEmail') || '').trim().toLowerCase();
+    let currentUserUid = localStorage.getItem('currentUserUid') || '';
 
     function conversationIdFor(email) {
       return [currentUserEmail, String(email || '').trim().toLowerCase()]
@@ -517,26 +519,31 @@
     }
 
     function updatePresence(status = 'online') {
-      if (!currentUserEmail) return;
-      return db.collection('users').where('email', '==', currentUserEmail).limit(1).get()
-        .then(snapshot => {
-          if (snapshot.empty) {
-            console.warn(`No Firestore user profile found for ${currentUserEmail}.`);
-            return;
-          }
-          return snapshot.docs[0].ref.set({
-            status,
-            presenceStatus: status,
-            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge: true });
-        })
-        .catch(error => {
-          console.error('Could not update device presence:', error);
-        });
+      if (!currentUserUid) return Promise.resolve();
+      return db.collection('users').doc(currentUserUid).set({
+        status,
+        presenceStatus: status,
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true }).catch(error => {
+        console.error('Could not update device presence:', error);
+      });
     }
 
-    function startPresence() {
+    function startPresence(user) {
       if (presenceTimer) clearInterval(presenceTimer);
+      currentUserUid = user.uid;
+      localStorage.setItem('currentUserUid', currentUserUid);
+      const nativePresence = window.sbrymsPresence && window.sbrymsPresence.isAvailable();
+      if (nativePresence) {
+        window.sbrymsPresence.start(user, firebaseConfig).catch(error => {
+          console.error('Could not start background presence service:', error);
+          updatePresence(navigator.onLine ? 'online' : 'offline');
+          presenceTimer = setInterval(() => {
+            if (navigator.onLine) updatePresence('online');
+          }, 30000);
+        });
+        return;
+      }
       updatePresence(navigator.onLine ? 'online' : 'offline');
       presenceTimer = setInterval(() => {
         if (navigator.onLine) updatePresence('online');
@@ -568,6 +575,18 @@
         const count = unreadCounts.get(email) || 0;
         badge.textContent = count > 99 ? '99+' : String(count);
         badge.classList.toggle('is-visible', count > 0);
+      });
+    }
+
+    function refreshMemberStatuses() {
+      document.querySelectorAll('#memberList .member-card').forEach(card => {
+        const member = members.find(item => item.email === card.dataset.email);
+        const badge = card.querySelector('.status-badge');
+        if (!member || !badge) return;
+        const online = getMemberStatus(member) === 'online';
+        badge.classList.toggle('online', online);
+        badge.classList.toggle('offline', !online);
+        badge.setAttribute('aria-label', online ? 'Online' : 'Offline');
       });
     }
 
@@ -740,9 +759,7 @@
       updatePresence('offline');
       renderMembers();
     });
-    window.addEventListener('beforeunload', () => {
-      updatePresence('offline');
-    });
+    setInterval(refreshMemberStatuses, 1000);
 
     function openChat(member) {
       if (!member) return;
@@ -935,15 +952,6 @@
       localStorage.setItem('selectedProfileDesignation', member.role || 'Member');
       localStorage.setItem('selectedProfileCurrent', 'false');
       const callId = `call-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      db.collection('notifications').add({
-        to: String(member.email || '').trim().toLowerCase(),
-        from: currentUserEmail,
-        type: 'team_call',
-        title: `${type === 'video' ? 'Video' : 'Audio'} call`,
-        message: `${localStorage.getItem('currentUserName') || 'A member'} is calling you`,
-        read: false,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      }).catch(error => console.error('Failed to create call notification:', error));
       window.location.href = 'team-meet-call.html?chat='
         + encodeURIComponent(member.email)
         + '&call=' + encodeURIComponent(callId)
@@ -975,6 +983,9 @@
             return;
           }
           const data = callDoc.data();
+          if (window.Capacitor
+            && typeof window.Capacitor.isNativePlatform === 'function'
+            && window.Capacitor.isNativePlatform()) return;
           if (!groupIncomingAudio) {
             const ringtone = localStorage.getItem('callRingtone') || 'uploaded-1';
             const path = ringtone === 'uploaded-2'
@@ -1021,11 +1032,16 @@
       if (user && user.email) {
         currentUserEmail = user.email.trim().toLowerCase();
         localStorage.setItem('currentUserEmail', currentUserEmail);
-        startPresence();
+        startPresence(user);
         loadMembersFromFirestore();
         watchUnreadMessages();
         listenForTeamGroupCalls();
       } else {
+        if (window.sbrymsPresence) {
+          window.sbrymsPresence.stop().catch(error => {
+            console.error('Could not stop background presence service:', error);
+          });
+        }
         console.warn('Team Meet requires an authenticated account for unread message counts.');
       }
     });

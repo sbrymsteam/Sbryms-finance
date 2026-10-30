@@ -7,9 +7,10 @@
     <title>SBRYMS Finance - Dashboard</title>
 
     <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="assets/native-presence.js"></script>
     <script type="importmap">
         {"imports":{"@capacitor/core":"/assets/vendor/capacitor-core/index.js"}}
     </script>
@@ -27,41 +28,6 @@
             firebase.initializeApp(mainPageFirebaseConfig);
         }
 
-        function subscribeIncomingDirectCalls() {
-            if (!db || _incomingCallUnsub) return;
-            const email = getCurrentUserEmail().trim().toLowerCase();
-            if (!email) return;
-            _incomingCallUnsub = db.collection('calls')
-                .where('receiverId', '==', email)
-                .onSnapshot(snapshot => {
-                    snapshot.docChanges().forEach(change => {
-                        if (change.type !== 'added') return;
-                        const data = change.doc.data() || {};
-                        const createdAt = data.createdAt && typeof data.createdAt.toMillis === 'function'
-                            ? data.createdAt.toMillis()
-                            : (data.createdAt ? new Date(data.createdAt).getTime() : Date.now());
-                        if (data.status !== 'ringing' || Date.now() - createdAt > 60000) return;
-                        const callUrl = `team-meet-call.html?chat=${encodeURIComponent(data.callerId || '')}&call=${encodeURIComponent(change.doc.id)}&role=callee&type=${encodeURIComponent(data.callType || 'audio')}`;
-                        const openCall = () => { window.location.href = callUrl; };
-                        if (document.visibilityState === 'visible'
-                            && localStorage.getItem('browserNotificationsEnabled') === 'true'
-                            && 'Notification' in window && Notification.permission === 'granted') {
-                            const notification = new Notification(data.callerName || 'Incoming call', {
-                                body: `${data.callType === 'video' ? 'Video' : 'Audio'} call`,
-                                tag: `incoming-call-${change.doc.id}`
-                            });
-                            notification.onclick = () => {
-                                window.focus();
-                                notification.close();
-                                openCall();
-                            };
-                        }
-                    });
-                }, error => {
-                    console.error('Incoming direct-call listener failed:', error);
-                    _incomingCallUnsub = null;
-                });
-        }
         firebase.auth().onAuthStateChanged((user) => {
             if (!user) {
                 window.location.replace('index.html');
@@ -73,7 +39,48 @@
         });
     </script>
     <style>
-        html.auth-pending body { visibility: hidden; }
+        html.auth-pending body > :not(#faceAppAuthLoading) { visibility: hidden; }
+        #faceAppAuthLoading { display: none; }
+        html.auth-pending #faceAppAuthLoading {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 20000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            padding: 24px;
+            color: #e6eef6;
+            background: #071124;
+            font-size: 15px;
+            text-align: center;
+        }
+        #faceAppAuthLoading::before {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(94, 213, 191, .25);
+            border-top-color: #5ed5bf;
+            border-radius: 50%;
+            animation: face-app-auth-spin .8s linear infinite;
+            content: '';
+        }
+        @keyframes face-app-auth-spin { to { transform: rotate(360deg); } }
+        html.auth-timeout #faceAppAuthLoading::before { display: none; }
+        #faceAppAuthActions button, #faceAppAuthActions a {
+            padding: 10px 14px;
+            border: 0;
+            border-radius: 10px;
+            color: #071124;
+            background: #5ed5bf;
+            font: inherit;
+            font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+        }
             /* Remove rounded corners and use linear borders */
             /* Remove global forced rounding; apply refined gradient borders and sensible radii */
 /* Use a transparent base border and a subtle gradient edge for better look on dark background */
@@ -704,6 +711,13 @@ body.custom-image-background::before {
 <link rel="stylesheet" href="assets/bg.css">
 </head>
 <body>
+    <div id="faceAppAuthLoading" role="status" aria-live="polite">
+        <span id="faceAppAuthStatus">Checking your login...</span>
+        <div id="faceAppAuthActions" style="display:none;gap:12px;flex-wrap:wrap;justify-content:center;">
+            <button type="button" onclick="window.location.reload()">Try again</button>
+            <a href="index.html">Back to login</a>
+        </div>
+    </div>
 <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute; left:-9999px; top:-9999px;">
     <defs>
         <linearGradient id="iconFlowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -1053,16 +1067,32 @@ body.custom-image-background::before {
         }
 
         if (typeof firebase !== 'undefined' && firebase.auth) {
+            function showFaceAppAuthRecovery(message) {
+                document.documentElement.classList.add('auth-timeout');
+                const status = document.getElementById('faceAppAuthStatus');
+                const actions = document.getElementById('faceAppAuthActions');
+                if (status) status.textContent = message;
+                if (actions) actions.style.display = 'flex';
+            }
+            const faceAppAuthLoadingTimer = setTimeout(() => {
+                if (!document.documentElement.classList.contains('auth-pending')) return;
+                showFaceAppAuthRecovery('Login check is taking longer than expected. Check your internet connection.');
+            }, 12000);
             firebase.auth().onAuthStateChanged((user) => {
                 if (!user) {
+                    clearTimeout(faceAppAuthLoadingTimer);
                     window.location.replace('index.html');
                     return;
                 }
                 localStorage.setItem('currentUserEmail', user.email || '');
                 localStorage.setItem('currentUserUid', user.uid);
+                clearTimeout(faceAppAuthLoadingTimer);
                 document.documentElement.classList.remove('auth-pending');
                 subscribeNotificationsRealtime();
-                subscribeIncomingDirectCalls();
+            }, (error) => {
+                console.error('Could not verify the saved login session:', error);
+                clearTimeout(faceAppAuthLoadingTimer);
+                showFaceAppAuthRecovery('Could not check your login. Check your connection and try again.');
             });
         } else {
             window.location.replace('index.html');
@@ -1213,7 +1243,8 @@ body.custom-image-background::before {
             const currentUid = localStorage.getItem('currentUserUid') || '';
 
             db.collection('team_meet_messages_shared')
-                .orderBy('createdAt', 'asc')
+                .orderBy('createdAt', 'desc')
+                .limit(100)
                 .onSnapshot(snapshot => {
                     if (!snapshot || snapshot.empty) {
                         const counts = getUnreadMessageCounts();
@@ -1273,7 +1304,7 @@ body.custom-image-background::before {
         let _notifPollingId = null;
         let _notifUnsubPersonal = null;
         let _notifUnsubAll = null;
-        let _incomingCallUnsub = null;
+        let _notifRealtimeStarted = false;
 
         function updateBadgeCount(count) {
             const badge = document.getElementById('notifBadge');
@@ -1289,7 +1320,8 @@ body.custom-image-background::before {
                 || document.visibilityState !== 'visible'
                 || !('Notification' in window) || Notification.permission !== 'granted') return;
             const type = data.type || 'message';
-            if (type !== 'message' && type !== 'team_call') return;
+            if (type === 'team_call') return;
+            if (type !== 'message') return;
             const senderName = data.fromName || (type === 'team_call' ? 'Team Meet' : 'New message');
             const body = data.message || (type === 'team_call' ? 'A team call has started.' : 'You have a new message');
             const tag = type === 'team_call' ? 'sbryms-team-call' : 'sbryms-message';
@@ -1313,6 +1345,8 @@ body.custom-image-background::before {
         }
 
         function subscribeNotificationsRealtime() {
+            if (_notifRealtimeStarted) return;
+            _notifRealtimeStarted = true;
             // If Firestore is available, use onSnapshot for instant updates; otherwise fallback to polling
             const email = getCurrentUserEmail();
             if (!db) { startNotificationPolling(); return; }
@@ -1352,17 +1386,11 @@ body.custom-image-background::before {
             }
         }
 
-        // Call subscription automatically when page loads (if possible)
-        window.addEventListener('load', function() {
-            try { subscribeNotificationsRealtime(); } catch(e){ console.error('subscribe init error', e); }
-        });
-
         // Cleanup on unload
         window.addEventListener('beforeunload', function(){
             try {
                 if (_notifUnsubPersonal) _notifUnsubPersonal();
                 if (_notifUnsubAll) _notifUnsubAll();
-                if (_incomingCallUnsub) _incomingCallUnsub();
                 stopNotificationPolling();
             } catch(e){}
         });
@@ -1651,6 +1679,13 @@ body.custom-image-background::before {
 
         async function logout() {
             if (confirm('Are you sure you want to logout?')) {
+                if (window.sbrymsPresence) {
+                    try {
+                        await window.sbrymsPresence.stop();
+                    } catch (error) {
+                        console.error('Could not stop background presence service:', error);
+                    }
+                }
                 if (localStorage.getItem('browserNotificationsEnabled') === 'true'
                     && window.sbrymsPush) {
                     try {

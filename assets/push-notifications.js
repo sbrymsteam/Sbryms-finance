@@ -5,6 +5,7 @@
   let registrationWaiter = null;
   let registrationListenersAttached = false;
   let foregroundMessageListenerAttached = false;
+  let nativeRegistrationPromise = null;
 
   function getApiBase() {
     return nativePlatform
@@ -33,6 +34,38 @@
     const user = firebase.auth().currentUser;
     if (!user) throw new Error('Please sign in before enabling notifications.');
     return user;
+  }
+
+  async function uploadProfilePhotoDataUrl(photoDataUrl, user) {
+    const cacheKey = `profilePhotoCloudinary_${user.uid}`;
+    const cachedPhoto = localStorage.getItem(cacheKey);
+    if (cachedPhoto && cachedPhoto.startsWith('https://')) return cachedPhoto;
+
+    const signature = await apiRequest('/api/cloudinary-signature', { purpose: 'profile-photo' });
+    const formData = new FormData();
+    formData.append('file', photoDataUrl);
+    formData.append('api_key', signature.apiKey);
+    formData.append('timestamp', String(signature.timestamp));
+    formData.append('folder', signature.folder);
+    formData.append('signature', signature.signature);
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${encodeURIComponent(signature.cloudName)}/image/upload`,
+      { method: 'POST', body: formData }
+    );
+    const uploaded = await response.json();
+    if (!response.ok || typeof uploaded.secure_url !== 'string'
+      || !uploaded.secure_url.startsWith('https://')) {
+      throw new Error(uploaded.error && uploaded.error.message
+        ? uploaded.error.message
+        : 'Profile photo upload failed.');
+    }
+
+    localStorage.setItem(cacheKey, uploaded.secure_url);
+    if (window.firebase && firebase.firestore) {
+      await firebase.firestore().collection('users').doc(user.uid)
+        .set({ photo: uploaded.secure_url }, { merge: true });
+    }
+    return uploaded.secure_url;
   }
 
   async function apiRequest(path, payload) {
@@ -71,10 +104,14 @@
     const url = data.url || notification.url || '/team-meet.html';
     const answerUrl = data.answerUrl || '';
     const eventId = data.messageId || data.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    if (isCall && String(data.groupCall) === 'true'
+      && window.location.pathname === '/team-meet.html'
+      && document.visibilityState === 'visible') return;
     const registration = await navigator.serviceWorker.ready;
     await registration.showNotification(title, {
       body,
-      icon: '/assets/team-meet-icon.png',
+      icon: isCall ? '/assets/team-meet-icon.png' : (data.senderPhoto || '/assets/team-meet-icon.png'),
+      image: !isCall && data.senderPhoto ? data.senderPhoto : undefined,
       badge: '/assets/team-meet-icon.png',
       tag: isCall && callId
         ? `sbryms-call-${callId}`
@@ -160,6 +197,63 @@
     registrationListenersAttached = true;
   }
 
+  async function requestNativeNotificationPermission() {
+    if (window.sbrymsEnsureNotificationPermission) {
+      return window.sbrymsEnsureNotificationPermission();
+    }
+    if (window.__sbrymsNotificationPermissionPromise) {
+      return window.__sbrymsNotificationPermissionPromise;
+    }
+    window.__sbrymsNotificationPermissionPromise = nativePush.checkPermissions()
+      .then(permission => permission.receive === 'granted'
+        ? permission
+        : nativePush.requestPermissions())
+      .then(permission => {
+        if (permission.receive !== 'granted') {
+          throw new Error('Android notification permission was not granted.');
+        }
+        return permission;
+      })
+      .finally(() => {
+        window.__sbrymsNotificationPermissionPromise = null;
+      });
+    return window.__sbrymsNotificationPermissionPromise;
+  }
+
+  async function requestNotificationPermission() {
+    await nativeReady;
+    if (!nativePlatform) return { receive: 'granted' };
+    return requestNativeNotificationPermission();
+  }
+
+  async function registerNativeToken() {
+    if (nativeRegistrationPromise) return nativeRegistrationPromise;
+    let registrationTimeout;
+    const registration = new Promise((resolve, reject) => {
+      registrationTimeout = setTimeout(() => {
+        registrationWaiter = null;
+        reject(new Error('Android push registration timed out.'));
+      }, 20000);
+      registrationWaiter = {
+        resolve: () => { clearTimeout(registrationTimeout); registrationWaiter = null; resolve(); },
+        reject: error => { clearTimeout(registrationTimeout); registrationWaiter = null; reject(error); }
+      };
+    });
+    nativeRegistrationPromise = Promise.resolve().then(async () => {
+      await nativePush.register();
+      await registration;
+    }).catch(error => {
+      if (registrationWaiter) {
+        clearTimeout(registrationTimeout);
+        registrationWaiter = null;
+      }
+      throw error;
+    }).finally(() => {
+      nativeRegistrationPromise = null;
+    });
+    return nativeRegistrationPromise;
+  }
+
   async function enable() {
     await nativeReady;
     await getCurrentUser();
@@ -169,18 +263,8 @@
       window.dispatchEvent(new Event('sbrymsPushStatusChange'));
       return;
     }
-    const permission = await nativePush.requestPermissions();
-    if (permission.receive !== 'granted') throw new Error('Android notification permission was not granted.');
-
-    const registration = new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Android push registration timed out.')), 20000);
-      registrationWaiter = {
-        resolve: () => { clearTimeout(timeout); registrationWaiter = null; resolve(); },
-        reject: error => { clearTimeout(timeout); registrationWaiter = null; reject(error); }
-      };
-    });
-    await nativePush.register();
-    await registration;
+    await requestNativeNotificationPermission();
+    await registerNativeToken();
     localStorage.setItem('browserNotificationsEnabled', 'true');
     window.dispatchEvent(new Event('sbrymsPushStatusChange'));
   }
@@ -213,14 +297,6 @@
       localStorage.removeItem('webPushToken');
     }
     const messaging = firebase.messaging();
-    if (!foregroundMessageListenerAttached) {
-      messaging.onMessage(payload => {
-        showWebNotification(payload).catch(error => {
-          console.error('Could not show the foreground push notification:', error);
-        });
-      });
-      foregroundMessageListenerAttached = true;
-    }
     await messaging.deleteToken();
     localStorage.setItem('browserNotificationsEnabled', 'false');
     window.dispatchEvent(new Event('sbrymsPushStatusChange'));
@@ -243,9 +319,31 @@
       enabled: permission === 'granted' && Boolean(localStorage.getItem('webPushToken'))
     };
   }
+
   async function send(payload) {
     try {
-      return await apiRequest('/api/send-push', payload);
+      const notificationPayload = { ...payload };
+      if (typeof notificationPayload.senderPhoto === 'string'
+        && /^data:image\/(jpeg|png|webp);base64,/i.test(notificationPayload.senderPhoto)) {
+        try {
+          const user = await getCurrentUser();
+          notificationPayload.senderPhoto = await uploadProfilePhotoDataUrl(
+            notificationPayload.senderPhoto,
+            user
+          );
+        } catch (error) {
+          console.error('Could not prepare the sender profile photo for push:', error);
+          delete notificationPayload.senderPhoto;
+        }
+      } else if (typeof notificationPayload.senderPhoto !== 'string'
+        || !notificationPayload.senderPhoto.startsWith('https://')) {
+        delete notificationPayload.senderPhoto;
+      }
+      const result = await apiRequest('/api/send-push', notificationPayload);
+      if (notificationPayload.type === 'message' && result.sent === 0) {
+        console.warn('No recipient device has a registered push token. Open the APK and allow notifications on the recipient device.');
+      }
+      return result;
     } catch (error) {
       console.error('Could not send push notification:', error);
       return null;
@@ -257,12 +355,17 @@
     if (preference === 'false') return;
     if (nativePlatform) {
       await nativeReady;
-      const permission = await nativePush.checkPermissions();
-      if (permission.receive === 'granted') {
-        await nativePush.register();
-        if (preference !== 'true') localStorage.setItem('browserNotificationsEnabled', 'true');
-      window.dispatchEvent(new Event('sbrymsPushStatusChange'));
+      try {
+        await requestNativeNotificationPermission();
+        await registerNativeToken();
+        localStorage.setItem('browserNotificationsEnabled', 'true');
         window.dispatchEvent(new Event('sbrymsPushStatusChange'));
+      } catch (error) {
+        if (error.message === 'Android notification permission was not granted.'
+          || error.message === 'Android notification permissions are unavailable.') {
+          localStorage.setItem('browserNotificationsEnabled', 'false');
+        }
+        throw error;
       }
       return;
     }
@@ -285,6 +388,10 @@
   })();
   nativeReady.catch(error => console.error('Capacitor push setup could not start:', error));
 
-  window.sbrymsPush = { enable, disable, send, getStatus };
+  window.sbrymsPush = { enable, disable, send, getStatus, requestNotificationPermission };
+  window.sbrymsPushReady = nativeReady.then(() => window.sbrymsPush);
+  window.sbrymsPushReady.catch(error => {
+    console.error('Push notification services could not initialize:', error);
+  });
   window.dispatchEvent(new Event('sbrymsPushReady'));
 })();

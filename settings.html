@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SBRYMS Finance - Settings</title>
+  <script type="importmap">
+    {"imports":{"@capacitor/core":"/assets/vendor/capacitor-core/index.js"}}
+  </script>
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
@@ -44,6 +47,7 @@
       display: flex; align-items: center; justify-content: space-between; gap: 14px;
       min-height: 58px; border-top: 1px solid rgba(255,255,255,.08);
     }
+    #dndAccessRow[hidden] { display: none; }
     .row:first-of-type { border-top: 0; }
     .row strong { display: block; font-size: 14px; }
     .row small { display: block; margin-top: 3px; color: #9aa8bf; font-size: 12px; }
@@ -96,6 +100,14 @@
         <button class="toggle" id="notificationToggle" type="button" aria-label="Toggle call and message alerts"></button>
       </div>
       <div class="row">
+        <div><strong>Device notification permission</strong><small id="deviceNotificationHelp">Open device settings to allow SBRYMS notifications</small></div>
+        <button class="open-link" id="openNotificationSettings" type="button">Open settings</button>
+      </div>
+      <div class="row" id="dndAccessRow" hidden>
+        <div><strong>Allow calls during Do Not Disturb</strong><small id="dndAccessStatus">Check Android call alert access</small></div>
+        <button class="open-link" id="openDndAccessSettings" type="button">Manage access</button>
+      </div>
+      <div class="row">
         <div><strong>Team Meet badge</strong><small>Show unread count on dashboard</small></div>
         <button class="toggle" id="badgeToggle" type="button" aria-label="Toggle Team Meet badge"></button>
       </div>
@@ -137,9 +149,10 @@
     </div>
     <button class="danger" id="logoutButton" type="button">Log out</button>
   </main>
+  <script src="assets/background-settings.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="assets/background-settings.js"></script>
+  <script src="assets/native-presence.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
@@ -150,6 +163,7 @@
       appId: "1:1087018056369:web:81bc39017385a649500090"
     };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
     const theme = localStorage.getItem('theme') || 'light';
     const backgroundPresets = {
       pinkBlue: 'linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5)',
@@ -196,6 +210,30 @@
     });
     const notificationButton = document.getElementById('notificationToggle');
     const notificationStatus = document.getElementById('notificationStatus');
+    const notificationSettingsButton = document.getElementById('openNotificationSettings');
+    const deviceNotificationHelp = document.getElementById('deviceNotificationHelp');
+    const dndAccessRow = document.getElementById('dndAccessRow');
+    const dndAccessStatus = document.getElementById('dndAccessStatus');
+    const dndAccessButton = document.getElementById('openDndAccessSettings');
+    const getDeviceSettings = () => window.Capacitor
+      && window.Capacitor.Plugins
+      && window.Capacitor.Plugins.DeviceSettings;
+    const refreshDndAccess = async () => {
+      const deviceSettings = getDeviceSettings();
+      if (!deviceSettings || typeof deviceSettings.getDndAccessStatus !== 'function') {
+        dndAccessRow.hidden = true;
+        return;
+      }
+      dndAccessRow.hidden = false;
+      try {
+        const status = await deviceSettings.getDndAccessStatus();
+        dndAccessStatus.textContent = status.granted
+          ? 'Allowed. Incoming calls may bypass Do Not Disturb.'
+          : 'Not allowed. Grant access in Android Settings to bypass Do Not Disturb.';
+      } catch (error) {
+        dndAccessStatus.textContent = error.message || 'Could not check Do Not Disturb access.';
+      }
+    };
     const refreshNotificationStatus = async () => {
       if (!window.sbrymsPush || !window.sbrymsPush.getStatus) return;
       try {
@@ -214,8 +252,52 @@
         notificationStatus.textContent = error.message || 'Could not check notification status.';
       }
     };
+    notificationSettingsButton.addEventListener('click', async () => {
+      notificationSettingsButton.disabled = true;
+      try {
+        const isNativeApp = Boolean(
+          window.Capacitor
+          && typeof window.Capacitor.isNativePlatform === 'function'
+          && window.Capacitor.isNativePlatform()
+        );
+        const deviceSettings = window.Capacitor
+          && window.Capacitor.Plugins
+          && window.Capacitor.Plugins.DeviceSettings;
+        if (isNativeApp && deviceSettings && typeof deviceSettings.openNotificationSettings === 'function') {
+          await deviceSettings.openNotificationSettings();
+          deviceNotificationHelp.textContent = 'Allow notifications for SBRYMS Finance, then return and enable alerts.';
+        } else {
+          deviceNotificationHelp.textContent = 'Open your browser or device Settings, find SBRYMS Finance, and allow Notifications.';
+        }
+      } catch (error) {
+        deviceNotificationHelp.textContent = error.message || 'Could not open notification settings.';
+      } finally {
+        notificationSettingsButton.disabled = false;
+      }
+    });
+    dndAccessButton.addEventListener('click', async () => {
+      const deviceSettings = getDeviceSettings();
+      if (!deviceSettings || typeof deviceSettings.openDndAccessSettings !== 'function') return;
+      dndAccessButton.disabled = true;
+      try {
+        await deviceSettings.openDndAccessSettings();
+        dndAccessStatus.textContent = 'Allow SBRYMS Finance in Android Settings, then return here.';
+      } catch (error) {
+        dndAccessStatus.textContent = error.message || 'Could not open Do Not Disturb settings.';
+      } finally {
+        dndAccessButton.disabled = false;
+      }
+    });
     window.addEventListener('sbrymsPushReady', refreshNotificationStatus);
     window.addEventListener('sbrymsPushStatusChange', refreshNotificationStatus);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        refreshNotificationStatus();
+        refreshDndAccess();
+      }
+    });
+    window.addEventListener('sbrymsPushReady', refreshDndAccess);
+    refreshDndAccess();
     const bindToggle = (id, key, defaultValue) => {
       const button = document.getElementById(id);
       const update = value => {
@@ -235,7 +317,9 @@
           }
           localStorage.setItem(key, String(next));
           update(next);
-          if (key === 'browserNotificationsEnabled') await refreshNotificationStatus();
+          if (key === 'browserNotificationsEnabled') {
+            await refreshNotificationStatus();
+          }
         } catch (error) {
           if (key === 'browserNotificationsEnabled') {
             notificationStatus.textContent = error.message || 'Notifications could not be enabled.';
@@ -250,10 +334,25 @@
     selectBackground(localStorage.getItem('appBackgroundPreset') || 'pinkBlue');
     const savedRingtone = localStorage.getItem('callRingtone') || 'dj-jazz-2';
     document.querySelectorAll('[data-ringtone]').forEach(button => button.classList.toggle('active', button.dataset.ringtone === savedRingtone));
-    document.getElementById('logoutButton').addEventListener('click', () => {
+    document.getElementById('logoutButton').addEventListener('click', async () => {
+      document.getElementById('logoutButton').disabled = true;
+      try {
+        if (window.sbrymsPresence) {
+          try {
+            await window.sbrymsPresence.stop();
+          } catch (error) {
+            console.error('Could not stop background presence service:', error);
+          }
+        }
+        await firebase.auth().signOut();
+      } catch (error) {
+        console.error('Firebase sign-out failed:', error);
+        document.getElementById('logoutButton').disabled = false;
+        return;
+      }
       localStorage.removeItem('currentUserEmail');
       localStorage.removeItem('currentUserUid');
-      window.location.href = 'index.html';
+      window.location.replace('index.html');
     });
     applyTheme(theme);
   </script>
