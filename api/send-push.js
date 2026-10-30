@@ -99,7 +99,6 @@ module.exports = async function sendPush(req, res) {
 
     const targets = await getRecipientTokens(services.db, recipient, user.uid);
     let sent = 0;
-    const messageTag = `sbryms-message-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     for (let index = 0; index < targets.length; index += 500) {
       const batch = targets.slice(index, index + 500);
       const senderEmail = String(user.email || '').trim().toLowerCase();
@@ -143,18 +142,6 @@ module.exports = async function sendPush(req, res) {
         tokens: batch.map(target => target.token),
         data: notificationData,
         webpush: {
-          notification: {
-            title: notificationData.title,
-            body,
-            ...(type === 'message' && senderPhoto
-              ? { icon: senderPhoto, image: senderPhoto }
-              : {}),
-            tag: type === 'team_call'
-              ? `sbryms-call-${callId || roomId}`
-              : `sbryms-message-${notificationData.messageId || messageTag}`,
-            requireInteraction: type === 'team_call',
-            renotify: type === 'team_call'
-          },
           headers: { Urgency: 'high' }
         },
         android: { priority: 'high', ttl: 600_000 }

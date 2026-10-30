@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="bn">
 <head>
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/app-icon-192.png?v=22">
+  <link rel="apple-touch-icon" href="/assets/app-icon-192.png?v=22">
+  <link rel="manifest" href="/manifest.json">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SBRYMS Finance - Team Meet Chat</title>
@@ -1821,15 +1824,37 @@
       if (localStorage.getItem('browserNotificationsEnabled') !== 'true'
         || document.visibilityState !== 'visible'
         || !('Notification' in window) || Notification.permission !== 'granted') return;
-      const notification = new Notification(message.senderName || selectedMember.name || 'New message', {
-        body: message.deleted ? 'Message deleted' : (message.text || 'New voice message'),
-        icon: selectedMember.photo || buildAvatarSvg(message.senderName || selectedMember.name || 'User'),
-        tag: `team-meet-${conversationId}`
-      });
-      notification.onclick = () => {
-        window.focus();
-        notification.close();
+      const senderName = message.senderName || selectedMember.name || 'New message';
+      const senderPhoto = message.senderPhoto || selectedMember.photo || '';
+      const body = message.deleted ? 'Message deleted' : (message.text || 'New voice message');
+      const notificationOptions = {
+        body,
+        icon: senderPhoto || '/assets/app-icon-192.png',
+        image: senderPhoto || undefined,
+        badge: '/assets/app-icon-192.png',
+        tag: `sbryms-message-${conversationId}`,
+        data: { url: `/team-meet-chat.html?chat=${encodeURIComponent(conversationId)}` }
       };
+      const showFallbackNotification = () => {
+        const notification = new Notification(senderName, notificationOptions);
+        notification.onclick = () => {
+          window.focus();
+          notification.close();
+        };
+      };
+      if (!('serviceWorker' in navigator)) {
+        showFallbackNotification();
+        return;
+      }
+      navigator.serviceWorker.getRegistration().then(registration => {
+        if (registration) {
+          return registration.showNotification(senderName, notificationOptions);
+        }
+        showFallbackNotification();
+        return undefined;
+      }).catch(error => {
+        console.error('Could not show the message notification:', error);
+      });
     }
 
     function markIncomingMessagesRead(messages) {

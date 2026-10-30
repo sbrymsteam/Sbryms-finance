@@ -1,8 +1,9 @@
-const CACHE_NAME = 'sbryms-finance-v21';
+const CACHE_NAME = 'sbryms-finance-v22';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/assets/app-icon-192.png',
   '/assets/bg.png',
   '/assets/bg.css'
 ];
@@ -36,15 +37,23 @@ self.addEventListener('push', event => {
   const isCall = data.type === 'team_call';
   const callId = data.callId || '';
   const eventId = data.messageId || data.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const title = notification.title || data.title || 'SBRYMS Finance';
+  const title = isCall
+    ? (notification.title || data.callerName || data.title || 'Incoming call')
+    : (data.senderName || data.title || notification.title || 'SBRYMS Finance');
+  const senderPhoto = !isCall && typeof data.senderPhoto === 'string'
+    && data.senderPhoto.startsWith('https://')
+    ? data.senderPhoto
+    : '';
   const options = {
     body: notification.body || data.body || 'You have a new message or call.',
-    icon: isCall ? '/assets/team-meet-icon.png' : (data.senderPhoto || '/assets/team-meet-icon.png'),
-    image: !isCall && data.senderPhoto ? data.senderPhoto : undefined,
-    badge: '/assets/team-meet-icon.png',
+    icon: isCall ? '/assets/app-icon-192.png' : (senderPhoto || '/assets/app-icon-192.png'),
+    image: senderPhoto || undefined,
+    badge: '/assets/app-icon-192.png',
     tag: isCall && callId
       ? `sbryms-call-${callId}`
-      : (notification.tag || `sbryms-${data.type || 'notification'}-${eventId}`),
+      : (data.type === 'message'
+        ? `sbryms-message-${data.chat || eventId}`
+        : (notification.tag || `sbryms-${data.type || 'notification'}-${eventId}`)),
     requireInteraction: isCall,
     renotify: isCall,
     vibrate: isCall ? [0, 500, 250, 500] : [0, 150],
@@ -54,7 +63,7 @@ self.addEventListener('push', event => {
     data: {
       url: data.url || notification.url || '/team-meet.html',
       answerUrl: data.answerUrl || '',
-      chatUrl: data.chatUrl || ''
+      chatUrl: data.chatUrl || data.url || ''
     }
   };
   event.waitUntil((async () => {

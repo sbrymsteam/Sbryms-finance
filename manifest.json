@@ -3,30 +3,31 @@
   "short_name": "SBRYMS",
   "description": "Secure Finance App for managing income, expenses, and more.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#c800ae",
   "theme_color": "#df146e",
   "icons": [
     {
-      "src": "assets/app-icon.svg",
+      "src": "/assets/app-icon.svg?v=22",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "assets/app-icon-192.png",
+      "src": "/assets/app-icon-192.png?v=22",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/app-icon-512.png",
+      "src": "/assets/app-icon-512.png?v=22",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "assets/app-icon-maskable-512.png",
+      "src": "/assets/app-icon-maskable-512.png?v=22",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
