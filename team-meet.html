@@ -217,6 +217,12 @@
     }
     .status-badge.online { background-color: #4CAF50; }
     .status-badge.offline { background-color: #FFC107; }
+    html:root:root body:not(#sbryms-theme-specificity-anchor) .status-badge.online {
+      background-color: #22c55e !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor) .status-badge.offline {
+      background-color: #f59e0b !important;
+    }
     .member-meta {
       min-width: 0;
       flex: 1;
@@ -230,10 +236,15 @@
     .member-role {
       color: var(--muted);
       font-size: 12px;
+      font-weight: 400;
       margin-top: 4px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    .member-role.unread {
+      color: var(--text);
+      font-weight: 700;
     }
     .member-preview {
       display: flex;
@@ -272,6 +283,7 @@
       .member-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
     }
   </style>
+  <link rel="stylesheet" href="assets/bg.css?v=30">
 </head>
 <body>
   <div class="app">
@@ -398,8 +410,7 @@
 
     const members = [];
     const unreadCounts = new Map();
-    const unreadListeners = new Map();
-    let membersLoaded = false;
+    let conversationPreviewUnsubscribe = null;
     let currentUserEmail = (localStorage.getItem('currentUserEmail') || '').trim().toLowerCase();
     let currentUserUid = localStorage.getItem('currentUserUid') || '';
 
@@ -410,41 +421,14 @@
         .join('__');
     }
 
-    function countUnreadMessages(messages) {
-      return messages.filter(message => {
-        const senderEmail = String(message.senderEmail || '').trim().toLowerCase();
-        const legacySelfMessage = !senderEmail
-          && (message.self === true || /^(me|self|you)$/i.test(String(message.sender || message.senderName || '').trim()));
-        return !message.deleted
-          && !legacySelfMessage
-          && (!currentUserEmail || senderEmail !== currentUserEmail)
-          && message.status !== 'seen';
-      }).length;
-    }
-
-    function getLocalUnreadCount(email) {
-      const storageKey = `team_meet_chat_${[currentUserEmail, String(email || '').trim().toLowerCase()]
-        .filter(Boolean)
-        .sort()
-        .join('__')}`;
+    function getConversationPreview(email) {
+      const conversationId = email === 'team-group' ? 'team_group_chat' : conversationIdFor(email);
       try {
-        return countUnreadMessages(JSON.parse(localStorage.getItem(storageKey) || '[]'));
+        const preview = JSON.parse(localStorage.getItem(`team_meet_preview_${conversationId}`) || 'null');
+        return preview && typeof preview === 'object' ? preview : null;
       } catch (error) {
-        console.error(`Could not read local unread messages for ${email}:`, error);
-        return 0;
-      }
-    }
-
-    function getLocalMessages(email) {
-      const storageKey = `team_meet_chat_${[currentUserEmail, String(email || '').trim().toLowerCase()]
-        .filter(Boolean)
-        .sort()
-        .join('__')}`;
-      try {
-        return JSON.parse(localStorage.getItem(storageKey) || '[]');
-      } catch (error) {
-        console.error(`Could not read local messages for ${email}:`, error);
-        return [];
+        console.error(`Could not read cached conversation preview for ${email}:`, error);
+        return null;
       }
     }
 
@@ -452,9 +436,27 @@
       return 'team_meet_members_shared';
     }
 
+    function escapeHtml(value) {
+      return String(value || '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[character]);
+    }
+
     function saveMembersCache(memberList) {
       try {
+        const profileSignature = JSON.stringify(memberList.map(member => [
+          member.email,
+          member.name,
+          member.role,
+          member.photo
+        ]));
+        if (localStorage.getItem(`${membersCacheKey()}_signature`) === profileSignature) return;
         localStorage.setItem(membersCacheKey(), JSON.stringify(memberList));
+        localStorage.setItem(`${membersCacheKey()}_signature`, profileSignature);
       } catch (error) {
         console.error('Could not cache Team Meet members:', error);
       }
@@ -477,17 +479,6 @@
         console.error('Could not read cached Team Meet members:', error);
         return [];
       }
-    }
-
-    function getLatestMessage(messages) {
-      return [...(messages || [])]
-        .filter(message => !message.deleted && String(message.text || '').trim())
-        .sort((a, b) => {
-          const aDate = getMessageDate(a);
-          const bDate = getMessageDate(b);
-          return (aDate ? aDate.getTime() : 0) - (bDate ? bDate.getTime() : 0);
-        })
-        .pop() || null;
     }
 
     function getMessageDate(message) {
@@ -532,6 +523,61 @@
       });
     }
 
+    function updateMemberConversationPreview(email, conversationData) {
+      const normalizedEmail = String(email || '').trim().toLowerCase();
+      const messages = Array.isArray(conversationData.messages) ? conversationData.messages : [];
+      const cachedPreview = getConversationPreview(normalizedEmail);
+      if (!messages.length && cachedPreview && (cachedPreview.timestamp || cachedPreview.text)) {
+        return false;
+      }
+      const latest = [...messages].reverse().find(message =>
+        message && !message.deleted && (String(message.text || '').trim() || message.attachment || message.attachments)
+      );
+      const unreadCount = messages.filter(message => {
+        if (!message || message.deleted || message.status === 'seen') return false;
+        const senderEmail = String(message.senderEmail || '').trim().toLowerCase();
+        return senderEmail
+          ? senderEmail === normalizedEmail
+          : message.self !== true && !/^(me|self)$/i.test(String(message.sender || '').trim());
+      }).length;
+      const latestDate = latest ? getMessageDate(latest) : null;
+      const preview = {
+        text: latest
+          ? String(latest.text || (latest.attachment || latest.attachments ? 'Attachment' : '')).slice(0, 180)
+          : '',
+        senderName: latest ? (String(latest.senderEmail || '').trim().toLowerCase() === currentUserEmail ? 'You' : String(latest.senderName || '')) : '',
+        timestamp: latestDate ? latestDate.getTime() : 0,
+        unreadCount
+      };
+      try {
+        localStorage.setItem(`team_meet_preview_${conversationIdFor(normalizedEmail)}`, JSON.stringify(preview));
+      } catch (error) {
+        console.error('Could not cache the member conversation preview:', error);
+      }
+      return true;
+    }
+
+    function syncConversationPreviewListeners() {
+      if (!currentUserEmail || conversationPreviewUnsubscribe) return;
+      conversationPreviewUnsubscribe = db.collection('team_meet_conversations')
+        .where('participants', 'array-contains', currentUserEmail)
+        .onSnapshot(snapshot => {
+          let changed = false;
+          snapshot.docChanges().forEach(change => {
+            const data = change.doc.data();
+            const otherParticipant = (data.participants || [])
+              .map(email => String(email || '').trim().toLowerCase())
+              .find(email => email && email !== currentUserEmail);
+            if (otherParticipant) {
+              changed = updateMemberConversationPreview(otherParticipant, data) || changed;
+            }
+          });
+          if (changed) renderMembers();
+        }, error => {
+          console.error('Could not watch member conversation previews:', error);
+        });
+    }
+
     function startPresence(user) {
       if (presenceTimer) clearInterval(presenceTimer);
       currentUserUid = user.uid;
@@ -564,14 +610,6 @@
       return messageDate.toLocaleDateString([], { day: 'numeric', month: 'short' });
     }
 
-    function updateMemberPreview(member, messages) {
-      const latestMessage = getLatestMessage(messages) || getLatestMessage(getLocalMessages(member.email));
-      member.latestActivity = latestMessage;
-      member.lastMessage = latestMessage ? String(latestMessage.text).trim() : '';
-      member.lastMessageAge = latestMessage ? formatMessageAge(latestMessage) : '';
-      renderMembers();
-    }
-
     function renderUnreadBadges() {
       document.querySelectorAll('[data-unread-email]').forEach(badge => {
         const email = String(badge.dataset.unreadEmail || '').trim().toLowerCase();
@@ -593,33 +631,11 @@
       });
     }
 
-    function watchUnreadMessages() {
-      members.forEach(member => {
-        const email = String(member.email || '').trim().toLowerCase();
-        if (!email || !currentUserEmail || email === currentUserEmail || unreadListeners.has(email)) return;
-        unreadCounts.set(email, getLocalUnreadCount(email));
-        renderUnreadBadges();
-        const conversationRef = db.collection('team_meet_conversations').doc(conversationIdFor(email));
-        const unsubscribe = conversationRef.onSnapshot(snapshot => {
-          const messages = snapshot.exists ? (snapshot.data().messages || []) : [];
-          updateMemberPreview(member, messages);
-          unreadCounts.set(email, countUnreadMessages(messages));
-          renderUnreadBadges();
-        }, error => {
-          console.error(`Unread message listener failed for ${email}:`, error);
-          unreadCounts.set(email, getLocalUnreadCount(email));
-          renderUnreadBadges();
-        });
-        unreadListeners.set(email, unsubscribe);
-      });
-    }
-
     document.getElementById('memberList').innerHTML = '<div class="member-list-state">Loading members...</div>';
 
     function normalizeMember(data) {
       const email = (data.email || '').trim();
       const name = data.name || (email ? email.split('@')[0].replace(/[._-]/g, ' ') : 'Member');
-      const savedAccount = getSavedProfileAccount(email);
       return {
         name: email.toLowerCase() === currentUserEmail ? 'You' : name,
         email,
@@ -627,30 +643,27 @@
         status: data.status === 'online' ? 'online' : 'offline',
         presenceStatus: data.presenceStatus || data.status || 'offline',
         lastSeen: data.lastSeen || null,
-        photo: data.photo || data.profilePhoto || data.photoURL || data.avatar || savedAccount.photo || createAvatarDataUrl(name),
+        photo: getMemberPhoto(data, name),
         lastMessage: '',
         lastMessageAge: '',
         latestActivity: null
       };
     }
 
-    function getSavedProfileAccount(email) {
-      const normalizedEmail = String(email || '').trim().toLowerCase();
-      try {
-        const accounts = JSON.parse(localStorage.getItem('profile_accounts') || '[]');
-        return accounts.find(account => String(account.email || '').trim().toLowerCase() === normalizedEmail) || {};
-      } catch (error) {
-        console.error(`Could not read saved profile for ${email}:`, error);
-        return {};
-      }
+    function getMemberPhoto(data, name) {
+      const photo = data.photo || data.profilePhoto || data.photoURL || data.avatar || '';
+      if (typeof photo !== 'string') return createAvatarDataUrl(name);
+      if (photo.startsWith('https://')) return photo;
+      if (photo.startsWith('data:image/') && photo.length <= 100000) return photo;
+      return createAvatarDataUrl(name);
     }
 
     function loadMembersFromFirestore() {
       const cachedMembers = loadMembersCache();
       if (cachedMembers.length) {
         members.splice(0, members.length, ...cachedMembers);
+        syncConversationPreviewListeners();
         renderMembers();
-        watchUnreadMessages();
       }
       db.collection('users').limit(20).onSnapshot(snapshot => {
         const fireMembers = snapshot.docs
@@ -660,13 +673,11 @@
         if (fireMembers.length || !members.length) {
           members.splice(0, members.length, ...fireMembers);
           if (fireMembers.length) saveMembersCache(fireMembers);
-          renderMembers();
         }
-        membersLoaded = true;
-        watchUnreadMessages();
+        syncConversationPreviewListeners();
+        renderMembers();
       }, error => {
         console.error('Error loading users for Team Meet:', error);
-        membersLoaded = true;
         if (members.length) {
           renderMembers();
           return;
@@ -685,14 +696,20 @@
         list.innerHTML = '<div class="member-list-state">No members found.</div>';
         return;
       }
+      list.querySelectorAll('.member-list-state').forEach(state => state.remove());
       const validMembers = members.filter(member => member && typeof member === 'object' && String(member.email || '').trim());
       members.splice(0, members.length, ...validMembers);
       members.forEach(member => {
         member.status = getMemberStatus(member);
-        const latestMessage = member.latestActivity || getLatestMessage(getLocalMessages(member.email));
-        member.latestActivity = latestMessage;
-        member.lastMessage = latestMessage ? String(latestMessage.text).trim() : '';
-        member.lastMessageAge = latestMessage ? formatMessageAge(latestMessage) : '';
+        const preview = getConversationPreview(member.email);
+        member.latestActivity = preview && preview.timestamp
+          ? { text: preview.text || '', createdAt: preview.timestamp }
+          : null;
+        member.lastMessage = preview ? String(preview.text || '').trim() : '';
+        member.lastMessageAge = preview && preview.timestamp
+          ? formatMessageAge({ createdAt: preview.timestamp })
+          : '';
+        unreadCounts.set(member.email, Number.isFinite(preview && preview.unreadCount) ? preview.unreadCount : 0);
       });
       members.sort((a, b) => {
         const aDate = getMessageDate(a.latestActivity);
@@ -701,46 +718,93 @@
         const bTime = bDate ? bDate.getTime() : 0;
         return bTime - aTime;
       });
-      list.innerHTML = members.map(member => `
-        <div class="member-card" data-email="${member.email}" role="button" tabindex="0" aria-label="Open chat with ${member.name}">
-          <div class="avatar-container">
-            <div class="member-avatar">${member.photo ? `<img src="${member.photo}" alt="${member.name}" />` : initials(member.name)}</div>
-            <span class="status-badge ${member.status === 'online' ? 'online' : 'offline'}" aria-label="${member.status === 'online' ? 'Online' : 'Offline'}"></span>
-          </div>
-          <div class="member-meta">
-            <div class="member-name">${member.name}</div>
-            <div class="member-preview">
-              <div class="member-role">${member.lastMessage || member.role}</div>
-              <span class="member-preview-time">${member.lastMessageAge}</span>
-            </div>
-          </div>
-          <span class="unread-badge" data-unread-email="${member.email}" aria-label="Unread messages"></span>
-        </div>
-      `).join('');
-      list.querySelectorAll('.member-avatar img').forEach(image => {
-        image.addEventListener('error', () => {
-          const card = image.closest('.member-card');
-          const email = card ? card.getAttribute('data-email') : '';
-          const member = members.find(item => item.email === email);
-          if (!member) return;
-          image.onerror = null;
-          image.src = createAvatarDataUrl(member.name);
-        }, { once: true });
+      const emailSet = new Set(members.map(member => member.email));
+      list.querySelectorAll('.member-card').forEach(card => {
+        if (!emailSet.has(card.dataset.email)) card.remove();
       });
 
-      list.querySelectorAll('.member-card').forEach(card => {
-        const openMemberChat = () => {
-          const email = card.dataset.email;
-          const member = members.find(m => m.email === email);
-          if (member) openChat(member);
-        };
-        card.addEventListener('click', openMemberChat);
-        card.addEventListener('keydown', event => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            openMemberChat();
+      members.forEach((member, index) => {
+        let card = Array.from(list.querySelectorAll('.member-card'))
+          .find(item => item.dataset.email === member.email);
+        if (!card) {
+          card = document.createElement('div');
+          card.className = 'member-card';
+          card.dataset.email = member.email;
+          card.setAttribute('role', 'button');
+          card.tabIndex = 0;
+          card.innerHTML = `
+            <div class="avatar-container">
+              <div class="member-avatar"></div>
+              <span class="status-badge" aria-hidden="true"></span>
+            </div>
+            <div class="member-meta">
+              <div class="member-name"></div>
+              <div class="member-preview">
+                <div class="member-role"></div>
+                <span class="member-preview-time"></span>
+              </div>
+            </div>
+            <span class="unread-badge" data-unread-email="${escapeHtml(member.email)}" aria-label="Unread messages"></span>
+          `;
+          const openMemberChat = () => {
+            const selectedMember = members.find(item => item.email === card.dataset.email);
+            if (selectedMember) openChat(selectedMember);
+          };
+          card.addEventListener('click', openMemberChat);
+          card.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              openMemberChat();
+            }
+          });
+        }
+
+        card.setAttribute('aria-label', `Open chat with ${member.name}`);
+        const avatar = card.querySelector('.member-avatar');
+        const photo = member.photo || '';
+        const currentImage = avatar.querySelector('img');
+        if (photo) {
+          if (currentImage && currentImage.dataset.photo !== photo) {
+            avatar.dataset.failedPhoto = '';
           }
-        });
+          if ((!currentImage || currentImage.dataset.photo !== photo) && avatar.dataset.failedPhoto !== photo) {
+            const image = document.createElement('img');
+            image.src = photo;
+            image.dataset.photo = photo;
+            image.alt = member.name;
+            image.loading = 'eager';
+            image.decoding = 'async';
+            image.fetchPriority = 'high';
+            image.addEventListener('error', () => {
+              if (!image.isConnected) return;
+              avatar.dataset.failedPhoto = photo;
+              image.replaceWith(document.createTextNode(initials(member.name)));
+            }, { once: true });
+            avatar.replaceChildren(image);
+          } else if (!currentImage && avatar.dataset.failedPhoto === photo) {
+            if (avatar.textContent !== initials(member.name)) avatar.textContent = initials(member.name);
+          } else {
+            currentImage.alt = member.name;
+          }
+        } else if (currentImage) {
+          avatar.textContent = initials(member.name);
+        } else if (avatar.textContent !== initials(member.name)) {
+          avatar.textContent = initials(member.name);
+        }
+
+        card.querySelector('.member-name').textContent = member.name;
+        const preview = card.querySelector('.member-role');
+        preview.textContent = member.lastMessage || member.role;
+        preview.classList.toggle('unread', unreadCounts.get(member.email) > 0);
+        card.querySelector('.member-preview-time').textContent = member.lastMessageAge;
+        const statusBadge = card.querySelector('.status-badge');
+        const online = member.status === 'online';
+        statusBadge.classList.toggle('online', online);
+        statusBadge.classList.toggle('offline', !online);
+        statusBadge.setAttribute('aria-label', online ? 'Online' : 'Offline');
+        if (list.children[index] !== card) {
+          list.insertBefore(card, list.children[index] || null);
+        }
       });
 
       renderUnreadBadges();
@@ -772,7 +836,7 @@
       localStorage.setItem('selectedProfileDesignation', member.role || 'Member');
       localStorage.setItem('selectedProfileCurrent', 'false');
       const chatUrl = new URL('team-meet-chat.html', document.baseURI);
-      chatUrl.searchParams.set('v', '6');
+      chatUrl.searchParams.set('v', '15');
       chatUrl.hash = 'chat=' + encodeURIComponent(String(member.email || '').trim());
       window.location.replace(chatUrl.href);
     }
@@ -784,7 +848,7 @@
         openChat(member);
       } else if (normalizedEmail) {
         const chatUrl = new URL('team-meet-chat.html', document.baseURI);
-        chatUrl.searchParams.set('v', '6');
+        chatUrl.searchParams.set('v', '15');
         chatUrl.hash = 'chat=' + encodeURIComponent(normalizedEmail);
         window.location.replace(chatUrl.href);
       }
@@ -815,33 +879,24 @@
       bannerSvg.style.display = 'block';
     });
 
-    function updateGroupLastMessage(messages) {
-      const latest = [...(messages || [])]
-        .filter(message => !message.deleted && String(message.text || '').trim())
-        .pop();
+    function updateGroupLastMessage(latest) {
       const preview = document.getElementById('groupLastMessage');
       if (!preview) return;
-      if (!latest) {
-        preview.textContent = 'No messages yet.';
+      if (!latest || !String(latest.text || '').trim()) {
+        preview.textContent = 'Open the group chat to see messages.';
         return;
       }
-      const sender = latest.senderName || (latest.self ? 'You' : '');
+      const sender = latest.senderName || '';
       preview.textContent = `${sender ? `${sender}: ` : ''}${String(latest.text).trim()}`;
     }
 
     function loadGroupLastMessage() {
-      let localMessages = [];
       try {
-        localMessages = JSON.parse(localStorage.getItem('team_meet_group_chat') || '[]');
+        const preview = JSON.parse(localStorage.getItem('team_meet_preview_team_group_chat') || 'null');
+        updateGroupLastMessage(preview);
       } catch (error) {
         console.error('Could not read group chat preview:', error);
       }
-      updateGroupLastMessage(localMessages);
-      db.collection('team_meet_conversations').doc('team_group_chat').onSnapshot(snapshot => {
-        updateGroupLastMessage(snapshot.exists ? (snapshot.data().messages || []) : localMessages);
-      }, error => {
-        console.error('Group chat preview listener failed:', error);
-      });
     }
 
     function triggerGroupPhotoUpload() {
@@ -871,7 +926,7 @@
       localStorage.setItem('selectedProfileDesignation', 'Everyone');
       localStorage.setItem('selectedProfileCurrent', 'false');
       const chatUrl = new URL('team-meet-chat.html', document.baseURI);
-      chatUrl.searchParams.set('v', '6');
+      chatUrl.searchParams.set('v', '15');
       chatUrl.hash = 'chat=team-group';
       window.location.replace(chatUrl.href);
     }
@@ -891,6 +946,7 @@
         callType: type,
         roomId,
         text: `${type === 'video' ? 'Video' : 'Audio'} group call started`,
+        createdAt: new Date().toISOString(),
         time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
         reactions: {}
       };
@@ -934,8 +990,29 @@
         console.error('Could not read group chat messages:', error);
       }
       localStorage.setItem(storageKey, JSON.stringify([...messages, invite]));
-      conversationRef.set({ conversationId: 'team_group_chat', messages: [...messages, invite], updatedAt: new Date() }, { merge: true })
-        .catch(error => console.error('Failed to publish group call invite:', error));
+      const recentMessages = [...messages, invite].slice(-100).map(message => ({
+        id: String(message.id || ''),
+        sender: message.sender || '',
+        senderEmail: message.senderEmail || '',
+        senderName: message.senderName || '',
+        self: message.self === true,
+        status: message.status || 'sent',
+        text: String(message.text || '').slice(0, 180),
+        attachment: message.type === 'attachment' || Boolean(message.attachment || message.attachments),
+        type: message.type || 'text',
+        deleted: message.deleted === true,
+        createdAt: message.createdAt || message.timestamp || message.date || null,
+        time: message.time || ''
+      }));
+      await Promise.all([
+        db.collection('team_meet_messages_shared').doc(`team_group_chat__${invite.id}`).set({
+          conversationId: 'team_group_chat',
+          messageId: invite.id,
+          message: invite,
+          updatedAt: new Date()
+        }),
+        conversationRef.set({ conversationId: 'team_group_chat', messages: recentMessages, updatedAt: new Date() }, { merge: true })
+      ]).catch(error => console.error('Failed to publish group call invite:', error));
       localStorage.setItem('selectedProfileName', 'Team Group Chat');
       localStorage.setItem('selectedProfileEmail', 'team-group');
       localStorage.removeItem('selectedProfilePhoto');
@@ -967,11 +1044,12 @@
     function listenForTeamGroupCalls() {
       if (!currentUserEmail || groupIncomingCallUnsubscribe) return;
       groupIncomingCallUnsubscribe = db.collection('calls')
-        .where('groupId', '==', 'team-group')
+        .where('status', '==', 'ringing')
+        .limit(20)
         .onSnapshot(snapshot => {
           const callDoc = snapshot.docs.find(doc => {
             const data = doc.data();
-            return data.status === 'ringing'
+            return data.groupId === 'team-group'
               && data.callerId !== currentUserEmail
               && !rejectedGroupCallIds.has(doc.id);
           });
@@ -1026,10 +1104,19 @@
     }
 
     const savedGroupPhoto = localStorage.getItem('teamGroupChatPhoto');
-    if (savedGroupPhoto) {
-      updateGroupBannerPhoto(savedGroupPhoto);
-    }
+    updateGroupBannerPhoto(savedGroupPhoto || 'assets/app-icon-192.png');
     loadGroupLastMessage();
+
+    function showTeamMeetAuthMessage(message, actionLabel, action) {
+      const memberList = document.getElementById('memberList');
+      if (!memberList) return;
+      memberList.innerHTML = `
+        <div class="member-list-state">
+          ${message}
+          <a href="${action}" style="display:inline-block;margin-top:12px;color:#5ae1d7;font-weight:700">${actionLabel}</a>
+        </div>
+      `;
+    }
 
     firebase.auth().onAuthStateChanged(user => {
       if (user && user.email) {
@@ -1037,7 +1124,6 @@
         localStorage.setItem('currentUserEmail', currentUserEmail);
         startPresence(user);
         loadMembersFromFirestore();
-        watchUnreadMessages();
         listenForTeamGroupCalls();
       } else {
         if (window.sbrymsPresence) {
@@ -1045,10 +1131,14 @@
             console.error('Could not stop background presence service:', error);
           });
         }
-        console.warn('Team Meet requires an authenticated account for unread message counts.');
+        showTeamMeetAuthMessage('Your saved sign-in is unavailable. Sign in again to open Team Meet.', 'Go to login', 'login.html');
       }
+    }, error => {
+      console.error('Could not verify the Team Meet sign-in:', error);
+      showTeamMeetAuthMessage('Could not verify your sign-in. Check your connection and try again.', 'Retry', 'team-meet.html');
     });
   </script>
   <script src="assets/push-notifications.js"></script>
+<script src="assets/mobile-bottom-nav.js"></script>
 </body>
 </html>

@@ -46,6 +46,18 @@
       overflow: hidden;
       box-shadow: 0 28px 90px rgba(0,0,0,0.5), inset 0 1px rgba(255,255,255,0.05);
     }
+    body.audio-call {
+      background:
+        radial-gradient(ellipse at 50% 34%, rgba(35, 122, 102, 0.3), transparent 38%),
+        radial-gradient(circle at 12% 90%, rgba(23, 91, 83, 0.16), transparent 34%),
+        #07120f;
+    }
+    body.audio-call .call-shell {
+      background:
+        radial-gradient(ellipse at 50% 38%, rgba(29, 103, 84, 0.2), transparent 46%),
+        linear-gradient(180deg, #0d1a17, #07110f 72%);
+      border-color: rgba(130, 205, 178, 0.12);
+    }
     .header {
       display: flex;
       align-items: center;
@@ -122,6 +134,24 @@
       overflow: hidden;
       flex-shrink: 0;
     }
+    body.audio-call .avatar {
+      width: clamp(132px, 38vw, 174px);
+      height: auto;
+      aspect-ratio: 1;
+      margin-bottom: 24px;
+      box-shadow: 0 0 0 8px rgba(55, 190, 143, 0.07), 0 0 0 18px rgba(55, 190, 143, 0.035), 0 18px 48px rgba(0,0,0,0.4);
+    }
+    body.audio-call.call-connecting .avatar {
+      animation: audioCallPulse 2.2s ease-in-out infinite;
+    }
+    body.audio-call.call-connected .avatar {
+      animation: none;
+      box-shadow: 0 0 0 7px rgba(74, 222, 128, 0.09), 0 0 0 15px rgba(74, 222, 128, 0.035), 0 18px 48px rgba(0,0,0,0.4);
+    }
+    @keyframes audioCallPulse {
+      0%, 100% { box-shadow: 0 0 0 8px rgba(55, 190, 143, 0.07), 0 0 0 18px rgba(55, 190, 143, 0.035), 0 18px 48px rgba(0,0,0,0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(55, 190, 143, 0.11), 0 0 0 25px rgba(55, 190, 143, 0.045), 0 20px 52px rgba(0,0,0,0.44); }
+    }
     .avatar img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 50%; background: #050a12; }
     @keyframes avatarPulse {
       0%, 100% { transform: scale(1); box-shadow: 0 0 0 5px rgba(90,225,215,0.05), 0 0 0 10px rgba(90,225,215,0.025), 0 14px 30px rgba(44,201,245,0.16); }
@@ -138,8 +168,43 @@
     }
     .status {
       color: var(--muted);
-      margin: 9px 0 0;
+      margin: 11px 0 0;
       font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      flex: 0 0 7px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.72;
+    }
+    body.call-connecting .status::before {
+      background: #f4c76b;
+      box-shadow: 0 0 0 4px rgba(244, 199, 107, 0.1);
+      animation: statusPulse 1.4s ease-in-out infinite;
+    }
+    body.call-connected .status::before {
+      background: #4ade80;
+      box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.1);
+    }
+    body.call-connected .status {
+      color: #a7e8ba;
+    }
+    body.call-error .status {
+      color: #ff8291;
+    }
+    body.call-error .status::before {
+      background: #ff6b7b;
+      box-shadow: 0 0 0 4px rgba(255, 107, 123, 0.1);
+    }
+    @keyframes statusPulse {
+      0%, 100% { opacity: 0.55; }
+      50% { opacity: 1; }
     }
     .timer {
       display: none;
@@ -153,38 +218,96 @@
       text-shadow: 0 0 14px rgba(44,201,245,0.45);
     }
     .controls {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      padding: 20px 18px 28px;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      justify-items: center;
+      align-items: start;
+      gap: 20px 12px;
+      margin: 0 16px 16px;
+      padding: 22px 14px max(24px, env(safe-area-inset-bottom));
+      border: 1px solid rgba(255,255,255,0.055);
+      border-radius: 30px;
+      background: rgba(15, 22, 25, 0.94);
+      box-shadow: 0 16px 45px rgba(0,0,0,0.28);
     }
-    .video-control { display: none; }
-    .video-call .video-control { display: inline-grid; }
+    .more-menu .video-control { display: none; }
+    body.video-call .more-menu .video-control { display: inline-flex; }
     .control-btn {
-      width: 58px; height: 58px; border-radius: 19px;
-      border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.07);
+      width: 100%;
+      max-width: 90px;
+      min-height: 90px;
+      border: 0;
+      border-radius: 24px;
+      background: transparent;
       color: var(--text);
-      font-size: 19px;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      font-size: 18px;
       cursor: pointer;
       transition: transform 0.18s ease, background 0.18s ease;
     }
     .control-btn:hover {
-      transform: translateY(-2px);
-      background: rgba(255,255,255,0.13);
+      transform: translateY(-2px) scale(1.02);
+      background: rgba(255,255,255,0.06);
     }
+    .control-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+    .control-btn:disabled:hover { transform: none; background: transparent; }
     .control-btn.is-active {
-      color: var(--accent);
-      border-color: rgba(90,225,215,0.4);
-      background: rgba(90,225,215,0.12);
+      color: #0c1114;
+      background: #f5f7f8;
     }
-    .end {
-      width: 68px;
-      border-radius: 22px;
-      background: linear-gradient(135deg, #ff5b74, #e83255);
-      border-color: var(--danger);
-      box-shadow: 0 14px 34px rgba(255,79,109,0.35);
+    .control-btn.is-active .control-label {
+      color: #263138;
+    }
+    .control-btn svg {
+      width: 29px;
+      height: 29px;
+      flex: 0 0 29px;
+    }
+    .control-label {
+      color: rgba(237,246,255,0.86);
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1;
+    }
+    .control-btn.end {
+      width: 76px;
+      min-height: 76px;
+      justify-self: center;
+      border-radius: 50%;
+      background: #e9003d;
+      box-shadow: 0 10px 24px rgba(233,0,61,0.22);
+    }
+    .control-btn.end:hover { background: #f01850; }
+    .control-btn.end svg { transform: rotate(135deg); }
+    .more-menu {
+      grid-column: 1 / -1;
+      width: 100%;
+      max-width: 340px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      text-align: center;
+      font-size: 13px;
+    }
+    .more-menu[hidden] { display: none; }
+    .more-menu button {
+      margin-top: 10px;
+      padding: 8px 14px;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      font: inherit;
+      cursor: pointer;
     }
     .panel {
       padding: 14px 18px 20px;
@@ -195,6 +318,9 @@
       border-top: 1px solid rgba(255,255,255,0.06);
       background: rgba(255,255,255,0.025);
     }
+    body.direct-call #callModeDescription,
+    body.direct-call .room-tools { display: none; }
+    body.direct-call #callPanel:has(#roomInfo:empty) { display: none; }
     .room-tools {
       display: flex;
       gap: 8px;
@@ -218,15 +344,73 @@
         border-left: 0;
         border-right: 0;
       }
+      body.audio-call .header { padding: max(20px, env(safe-area-inset-top)) 20px 10px; }
+      body.audio-call .profile { padding: 12px 18px 20px; }
+      .controls { margin: 0 16px max(16px, env(safe-area-inset-bottom)); }
     }
     .room-tools input { flex: 1; min-width: 0; }
     .room-tools button { cursor: pointer; }
     .call-result-actions { display: flex; justify-content: center; gap: 10px; margin-top: 14px; }
     .call-result-actions[hidden] { display: none; }
+    .status.is-success { color: #4ade80; }
+    .status.is-error { color: #ff6b7b; }
+    html:root:root body:not(#sbryms-theme-specificity-anchor) .status.is-success { color: #4ade80 !important; }
+    html:root:root body:not(#sbryms-theme-specificity-anchor) .status.is-error { color: #ff6b7b !important; }
     .call-result-actions button {
       border: 1px solid rgba(255,255,255,0.16); border-radius: 999px;
       padding: 9px 16px; background: rgba(255,255,255,0.08); color: var(--text);
       font: inherit; font-weight: 700; cursor: pointer;
+    }
+  </style>
+  <link rel="stylesheet" href="assets/bg.css?v=29">
+  <style>
+    html:root:root body:not(#sbryms-theme-specificity-anchor).audio-call {
+      background-color: #07120f !important;
+      background-image: radial-gradient(ellipse at 50% 34%, rgba(35, 122, 102, 0.3), transparent 38%), radial-gradient(circle at 12% 90%, rgba(23, 91, 83, 0.16), transparent 34%) !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor).audio-call .call-shell {
+      background: radial-gradient(ellipse at 50% 38%, rgba(29, 103, 84, 0.2), transparent 46%), linear-gradient(180deg, #0d1a17, #07110f 72%) !important;
+      border-color: rgba(130, 205, 178, 0.12) !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor) .call-shell .controls {
+      background: rgba(15, 22, 25, 0.94) !important;
+      border: 1px solid rgba(255,255,255,0.055) !important;
+      box-shadow: 0 16px 45px rgba(0,0,0,0.28) !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor) .call-shell .controls .control-btn {
+      width: 82px !important;
+      height: 82px !important;
+      min-height: 82px !important;
+      max-width: 82px !important;
+      border: 0 !important;
+      border-radius: 50% !important;
+      background: #20282d !important;
+      background-image: none !important;
+      box-shadow: none !important;
+      color: #fff !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor) .call-shell .controls .control-btn.is-active {
+      background: #f5f7f8 !important;
+      background-image: none !important;
+      color: #101518 !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor) .call-shell .controls .control-btn.end {
+      width: 82px !important;
+      height: 82px !important;
+      min-height: 82px !important;
+      border-radius: 50% !important;
+      background: #e9003d !important;
+      background-image: none !important;
+      box-shadow: 0 10px 24px rgba(233,0,61,0.22) !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor) .call-shell .controls .control-btn .control-label {
+      color: rgba(237,246,255,0.9) !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor) .call-shell .controls .control-btn.is-active .control-label {
+      color: #263138 !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor) .call-shell .controls .control-btn.end .control-label {
+      color: #fff !important;
     }
   </style>
 </head>
@@ -253,27 +437,52 @@
     </div>
 
     <div class="controls">
-      <button class="control-btn" type="button" aria-label="Mute">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>
-        </svg>
-      </button>
-      <button class="control-btn" type="button" aria-label="Speaker">
+      <button class="control-btn is-active" type="button" aria-label="Audio" title="Turn incoming call audio on or off">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5a4 4 0 0 1 0 5M19.5 7a7.5 7.5 0 0 1 0 10"/>
         </svg>
+        <span class="control-label">Audio</span>
       </button>
-      <button class="control-btn video-control" type="button" aria-label="Camera switch" title="Switch camera">↻</button>
-      <button class="control-btn video-control" type="button" aria-label="Share screen" title="Share screen">▣</button>
+      <button class="control-btn" id="toggleVideoButton" type="button" aria-label="Turn video on" title="Turn camera on">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/>
+        </svg>
+        <span class="control-label">Video</span>
+      </button>
+      <button class="control-btn" type="button" aria-label="Mute" title="Mute microphone">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>
+        </svg>
+        <span class="control-label">Mute</span>
+      </button>
+      <button class="control-btn" id="moreCallControls" type="button" aria-label="More call options" aria-expanded="false" aria-controls="moreCallMenu">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+          <circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/>
+        </svg>
+        <span class="control-label">More</span>
+      </button>
+      <button class="control-btn" type="button" aria-label="Share screen" title="Share screen">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="13" rx="2"/><path d="M12 21v-7m-3 3 3-3 3 3"/>
+        </svg>
+        <span class="control-label">Share</span>
+      </button>
       <button class="control-btn end" type="button" aria-label="End call">
         <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
           <path d="M5 15.5c3.8-3.2 10.2-3.2 14 0"/><path d="M7.5 14.5 5 18M16.5 14.5 19 18"/>
         </svg>
+        <span class="control-label">End</span>
       </button>
+      <div class="more-menu" id="moreCallMenu" hidden>
+        <span>Manage microphone, speaker, and call details.</span>
+        <br>
+        <button type="button" id="copyCallIdButton">Copy call ID</button>
+        <button class="video-control" type="button" aria-label="Camera switch" title="Switch camera">Switch camera</button>
+      </div>
     </div>
 
-    <div class="panel">
-      You are currently in a <strong id="callModeText">audio</strong> call.
+    <div class="panel" id="callPanel">
+      <span id="callModeDescription">You are currently in a <strong id="callModeText">audio</strong> call.</span>
       <div class="room-tools">
         <input id="roomIdInput" type="text" placeholder="Room ID" autocomplete="off">
         <button type="button" onclick="createRoom()">Create</button>
@@ -286,7 +495,6 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="assets/push-notifications.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
@@ -305,6 +513,7 @@
     const params = new URLSearchParams(window.location.search);
     const chatEmail = (params.get('chat') || localStorage.getItem('selectedProfileEmail') || 'ahmedmshakil4@gmail.com').trim();
     const callType = params.get('type') || 'audio';
+    let videoEnabled = callType === 'video';
     const isGroupCall = params.get('group') === 'true' || chatEmail.toLowerCase() === 'team-group';
     const initialRoomId = (params.get('room') || '').trim();
     const callRole = params.get('role') || 'callee';
@@ -312,6 +521,22 @@
     let currentUserEmail = (localStorage.getItem('currentUserEmail') || '').trim().toLowerCase();
     const roomTools = document.querySelector('.room-tools');
     if (roomTools) roomTools.style.display = 'none';
+    document.body.classList.toggle('audio-call', callType !== 'video');
+    document.body.classList.toggle('video-call', videoEnabled);
+    document.body.classList.toggle('direct-call', Boolean(directCallId));
+    document.getElementById('callTypeBadge').textContent = callType === 'video' ? 'Video' : 'Audio';
+    document.getElementById('callModeText').textContent = callType;
+    const roomInfo = document.getElementById('roomInfo');
+    const callPanel = document.getElementById('callPanel');
+    const updateCallPanelVisibility = () => {
+      if (callPanel && directCallId) {
+        callPanel.hidden = !roomInfo.textContent.trim();
+      }
+    };
+    if (roomInfo) {
+      new MutationObserver(updateCallPanelVisibility).observe(roomInfo, { childList: true, characterData: true, subtree: true });
+      updateCallPanelVisibility();
+    }
     const autoJoin = Boolean(initialRoomId);
     const savedProfileEmail = (localStorage.getItem('selectedProfileEmail') || '').trim().toLowerCase();
     const savedProfileName = localStorage.getItem('selectedProfileName') || '';
@@ -352,12 +577,12 @@
     }
 
     function applyMember(member) {
-      document.body.classList.toggle('video-call', callType === 'video');
+      document.body.classList.toggle('video-call', videoEnabled);
       document.getElementById('targetName').textContent = member.name;
       document.getElementById('callTypeBadge').textContent = callType === 'video' ? 'Video' : 'Audio';
       const callStatus = document.getElementById('callStatus');
       if (callStatus.textContent === 'Dialing...') {
-        callStatus.textContent = callRole === 'caller' ? 'Calling...' : 'Ringing...';
+        setCallStatus(callRole === 'caller' ? 'Calling...' : 'Ringing...');
       }
       document.getElementById('callModeText').textContent = callType;
       const avatarEl = document.getElementById('avatar');
@@ -410,6 +635,8 @@
     };
     let peerConnection = null;
     let localStream = null;
+    let localVideoSender = null;
+    let videoTrackNegotiated = callType === 'video';
     let roomRef = null;
     let roomUnsubscribe = null;
     let candidateUnsubscribe = null;
@@ -426,6 +653,61 @@
     let unansweredCallTimer = null;
     let connectedTonePlayed = false;
     let callEnding = false;
+    let callHistorySaved = false;
+    let pendingDirectNegotiation = null;
+    let lastRemoteNegotiationId = '';
+
+    function setCallStatus(message, state = '') {
+      const status = document.getElementById('callStatus');
+      const errorState = state === 'error'
+        || /permission|required|not available|could not|failed|declined|disconnected|busy|not found/i.test(message);
+      const connectedState = state === 'success';
+      status.textContent = message;
+      status.classList.toggle('is-success', connectedState);
+      status.classList.toggle('is-error', errorState);
+      document.body.classList.toggle('call-connecting', !errorState && !connectedState);
+      document.body.classList.toggle('call-connected', connectedState);
+      document.body.classList.toggle('call-error', errorState);
+    }
+
+    function updateVideoControl() {
+      const button = document.getElementById('toggleVideoButton');
+      const remoteStream = document.getElementById('remoteVideo').srcObject;
+      const remoteHasVideo = remoteStream && typeof remoteStream.getVideoTracks === 'function'
+        && remoteStream.getVideoTracks().some(track => track.readyState === 'live');
+      button.classList.toggle('is-active', videoEnabled);
+      button.setAttribute('aria-label', videoEnabled ? 'Turn video off' : 'Turn video on');
+      button.title = videoEnabled ? 'Turn camera off' : 'Turn camera on';
+      button.querySelector('.control-label').textContent = videoEnabled ? 'Video on' : 'Video';
+      document.body.classList.toggle('video-call', videoEnabled || remoteHasVideo);
+    }
+
+    updateVideoControl();
+    if (isGroupCall && !videoEnabled) {
+      const videoButton = document.getElementById('toggleVideoButton');
+      videoButton.disabled = true;
+      videoButton.title = 'Video upgrade is unavailable during a group audio call.';
+    }
+
+    async function getTargetOnlineState() {
+      if (isGroupCall || !chatEmail) return null;
+      try {
+        const snapshot = await db.collection('users')
+          .where('email', '==', chatEmail.toLowerCase())
+          .limit(1)
+          .get();
+        if (snapshot.empty) return null;
+        const member = snapshot.docs[0].data();
+        const lastSeen = member.lastSeen && typeof member.lastSeen.toDate === 'function'
+          ? member.lastSeen.toDate()
+          : new Date(member.lastSeen || 0);
+        const isFresh = !Number.isNaN(lastSeen.getTime()) && Date.now() - lastSeen.getTime() <= 75000;
+        return (member.presenceStatus || member.status) === 'online' && isFresh && navigator.onLine;
+      } catch (error) {
+        console.error('Could not check the recipient presence before calling:', error);
+        return null;
+      }
+    }
 
     function playCallTone({ frequency, duration, volume, type = 'sine' }) {
       try {
@@ -579,7 +861,7 @@
       }
     }
 
-    function handleRemoteCallEnded(endedReason = '') {
+    async function handleRemoteCallEnded(endedReason = '') {
       if (callEnding) return;
       callEnding = true;
       stopConnectingTone();
@@ -609,13 +891,34 @@
         window.screenShareStream.getTracks().forEach(track => track.stop());
         window.screenShareStream = null;
       }
-      if (endedReason === 'declined') {
-        document.getElementById('callStatus').textContent = 'Call rejected';
-        document.getElementById('roomInfo').textContent = 'The other person rejected the call. Try again or send a message.';
+      const outcome = ['declined', 'rejected', 'busy'].includes(endedReason)
+        ? 'busy'
+        : endedReason === 'offline' || endedReason === 'disconnected'
+          ? 'disconnected'
+          : endedReason === 'timeout'
+            ? 'no-answer'
+            : endedReason === 'received'
+              ? 'received'
+              : endedReason === 'completed' || callStartedAt
+                ? 'completed'
+              : 'cancelled';
+      await saveCallHistory(outcome);
+      if (outcome === 'busy' || outcome === 'disconnected' || outcome === 'no-answer') {
+        const statusText = outcome === 'busy' ? 'Busy' : outcome === 'disconnected' ? 'Call disconnected' : 'No answer';
+        setCallStatus(statusText, 'error');
+        document.getElementById('roomInfo').textContent = outcome === 'busy'
+          ? 'The other person declined the call.'
+          : outcome === 'disconnected'
+            ? 'The other person is offline or disconnected.'
+            : 'No answer. You can try again or send a message.';
         document.getElementById('callResultActions').hidden = false;
         return;
       }
-      document.getElementById('callStatus').textContent = 'Call ended';
+      setCallStatus(
+        outcome === 'received' || outcome === 'completed' ? 'Call connected' : 'Call ended',
+        outcome === 'received' || outcome === 'completed' ? 'success' : 'error'
+      );
+      document.getElementById('callResultActions').hidden = false;
       setTimeout(() => {
         window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
       }, 500);
@@ -626,19 +929,23 @@
       stopConnectingTone();
       stopIncomingTone();
       stopUnansweredCallTimer();
-      document.getElementById('callStatus').textContent = 'No answer';
-      document.getElementById('roomInfo').textContent = 'No answer. You can try again or send a message.';
+      const targetOnline = await getTargetOnlineState();
+      const outcome = targetOnline === false ? 'disconnected' : 'no-answer';
+      setCallStatus(outcome === 'disconnected' ? 'Call disconnected' : 'No answer', 'error');
+      document.getElementById('roomInfo').textContent = outcome === 'disconnected'
+        ? 'The other person is offline or disconnected.'
+        : 'No answer. You can try again or send a message.';
       document.getElementById('callResultActions').hidden = false;
       if (directCallUnsubscribe) {
         directCallUnsubscribe();
         directCallUnsubscribe = null;
       }
       if (directCallRef) {
-        await directCallRef.update({ status: 'ended', endedReason: 'timeout' }).catch(error => {
+        await directCallRef.update({ status: 'ended', endedReason: outcome === 'disconnected' ? 'offline' : 'timeout' }).catch(error => {
           console.error('Failed to end unanswered call:', error);
         });
       }
-      await saveCallHistory();
+      await saveCallHistory(outcome);
       if (directCallUnsubscribe) directCallUnsubscribe();
       if (directCandidateUnsubscribe) directCandidateUnsubscribe();
       if (peerConnection) peerConnection.close();
@@ -663,8 +970,187 @@
       return localStream;
     }
 
+    async function renegotiateDirectCallForVideo() {
+      if (!directCallRef || !peerConnection || isGroupCall) {
+        throw new Error('Video is not available in this call.');
+      }
+      if (peerConnection.signalingState !== 'stable' || pendingDirectNegotiation) {
+        throw new Error('Another call update is in progress. Try again in a moment.');
+      }
+
+      const id = `video-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      let resolveResponse;
+      let rejectResponse;
+      const response = new Promise((resolve, reject) => {
+        resolveResponse = resolve;
+        rejectResponse = reject;
+      });
+      const timeout = setTimeout(() => {
+        if (pendingDirectNegotiation && pendingDirectNegotiation.id === id) {
+          pendingDirectNegotiation = null;
+          rejectResponse(new Error('The other member did not accept the video update.'));
+        }
+      }, 15000);
+      pendingDirectNegotiation = {
+        id,
+        processing: false,
+        resolve: () => {
+          clearTimeout(timeout);
+          pendingDirectNegotiation = null;
+          resolveResponse();
+        },
+        reject: error => {
+          clearTimeout(timeout);
+          pendingDirectNegotiation = null;
+          rejectResponse(error);
+        }
+      };
+
+      try {
+        await directCallRef.update({
+          renegotiation: {
+            id,
+            by: currentUserEmail,
+            offer: { type: offer.type, sdp: offer.sdp }
+          }
+        });
+        await response;
+      } catch (error) {
+        if (pendingDirectNegotiation && pendingDirectNegotiation.id === id) {
+          clearTimeout(timeout);
+          pendingDirectNegotiation = null;
+        }
+        if (peerConnection.signalingState === 'have-local-offer') {
+          await peerConnection.setLocalDescription({ type: 'rollback' });
+        }
+        throw error;
+      }
+    }
+
+    async function handleDirectRenegotiation(data) {
+      const negotiation = data.renegotiation;
+      if (!peerConnection || !directCallRef || !negotiation || !negotiation.id) return;
+      if (negotiation.by === currentUserEmail) {
+        const pending = pendingDirectNegotiation;
+        if (!pending || pending.id !== negotiation.id || !negotiation.answer || pending.processing) return;
+        pending.processing = true;
+        try {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(negotiation.answer));
+          pending.resolve();
+        } catch (error) {
+          pending.reject(error);
+          throw error;
+        }
+        return;
+      }
+
+      if (!negotiation.offer || negotiation.id === lastRemoteNegotiationId) return;
+      if (peerConnection.signalingState !== 'stable') {
+        throw new Error('A simultaneous call update is already in progress.');
+      }
+      lastRemoteNegotiationId = negotiation.id;
+      try {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(negotiation.offer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        await directCallRef.update({
+          renegotiation: {
+            id: negotiation.id,
+            by: negotiation.by,
+            offer: negotiation.offer,
+            answer: {
+              type: answer.type,
+              sdp: answer.sdp
+            }
+          }
+        });
+      } catch (error) {
+        lastRemoteNegotiationId = '';
+        throw error;
+      }
+    }
+
+    function listenToDirectCall(ref) {
+      directCallUnsubscribe = ref.onSnapshot(async snapshot => {
+        const data = snapshot.data();
+        if (!data) return;
+        if (data.status === 'ended') {
+          handleRemoteCallEnded(data.endedReason || '').catch(error => {
+            console.error('Could not finish the ended call:', error);
+          });
+          return;
+        }
+        try {
+          if (callRole === 'caller' && data.answer && !peerConnection.currentRemoteDescription) {
+            setCallStatus('Connecting...');
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+            stopConnectingTone();
+            stopIncomingTone();
+            stopUnansweredCallTimer();
+          }
+          await handleDirectRenegotiation(data);
+        } catch (error) {
+          console.error('Call video update failed:', error);
+          document.getElementById('roomInfo').textContent = error.message || 'Could not update the call.';
+        }
+      }, error => console.error('Remote call status listener failed:', error));
+    }
+
+    async function toggleVideo() {
+      if (!peerConnection || !localStream) {
+        throw new Error('Wait until the call connects before turning video on.');
+      }
+      if (isGroupCall && callType !== 'video') {
+        throw new Error('Video upgrade is unavailable during a group audio call.');
+      }
+      if (videoEnabled) {
+        if (window.screenShareStream) await toggleScreenShare();
+        const currentTrack = localStream.getVideoTracks()[0];
+        if (currentTrack) currentTrack.enabled = false;
+        videoEnabled = false;
+        document.getElementById('localVideo').style.visibility = 'hidden';
+        updateVideoControl();
+        return;
+      }
+
+      let videoTrack = localStream.getVideoTracks()[0];
+      if (!videoTrack) {
+        const cameraStream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: 'user' }
+        });
+        videoTrack = cameraStream.getVideoTracks()[0];
+        if (!videoTrack) throw new Error('No camera is available on this device.');
+        localStream.addTrack(videoTrack);
+        if (localVideoSender) {
+          await localVideoSender.replaceTrack(videoTrack);
+        } else {
+          localVideoSender = peerConnection.addTrack(videoTrack, localStream);
+        }
+        document.getElementById('localVideo').srcObject = localStream;
+      }
+      if (!videoTrackNegotiated) {
+        try {
+          await renegotiateDirectCallForVideo();
+          videoTrackNegotiated = true;
+        } catch (error) {
+          if (localVideoSender) await localVideoSender.replaceTrack(null);
+          localStream.removeTrack(videoTrack);
+          videoTrack.stop();
+          throw error;
+        }
+      }
+      videoTrack.enabled = true;
+      videoEnabled = true;
+      document.getElementById('localVideo').style.visibility = 'visible';
+      updateVideoControl();
+      showConnectedVideoLayout();
+    }
+
     async function switchCamera() {
-      if (callType !== 'video' || !localStream || !peerConnection) return;
+      if (!videoEnabled || !localStream || !peerConnection) return;
       const currentTrack = localStream.getVideoTracks()[0];
       if (!currentTrack) return;
       const nextFacingMode = currentTrack.getSettings().facingMode === 'environment' ? 'user' : 'environment';
@@ -675,6 +1161,7 @@
       const replacementTrack = replacementStream.getVideoTracks()[0];
       const sender = peerConnection.getSenders().find(item => item.track && item.track.kind === 'video');
       if (sender) await sender.replaceTrack(replacementTrack);
+      localVideoSender = sender || localVideoSender;
       currentTrack.stop();
       localStream.removeTrack(currentTrack);
       localStream.addTrack(replacementTrack);
@@ -682,8 +1169,13 @@
     }
 
     async function toggleScreenShare() {
-      if (callType !== 'video' || !peerConnection || !localStream) return;
-      const videoSender = peerConnection.getSenders().find(item => item.track && item.track.kind === 'video');
+      if (!peerConnection || !localStream) {
+        throw new Error('Wait until the call connects before sharing your screen.');
+      }
+      if (!localVideoSender) {
+        await toggleVideo();
+      }
+      const videoSender = localVideoSender;
       if (!videoSender) return;
       const currentCameraTrack = localStream.getVideoTracks()[0];
       if (window.screenShareStream) {
@@ -705,7 +1197,10 @@
     }
 
     function showConnectedVideoLayout() {
-      if (callType !== 'video') return;
+      const remoteStream = document.getElementById('remoteVideo').srcObject;
+      const remoteHasVideo = remoteStream && typeof remoteStream.getVideoTracks === 'function'
+        && remoteStream.getVideoTracks().some(track => track.readyState === 'live');
+      if (!videoEnabled && !remoteHasVideo) return;
       const videoGrid = document.getElementById('videoGrid');
       videoGrid.classList.add('active', 'connected');
       document.getElementById('localVideo').play().catch(() => {});
@@ -715,9 +1210,16 @@
     async function preparePeerConnection(ref) {
       peerConnection = await new RTCPeerConnection(rtcConfig);
       const stream = await openUserMedia();
-      stream.getTracks().forEach(track => peerConnection.addTrack(track, stream));
+      stream.getTracks().forEach(track => {
+        const sender = peerConnection.addTrack(track, stream);
+        if (track.kind === 'video') localVideoSender = sender;
+      });
       peerConnection.ontrack = event => {
         document.getElementById('remoteVideo').srcObject = event.streams[0];
+        if (event.track.kind === 'video') {
+          updateVideoControl();
+          showConnectedVideoLayout();
+        }
       };
       peerConnection.onicecandidate = event => {
         if (event.candidate) ref.collection('candidates').add(event.candidate.toJSON());
@@ -725,9 +1227,10 @@
       peerConnection.onconnectionstatechange = () => {
         const state = peerConnection.connectionState;
         if (state === 'connected') {
-          document.getElementById('callStatus').textContent = 'Connected';
+          setCallStatus('Connected', 'success');
         } else if (['failed', 'disconnected', 'closed'].includes(state)) {
-          document.getElementById('callStatus').textContent = `Call ${state}...`;
+          setCallStatus(state === 'disconnected' || state === 'failed' ? 'Call disconnected' : `Call ${state}...`,
+            state === 'disconnected' || state === 'failed' ? 'error' : '');
         }
         if (state === 'connected') {
           showConnectedVideoLayout();
@@ -773,6 +1276,14 @@
       if (!authenticatedUser || !authenticatedUser.email) {
         throw new Error('Please sign in again before starting a call.');
       }
+      const targetOnline = await getTargetOnlineState();
+      if (targetOnline === false) {
+        setCallStatus('Call disconnected', 'error');
+        document.getElementById('roomInfo').textContent = 'The other person is offline.';
+        document.getElementById('callResultActions').hidden = false;
+        await saveCallHistory('disconnected');
+        return;
+      }
       directCallRef = db.collection('calls').doc(directCallId);
       await preparePeerConnection(directCallRef);
       peerConnection.onicecandidate = event => {
@@ -813,24 +1324,7 @@
       startConnectingTone();
       unansweredCallTimer = setTimeout(autoEndUnansweredCall, 60000);
       subscribeToDirectCandidates(directCallRef, 'receiverCandidates');
-      directCallUnsubscribe = directCallRef.onSnapshot(async snapshot => {
-        const data = snapshot.data();
-        if (data && data.status === 'ended') {
-          handleRemoteCallEnded(data.endedReason || '');
-          return;
-        }
-        if (data && data.answer && !peerConnection.currentRemoteDescription) {
-          document.getElementById('callStatus').textContent = 'Connecting...';
-          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-          stopConnectingTone();
-          stopIncomingTone();
-          stopUnansweredCallTimer();
-          document.getElementById('callStatus').textContent = 'Connected';
-          showConnectedVideoLayout();
-          playConnectedTone();
-          startCallTimer();
-        }
-      });
+      listenToDirectCall(directCallRef);
     }
 
     async function answerDirectCall() {
@@ -838,7 +1332,12 @@
       directCallRef = db.collection('calls').doc(directCallId);
       const snapshot = await directCallRef.get();
       const data = snapshot.data();
-      if (!snapshot.exists || !data || !data.offer) throw new Error('Call request not found.');
+      if (!snapshot.exists || !data || !data.offer || data.status !== 'ringing') {
+        throw new Error('This call is no longer ringing.');
+      }
+      if (String(data.receiverId || '').trim().toLowerCase() !== currentUserEmail) {
+        throw new Error('This call was not sent to your account.');
+      }
       await preparePeerConnection(directCallRef);
       peerConnection.onicecandidate = event => {
         if (event.candidate) directCallRef.collection('receiverCandidates').add(event.candidate.toJSON());
@@ -851,15 +1350,11 @@
         answer: { type: answer.type, sdp: answer.sdp },
         status: 'connected'
       });
-      directCallUnsubscribe = directCallRef.onSnapshot(snapshot => {
-        const data = snapshot.data();
-        if (data && data.status === 'ended') handleRemoteCallEnded();
-      }, error => console.error('Remote call status listener failed:', error));
+      listenToDirectCall(directCallRef);
       stopConnectingTone();
       stopIncomingTone();
       stopUnansweredCallTimer();
-      document.getElementById('callStatus').textContent = 'Connected';
-      startCallTimer();
+      setCallStatus('Connecting...');
     }
 
     function startCallTimer() {
@@ -878,26 +1373,38 @@
       return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
     }
 
-    async function saveCallHistory() {
+    async function saveCallHistory(outcome = callStartedAt ? 'completed' : 'cancelled') {
       const durationSeconds = callStartedAt ? Math.max(0, Math.floor((Date.now() - callStartedAt) / 1000)) : 0;
       const callConversationId = isGroupCall
         ? 'team_group_chat'
         : [currentUserEmail, chatEmail.toLowerCase()].filter(Boolean).sort().join('__');
-      if (!callConversationId || !currentUserEmail) return;
+      if (!callConversationId || !currentUserEmail || (!isGroupCall && callRole !== 'caller') || callHistorySaved) return;
+      callHistorySaved = true;
       const conversationRef = db.collection('team_meet_conversations').doc(callConversationId);
+      const outcomeLabels = {
+        busy: 'Busy',
+        disconnected: 'Call disconnected',
+        received: 'Incoming call received',
+        completed: 'Call connected',
+        'no-answer': 'No answer',
+        cancelled: 'Call ended'
+      };
       const historyMessage = {
-        id: `call-history-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        id: `call-history-${directCallId || Date.now()}-${Math.random().toString(16).slice(2)}`,
+        callId: directCallId || '',
         sender: 'me',
         senderEmail: currentUserEmail,
         senderName: 'You',
         self: true,
+        callerId: currentUserEmail,
+        receiverId: isGroupCall ? '' : chatEmail.toLowerCase(),
         type: 'call-history',
+        outcome,
         callType,
         durationSeconds,
         duration: formatCallDuration(durationSeconds),
-        text: durationSeconds > 0
-          ? `${callType === 'video' ? 'Video' : 'Audio'} call`
-          : `${callType === 'video' ? 'Video' : 'Audio'} call cancelled`,
+        text: outcomeLabels[outcome] || outcomeLabels.cancelled,
+        createdAt: new Date().toISOString(),
         time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
         reactions: {}
       };
@@ -907,22 +1414,44 @@
           : `team_meet_chat_${[currentUserEmail, chatEmail.toLowerCase()].filter(Boolean).sort().join('__')}`;
         let localMessages = [];
         try {
-          localMessages = JSON.parse(localStorage.getItem(localStorageKey) || '[]');
+          const storedMessages = JSON.parse(localStorage.getItem(localStorageKey) || '[]');
+          localMessages = Array.isArray(storedMessages) ? storedMessages : [];
         } catch (storageError) {
           console.error('Failed to read local call history:', storageError);
         }
-        localStorage.setItem(localStorageKey, JSON.stringify([...localMessages, historyMessage]));
-        await db.runTransaction(async transaction => {
-          const snapshot = await transaction.get(conversationRef);
-          const messages = snapshot.exists ? (snapshot.data().messages || []) : [];
-          transaction.set(conversationRef, {
+        if (!localMessages.some(message => message.callId && message.callId === historyMessage.callId)) {
+          localStorage.setItem(localStorageKey, JSON.stringify([...localMessages, historyMessage]));
+        }
+        const recentMessages = [...localMessages, historyMessage].slice(-100).map(message => ({
+          id: String(message.id || ''),
+          sender: message.sender || '',
+          senderEmail: message.senderEmail || '',
+          senderName: message.senderName || '',
+          self: message.self === true,
+          status: message.status || 'sent',
+          text: String(message.text || '').slice(0, 180),
+          attachment: message.type === 'attachment' || Boolean(message.attachment || message.attachments),
+          type: message.type || 'text',
+          deleted: message.deleted === true,
+          createdAt: message.createdAt || message.timestamp || message.date || null,
+          time: message.time || ''
+        }));
+        await Promise.all([
+          db.collection('team_meet_messages_shared').doc(`${callConversationId}__${historyMessage.id}`).set({
             conversationId: callConversationId,
-            participants: [currentUserEmail, chatEmail].filter(Boolean),
-            messages: [...messages, historyMessage],
+            messageId: historyMessage.id,
+            message: historyMessage,
             updatedAt: new Date()
-          }, { merge: true });
-        });
+          }),
+          conversationRef.set({
+            conversationId: callConversationId,
+            participants: [currentUserEmail, chatEmail.toLowerCase()].filter(Boolean),
+            messages: recentMessages,
+            updatedAt: new Date()
+          }, { merge: true })
+        ]);
       } catch (error) {
+        callHistorySaved = false;
         console.error('Failed to save call history:', error);
       }
     }
@@ -945,7 +1474,7 @@
         const data = snapshot.data();
         if (data && data.answer && !peerConnection.currentRemoteDescription) {
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
-          document.getElementById('callStatus').textContent = 'Connecting...';
+          setCallStatus('Connecting...');
         }
       });
     }
@@ -970,31 +1499,76 @@
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
       await roomRef.update({ answer: { type: answer.type, sdp: answer.sdp } });
-      document.getElementById('callStatus').textContent = 'Connecting...';
+      setCallStatus('Connecting...');
     }
 
     document.querySelector('[aria-label="Mute"]').addEventListener('click', async event => {
-      const stream = await openUserMedia();
-      const track = stream.getAudioTracks()[0];
-      if (track) {
-        track.enabled = !track.enabled;
-        event.currentTarget.classList.toggle('is-active', !track.enabled);
-        event.currentTarget.setAttribute('aria-label', track.enabled ? 'Mute' : 'Unmute');
+      try {
+        const stream = await openUserMedia();
+        const track = stream.getAudioTracks()[0];
+        if (track) {
+          track.enabled = !track.enabled;
+          event.currentTarget.classList.toggle('is-active', !track.enabled);
+          event.currentTarget.setAttribute('aria-label', track.enabled ? 'Mute' : 'Unmute');
+          event.currentTarget.querySelector('.control-label').textContent = track.enabled ? 'Mute' : 'Unmute';
+          event.currentTarget.title = track.enabled ? 'Mute microphone' : 'Unmute microphone';
+        }
+      } catch (error) {
+        console.error('Could not change microphone state:', error);
+        document.getElementById('roomInfo').textContent = error.message || 'Microphone access is unavailable.';
       }
     });
 
-    document.querySelector('[aria-label="Speaker"]').addEventListener('click', event => {
+    document.querySelector('[aria-label="Audio"]').addEventListener('click', event => {
       const remoteVideo = document.getElementById('remoteVideo');
       remoteVideo.muted = !remoteVideo.muted;
       event.currentTarget.classList.toggle('is-active', !remoteVideo.muted);
-      event.currentTarget.setAttribute('aria-label', remoteVideo.muted ? 'Speaker off' : 'Speaker on');
+      event.currentTarget.setAttribute('aria-label', remoteVideo.muted ? 'Audio off' : 'Audio on');
+      event.currentTarget.querySelector('.control-label').textContent = remoteVideo.muted ? 'Audio off' : 'Audio';
+      event.currentTarget.title = remoteVideo.muted ? 'Turn incoming call audio on' : 'Turn incoming call audio off';
     });
 
+    document.getElementById('toggleVideoButton').addEventListener('click', () => {
+      toggleVideo().catch(error => {
+        console.error('Could not change video state:', error);
+        document.getElementById('roomInfo').textContent = error.message || 'Video is unavailable.';
+      });
+    });
     document.querySelector('[aria-label="Camera switch"]').addEventListener('click', () => {
-      switchCamera().catch(error => console.error('Camera switch failed:', error));
+      switchCamera().catch(error => {
+        console.error('Camera switch failed:', error);
+        document.getElementById('roomInfo').textContent = error.message || 'Camera switching is unavailable.';
+      });
     });
     document.querySelector('[aria-label="Share screen"]').addEventListener('click', () => {
-      toggleScreenShare().catch(error => console.error('Screen sharing failed:', error));
+      toggleScreenShare().catch(error => {
+        console.error('Screen sharing failed:', error);
+        document.getElementById('roomInfo').textContent = error.message || 'Screen sharing is unavailable.';
+      });
+    });
+    document.getElementById('moreCallControls').addEventListener('click', event => {
+      const menu = document.getElementById('moreCallMenu');
+      const isExpanded = event.currentTarget.getAttribute('aria-expanded') === 'true';
+      event.currentTarget.setAttribute('aria-expanded', String(!isExpanded));
+      menu.hidden = isExpanded;
+    });
+    document.getElementById('copyCallIdButton').addEventListener('click', async () => {
+      const callIdToCopy = directCallId || initialRoomId;
+      if (!callIdToCopy) {
+        document.getElementById('roomInfo').textContent = 'There is no call ID for this call.';
+        return;
+      }
+      if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
+        document.getElementById('roomInfo').textContent = 'Clipboard access is unavailable on this device.';
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(callIdToCopy);
+        document.getElementById('roomInfo').textContent = 'Call ID copied.';
+      } catch (error) {
+        console.error('Could not copy the call ID:', error);
+        document.getElementById('roomInfo').textContent = 'Could not copy the call ID.';
+      }
     });
 
     document.querySelector('[aria-label="End call"]').addEventListener('click', async () => {
@@ -1007,12 +1581,20 @@
         clearInterval(callTimer);
         callTimer = null;
       }
-      await saveCallHistory();
+      const callOutcome = callStartedAt
+        ? 'completed'
+        : callRole === 'callee' && directCallId
+          ? 'busy'
+          : 'cancelled';
+      await saveCallHistory(callOutcome);
       if (roomUnsubscribe) roomUnsubscribe();
       if (candidateUnsubscribe) candidateUnsubscribe();
       if (directCallUnsubscribe) directCallUnsubscribe();
       if (directCandidateUnsubscribe) directCandidateUnsubscribe();
-      if (directCallRef) directCallRef.update({ status: 'ended' }).catch(error => console.error('Failed to end call:', error));
+      if (directCallRef) directCallRef.update({
+        status: 'ended',
+        endedReason: callStartedAt ? 'completed' : callRole === 'callee' ? 'rejected' : 'cancelled'
+      }).catch(error => console.error('Failed to end call:', error));
       if (peerConnection) peerConnection.close();
       if (localStream) localStream.getTracks().forEach(track => track.stop());
       window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
@@ -1049,7 +1631,7 @@
       });
 
       if (!authenticatedUser || !authenticatedUser.email) {
-        document.getElementById('callStatus').textContent = 'Sign in required';
+        setCallStatus('Sign in required', 'error');
         document.getElementById('roomInfo').textContent = 'Please sign in from the login page before starting a call.';
         setTimeout(() => {
           window.location.href = 'index.html';
@@ -1070,11 +1652,11 @@
             status: 'ended',
             endedReason: 'declined'
           });
-          document.getElementById('callStatus').textContent = 'Call declined';
+          setCallStatus('Call declined', 'error');
           setTimeout(() => window.location.replace('team-meet.html'), 700);
         } catch (error) {
           console.error('Could not decline the incoming call:', error);
-          document.getElementById('callStatus').textContent = 'Could not decline the call';
+          setCallStatus('Could not decline the call', 'error');
           document.getElementById('roomInfo').textContent = error.message || 'Please try again.';
         }
         return;
@@ -1082,9 +1664,9 @@
 
       if (!isGroupCall && directCallId) {
         if (callRole === 'caller') {
-          document.getElementById('callStatus').textContent = 'Calling...';
+          setCallStatus('Calling...');
         } else {
-          document.getElementById('callStatus').textContent = 'Answering...';
+          setCallStatus('Answering...');
         }
         const directAction = callRole === 'caller' ? startDirectCall() : answerDirectCall();
         directAction.catch(error => {
@@ -1097,11 +1679,11 @@
         const isMediaPermissionError = ['NotAllowedError', 'PermissionDeniedError', 'NotFoundError'].includes(error.name);
         const isFirestorePermissionError = error.code === 'permission-denied'
           || /missing or insufficient permissions/i.test(error.message || '');
-        document.getElementById('callStatus').textContent = isMediaPermissionError
+        setCallStatus(isMediaPermissionError
           ? 'Microphone permission is required'
           : isFirestorePermissionError
             ? 'Call permission is not available'
-            : 'Call could not connect';
+            : 'Call could not connect', 'error');
         document.getElementById('roomInfo').textContent = isMediaPermissionError
           ? 'Allow microphone access in your browser, then try again.'
           : isFirestorePermissionError
@@ -1119,9 +1701,10 @@
 
     initializeCall().catch(error => {
       console.error('Call initialization failed:', error);
-      document.getElementById('callStatus').textContent = 'Call could not start';
+      setCallStatus('Call could not start', 'error');
       document.getElementById('roomInfo').textContent = error.message || 'Please try again.';
     });
   </script>
+  <script src="assets/push-notifications.js"></script>
 </body>
 </html>

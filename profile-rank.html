@@ -78,8 +78,7 @@ body { background-color: #071124 !important; background-image: radial-gradient(1
 .icon-box { border: 1px solid rgba(255,255,255,0.08) !important; background: transparent !important; box-shadow: none !important; }
 body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
 </style>
-<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
-<link rel="stylesheet" href="assets/bg.css">
+<link rel="stylesheet" href="assets/bg.css?v=29">
 </head>
 <body>
     <div class="page-header">
@@ -250,6 +249,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
         }
 
         function saveRow(index) {
+            const previous = rankData[index];
             const name = document.getElementById(`name-${index}`).value.trim();
             const depositName = document.getElementById(`deposit-${index}`).value.trim();
             const points = Number(document.getElementById(`points-${index}`).value);
@@ -264,6 +264,32 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             }
 
             rankData[index] = { name, depositName, points, rank, status, achievementDate, note };
+            const uid = localStorage.getItem('currentUserUid');
+            const email = localStorage.getItem('currentUserEmail') || '';
+            const prefix = uid
+                ? `user_${uid}_`
+                : email ? `user_${email.replace(/[^a-zA-Z0-9_-]/g, '_')}_` : '';
+            const currentName = localStorage.getItem(`${prefix}profile_name`) || '';
+            const changed = previous && (previous.rank !== rank || Number(previous.points) !== points);
+            if (changed && currentName.trim().toLowerCase() === previous.name.trim().toLowerCase() && email) {
+                const notification = {
+                    id: `rank-level-${email.replace(/[^a-z0-9]/gi, '-')}-${Date.now()}`,
+                    to: email.toLowerCase(),
+                    type: 'rank_level',
+                    title: 'Rank level update',
+                    message: `Your rank changed from ${previous.rank} (${previous.points} points) to ${rank} (${points} points).`,
+                    read: false,
+                    createdAt: new Date().toISOString()
+                };
+                try {
+                    const stored = JSON.parse(localStorage.getItem('sbryms_finance_notifications') || '[]');
+                    const notifications = Array.isArray(stored) ? stored : [];
+                    localStorage.setItem('sbryms_finance_notifications', JSON.stringify([notification, ...notifications].slice(0, 100)));
+                } catch (error) {
+                    console.error('Could not save rank notification:', error);
+                    alert('র‍্যাংক আপডেট হয়েছে, কিন্তু নোটিফিকেশন সংরক্ষণ করা যায়নি।');
+                }
+            }
             editIndex = null;
             saveToStorage();
             renderTable();

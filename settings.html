@@ -80,6 +80,7 @@
     body.light .subtitle, body.light .row small, body.light .section-title { color: #647089; }
     body.light .choice, body.light .open-link, body.light .back, body.light .icon-button { color: #283650; background: rgba(255,255,255,.72); border-color: rgba(20,35,60,.15); }
   </style>
+  <link rel="stylesheet" href="assets/bg.css?v=29">
 </head>
 <body>
   <main class="page">
@@ -87,14 +88,6 @@
       <button class="back" type="button" onclick="history.back()" aria-label="Back">‹</button>
       <div><h1>Settings</h1><p class="subtitle">Manage your app preferences</p></div>
     </header>
-
-    <div class="section">
-      <p class="section-title">Appearance</p>
-      <div class="row">
-        <div><strong>Theme</strong><small>Choose light or dark view</small></div>
-        <div class="actions"><button class="choice" data-theme-choice="light" type="button">Light</button><button class="choice" data-theme-choice="dark" type="button">Dark</button></div>
-      </div>
-    </div>
 
     <div class="section">
       <p class="section-title">Notifications</p>
@@ -118,17 +111,6 @@
 
     <div class="section">
       <p class="section-title">Personalization</p>
-      <div class="row background-row">
-        <div><strong>Background</strong><small>Choose the app wallpaper</small></div>
-        <div class="preset-grid" id="backgroundPresets">
-          <button class="preset" data-bg="pinkBlue" style="background:linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5)">Pink + Blue</button>
-          <button class="preset" data-bg="orangeBlue" style="background:linear-gradient(135deg,#ff7a18,#ffb347,#2193b0)">Orange + Blue</button>
-          <button class="preset" data-bg="mintPurple" style="background:linear-gradient(135deg,#43e97b,#38f9d7,#7f53ac)">Mint + Purple</button>
-          <button class="preset" data-bg="lavender" style="background:linear-gradient(135deg,#c471f5,#fa71cd,#12c2e9)">Lavender</button>
-          <button class="preset" data-bg="skyNight" style="background:linear-gradient(135deg,#141e30,#243b55,#00c6ff)">Blue Night</button>
-          <button class="preset" data-bg="solidBlack" style="background:#000">Black</button>
-        </div>
-      </div>
       <div class="row ringtone-row">
         <div><strong>Call ringtone</strong><small>Preview and choose incoming call sound</small></div>
         <div class="ringtone-grid" id="ringtoneOptions">
@@ -167,27 +149,10 @@
     };
     if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
 
-    const theme = localStorage.getItem('theme') || 'light';
-    const backgroundPresets = {
-      pinkBlue: 'linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5)',
-      orangeBlue: 'linear-gradient(135deg,#ff7a18,#ffb347,#2193b0)',
-      mintPurple: 'linear-gradient(135deg,#43e97b,#38f9d7,#7f53ac)',
-      lavender: 'linear-gradient(135deg,#c471f5,#fa71cd,#12c2e9)',
-      skyNight: 'linear-gradient(135deg,#141e30,#243b55,#00c6ff)',
-      solidBlack: '#000000'
-    };
     const ringtoneFiles = {
       'uploaded-1': 'assets/ringtone-upload-1.mp3',
       'uploaded-2': 'assets/ringtone-upload-2.mp3'
     };
-    const selectBackground = key => {
-      localStorage.setItem('appBackgroundPreset', key);
-      document.documentElement.style.setProperty('--motion-gradient', backgroundPresets[key]);
-      document.querySelectorAll('[data-bg]').forEach(button => button.classList.toggle('active', button.dataset.bg === key));
-    };
-    document.querySelectorAll('[data-bg]').forEach(button => {
-      button.addEventListener('click', () => selectBackground(button.dataset.bg));
-    });
     const previewRingtone = key => {
       localStorage.setItem('callRingtone', key);
       document.querySelectorAll('[data-ringtone]').forEach(button => button.classList.toggle('active', button.dataset.ringtone === key));
@@ -200,16 +165,6 @@
     };
     document.querySelectorAll('[data-ringtone]').forEach(button => {
       button.addEventListener('click', () => previewRingtone(button.dataset.ringtone));
-    });
-    const applyTheme = value => {
-      localStorage.setItem('theme', value);
-      document.body.classList.toggle('light', value === 'light');
-      document.querySelectorAll('[data-theme-choice]').forEach(button => {
-        button.classList.toggle('active', button.dataset.themeChoice === value);
-      });
-    };
-    document.querySelectorAll('[data-theme-choice]').forEach(button => {
-      button.addEventListener('click', () => applyTheme(button.dataset.themeChoice));
     });
     const notificationButton = document.getElementById('notificationToggle');
     const notificationStatus = document.getElementById('notificationStatus');
@@ -334,7 +289,6 @@
     };
     bindToggle('notificationToggle', 'browserNotificationsEnabled', false);
     bindToggle('badgeToggle', 'teamMeetBadgeEnabled', true);
-    selectBackground(localStorage.getItem('appBackgroundPreset') || 'pinkBlue');
     const savedRingtone = localStorage.getItem('callRingtone') || 'dj-jazz-2';
     document.querySelectorAll('[data-ringtone]').forEach(button => button.classList.toggle('active', button.dataset.ringtone === savedRingtone));
     document.getElementById('logoutButton').addEventListener('click', async () => {
@@ -357,7 +311,6 @@
       localStorage.removeItem('currentUserUid');
       window.location.replace('index.html');
     });
-    applyTheme(theme);
   </script>
   <script src="assets/push-notifications.js"></script>
 </body>

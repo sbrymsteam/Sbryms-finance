@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="bn" class="deposit-page">
 <head>
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/app-icon-192.png?v=22">
   <link rel="apple-touch-icon" href="/assets/app-icon-192.png?v=22">
@@ -341,75 +341,7 @@ ue {
     }
     .page-header { background: rgba(255, 255, 255, 0.5); }
 </style>
-<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
-<link rel="stylesheet" href="assets/bg.css">
 <style>
-    /* Deposit uses a light surface, so shared dark-theme overrides must not reduce contrast. */
-    body {
-        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%) !important;
-        color: #1f2937 !important;
-    }
-    .page-header {
-        background: #ffffff !important;
-        color: #111827 !important;
-        border-bottom-color: #dbe3ef !important;
-    }
-    .page-header a,
-    .page-title,
-    .profile-name,
-    .stat-value,
-    td,
-    th,
-    .table-card,
-    .summary-card,
-    .stat-box,
-    .profile-chip,
-    .profile-chip span {
-        color: #1f2937 !important;
-    }
-    .subtitle,
-    .stat-title,
-    th,
-    .profile-email,
-    .filters label,
-    .grid-cols span {
-        color: #64748b !important;
-        opacity: 1 !important;
-    }
-    .summary-card,
-    .table-card {
-        background: #ffffff !important;
-        border-color: #dbe3ef !important;
-        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08) !important;
-    }
-    .stat-box {
-        background: #f8fafc !important;
-        border: 1px solid #e2e8f0 !important;
-    }
-    .profile-chip {
-        background: #ffffff !important;
-        border-color: #dbe3ef !important;
-    }
-    .profile-chip.active {
-        background: #eef2ff !important;
-        border-color: #8b5cf6 !important;
-    }
-    .filters select {
-        background-color: #ffffff !important;
-        color: #1f2937 !important;
-        border-color: #cbd5e1 !important;
-        background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%) !important;
-    }
-    .filters select option {
-        background: #ffffff !important;
-        color: #1f2937 !important;
-    }
-    table th,
-    table td {
-        border-color: #e2e8f0 !important;
-    }
-    .row-paid { color: #047857 !important; }
-    .row-unpaid { color: #b91c1c !important; }
     .page-header {
         padding: 12px 16px !important;
         border-bottom: 1px solid #edf1f6 !important;
@@ -579,10 +511,6 @@ ue {
     }
 </style>
 <style>
-    /* Final reference finish: pale blue surface with a clean white highlight edge. */
-    body {
-        background: url('assets/bg.png') center center / cover no-repeat !important;
-    }
     .table-card {
         background: transparent !important;
         border: 0 !important;
@@ -634,7 +562,7 @@ ue {
 <style>
     @media (max-width: 600px) {
         .deposit-grid {
-            grid-template-columns: repeat(auto-fit, minmax(52px, 1fr)) !important;
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
             gap: 5px !important;
             width: 100% !important;
             padding: 8px 4px 12px !important;
@@ -789,6 +717,7 @@ ue {
     }
     .deposit-info-close:hover { color: #dc2626 !important; }
 </style>
+<link rel="stylesheet" href="assets/bg.css?v=35">
 </head>
 <body>
     <div class="page-header">
@@ -812,16 +741,27 @@ ue {
         <div class="profile-strip" id="profileStrip"></div>
         <div class="summary-card">
             <div class="summary-grid">
-                <div class="stat-box">
+                <div class="stat-box total-deposit-stat">
                     <div class="stat-title">Total Deposit</div>
                     <div class="stat-value" id="totalAmount">৳ 0</div>
                 </div>
-                <div class="stat-box">
-                    <div class="stat-title">Total Fine</div>
+                <div class="stat-box total-fine-stat">
+                    <div class="stat-title stat-title-with-icon">
+                        <svg class="summary-stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3 2.8 19a1.4 1.4 0 0 0 1.2 2.1h16a1.4 1.4 0 0 0 1.2-2.1L12 3z"></path>
+                            <path d="M12 9v5m0 3h.01"></path>
+                        </svg>
+                        <span>Total Fine</span>
+                    </div>
                     <div class="stat-value" id="totalFine">৳ 0</div>
                 </div>
-                <div class="stat-box">
-                    <div class="stat-title">Total Star Received</div>
+                <div class="stat-box total-star-stat">
+                    <div class="stat-title stat-title-with-icon">
+                        <svg class="summary-stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.4l6.3-.9L12 2.8z"></path>
+                        </svg>
+                        <span>Total Star Received</span>
+                    </div>
                     <div class="stat-value" id="totalStar">0</div>
                 </div>
             </div>
@@ -877,8 +817,10 @@ ue {
 
         function getCurrentProfile() {
             const currentEmail = localStorage.getItem('currentUserEmail') || '';
-            const defaultName = currentEmail ? currentEmail.split('@')[0].replace(/[._-]/g, ' ') : 'Member';
-            const name = localStorage.getItem(storageKey('profile_name')) || defaultName;
+            const storedName = localStorage.getItem(storageKey('profile_name')) || '';
+            const emailName = currentEmail.split('@')[0].replace(/[^a-z0-9]/gi, '').toLowerCase();
+            const normalizedName = storedName.replace(/[^a-z0-9]/gi, '').toLowerCase();
+            const name = storedName && normalizedName !== emailName ? storedName : 'Member';
             const photo = localStorage.getItem(storageKey('profile_photo')) || '';
             return { email: currentEmail, name, photo };
         }
@@ -899,7 +841,7 @@ ue {
                 .filter(account => account && account.email)
                 .map(account => ({
                     email: String(account.email).trim().toLowerCase(),
-                    name: account.name || account.displayName || account.email.split('@')[0].replace(/[._-]/g, ' '),
+                    name: String(account.name || account.displayName || '').trim() || 'Member',
                     photo: account.photo || account.profilePhoto || account.photoURL || ''
                 }));
         }
@@ -1078,15 +1020,42 @@ ue {
 
             const currentProfile = getCurrentProfile();
             registeredMemberAccounts.forEach(member => {
-                const existingIndex = accounts.findIndex(account => account.email === member.email);
-                if (existingIndex >= 0) accounts[existingIndex] = { ...accounts[existingIndex], ...member };
-                else accounts.push(member);
+                const existingIndex = accounts.findIndex(account =>
+                    String(account.email || '').trim().toLowerCase() === member.email
+                );
+                if (existingIndex >= 0) {
+                    const existingProfile = accounts[existingIndex];
+                    const memberName = String(member.name || member.displayName || '').trim();
+                    const existingName = String(existingProfile.name || existingProfile.displayName || '').trim();
+                    accounts[existingIndex] = {
+                        ...existingProfile,
+                        ...member,
+                        name: memberName && memberName !== 'Member'
+                            ? memberName
+                            : (existingName || 'Member'),
+                        photo: member.photo || existingProfile.photo || existingProfile.profilePhoto || existingProfile.photoURL || ''
+                    };
+                } else {
+                    accounts.push(member);
+                }
             });
 
             if (currentProfile.email) {
-                const existingIndex = accounts.findIndex(acc => acc.email === currentProfile.email);
+                const existingIndex = accounts.findIndex(acc =>
+                    String(acc.email || '').trim().toLowerCase() === currentProfile.email.trim().toLowerCase()
+                );
                 if (existingIndex >= 0) {
-                    accounts[existingIndex] = { ...accounts[existingIndex], ...currentProfile };
+                    const existingProfile = accounts[existingIndex];
+                    const existingName = String(existingProfile.name || existingProfile.displayName || '').trim();
+                    accounts[existingIndex] = {
+                        ...existingProfile,
+                        name: existingName && existingName !== 'Member'
+                            ? existingName
+                            : (currentProfile.name !== 'Member'
+                                ? currentProfile.name
+                                : 'Member'),
+                        photo: currentProfile.photo || existingProfile.photo || ''
+                    };
                 } else {
                     accounts.unshift(currentProfile);
                 }
@@ -1096,7 +1065,7 @@ ue {
                 .filter(account => account && account.email)
                 .map(account => ({
                     ...account,
-                    name: account.name || account.displayName || account.email.split('@')[0].replace(/[._-]/g, ' '),
+                    name: String(account.name || account.displayName || '').trim() || 'Member',
                     photo: account.photo || account.profilePhoto || account.photoURL || ''
                 }))
                 .sort((a, b) => {
@@ -1104,14 +1073,6 @@ ue {
                 if (b.email === currentProfile.email) return 1;
                 return a.name.localeCompare(b.name);
                 });
-        }
-
-        function extractNameFromEmail(email) {
-            return String(email || '').split('@')[0]
-                .split(/[._-]/)
-                .filter(Boolean)
-                .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-                .join(' ') || 'Member';
         }
 
         function ensureDepositRowsForProfiles(accounts) {
@@ -1150,7 +1111,7 @@ ue {
                 registeredMemberAccounts = snapshot.docs.map(doc => {
                     const data = doc.data() || {};
                     const email = String(data.email || data.emailAddress || '').trim().toLowerCase();
-                    const name = data.name || data.displayName || extractNameFromEmail(email);
+                    const name = String(data.name || data.displayName || '').trim() || 'Member';
                     return {
                         email,
                         name,
@@ -1183,25 +1144,28 @@ ue {
 
             const allActive = selectedProfileEmail === 'all' ? 'active' : '';
             const allChip = `
-                <div class="profile-chip ${allActive}" onclick="selectProfile('all')">
-                    <div class="profile-avatar">All</div>
+                <div class="profile-chip all-accounts-chip ${allActive}" onclick="selectProfile('all')">
+                    <div class="profile-avatar" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <circle cx="9" cy="8" r="3"></circle>
+                            <path d="M3.5 19c.4-3 2.4-4.8 5.5-4.8s5.1 1.8 5.5 4.8"></path>
+                            <path d="M16 5.5a3 3 0 0 1 0 5.8M16 14c2.8 0 4.4 1.7 4.6 4"></path>
+                        </svg>
+                    </div>
                     <div class="profile-chip-text">
-                            <p class="profile-name">All Accounts</p>
-                            <p class="profile-email">${accounts.length} total</p>
+                        <p class="profile-name">All</p>
                     </div>
                 </div>
             `;
 
             const accountChips = accounts.map(account => {
                 const activeClass = account.email === selectedProfileEmail ? 'active' : '';
-                const isCurrent = account.email === currentProfile.email;
-                const avatar = account.photo ? `<img src="${account.photo}" alt="${account.name}">` : `<span>${account.name.charAt(0).toUpperCase()}</span>`;
+                const avatar = account.photo ? `<img src="${account.photo}" alt="">` : `<span>${account.name === 'Member' ? 'M' : account.name.charAt(0).toUpperCase()}</span>`;
                 return `
-                    <div class="profile-chip ${activeClass}" onclick="selectProfile('${account.email.replace(/'/g, "\\'")}')">
+                    <div class="profile-chip account-profile-chip ${activeClass}" onclick="selectProfile('${account.email.replace(/'/g, "\\'")}')">
                         <div class="profile-avatar">${avatar}</div>
                         <div class="profile-chip-text">
                             <p class="profile-name">${account.name}</p>
-                            <p class="profile-email">${account.email}${isCurrent ? ' • Current' : ''}</p>
                         </div>
                     </div>
                 `;
@@ -1300,7 +1264,7 @@ ue {
 
             const period = window.selectedPeriod || null;
 
-            return depositData
+            const rows = depositData
                 .map((row, index) => ({ row, index }))
                 .filter(item => {
                     if (item.row.year !== currentYear) return false;
@@ -1311,6 +1275,13 @@ ue {
                     }
                     return true;
                 });
+            if (selectedProfileEmail === 'all') {
+                rows.sort((a, b) => {
+                    const dateDifference = getRowDueDate(a.row) - getRowDueDate(b.row);
+                    return dateDifference || a.row.name.localeCompare(b.row.name);
+                });
+            }
+            return rows;
         }
 
         function renderTable() {
@@ -1318,6 +1289,10 @@ ue {
             const emptyState = document.getElementById('emptyState');
             grid.innerHTML = '';
             const filteredRows = getFilteredRows();
+            const isAllAccountsView = selectedProfileEmail === 'all';
+            const profilesByEmail = isAllAccountsView
+                ? new Map(getProfileAccounts().map(profile => [profile.email, profile]))
+                : null;
 
             if (filteredRows.length === 0) {
                 emptyState.style.display = 'block';
@@ -1399,13 +1374,15 @@ ue {
                     : (displayStar === '3' ? '<span class="star-badge">★★★</span>' : (displayStar === '2' ? '<span class="star-badge">★★</span>' : (displayStar === '1' ? '<span class="star-badge">★</span>' : '')));
 
                 const card = document.createElement('div');
-                card.className = 'deposit-card';
+                card.className = isAllAccountsView
+                    ? `deposit-card all-account-card ${isPaid ? 'is-paid-card' : 'is-unpaid-card'}`
+                    : 'deposit-card';
                 card.innerHTML = `
                     <div class="deposit-card-header">
                         <p class="deposit-date">${getFixedDateLabel(row.date)}</p>
                         <button class="card-menu" type="button" aria-label="More options" style="border:0!important;border-width:0!important;border-style:none!important;border-color:transparent!important;outline:0!important;background:transparent!important;box-shadow:none!important;">⋯</button>
                     </div>
-                    <div class="deposit-meta"><span class="deposit-meta-label">Fee:</span> <span>${Number(feeValue) || 0}</span></div>
+                    <div class="deposit-meta deposit-fee-row"><span class="deposit-meta-label">Fee:</span> <span>${Number(feeValue) || 0}</span></div>
                     <div class="deposit-star-row"><span class="star-badge">star: ${starHtml}</span></div>
                     <div class="deposit-meta fine-row">
                         <span><span class="deposit-meta-label">Fine:</span> <span class="fine-value">${rowFine}</span></span>
@@ -1416,6 +1393,30 @@ ue {
                                 : '<button class="pay-pill" type="button" data-index="'+index+'">Pay</button>')}
                     </div>
                 `;
+
+                if (isAllAccountsView) {
+                    const account = profilesByEmail.get(row.profileEmail);
+                    const identity = document.createElement('div');
+                    identity.className = 'all-account-identity';
+                    const avatar = document.createElement('span');
+                    avatar.className = 'all-account-avatar';
+                    if (account && account.photo) {
+                        const image = document.createElement('img');
+                        image.src = account.photo;
+                        image.alt = '';
+                        image.loading = 'lazy';
+                        avatar.appendChild(image);
+                    } else {
+                        const accountName = account && account.name ? account.name : 'Member';
+                        avatar.textContent = accountName.trim().charAt(0).toUpperCase();
+                    }
+                    const name = document.createElement('span');
+                    name.className = 'all-account-name';
+                    name.textContent = account && account.name ? account.name : 'Member';
+                    identity.appendChild(avatar);
+                    identity.appendChild(name);
+                    card.querySelector('.deposit-card-header').insertAdjacentElement('afterend', identity);
+                }
 
                 const payButton = card.querySelector('button.pay-pill');
                 if (payButton) {

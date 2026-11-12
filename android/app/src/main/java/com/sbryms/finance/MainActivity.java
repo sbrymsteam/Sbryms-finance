@@ -1,11 +1,62 @@
 package com.sbryms.finance;
 
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
+import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.WebViewListener;
 
 public class MainActivity extends BridgeActivity {
+    private static final String RECOVERY_PREFERENCES = "renderer_recovery";
+    private static final String RECOVERY_COUNT = "count";
+    private static final String RECOVERY_TIMESTAMP = "timestamp";
+    private static final long RECOVERY_WINDOW_MS = 5 * 60 * 1000;
+    private static final int MAX_AUTOMATIC_RECOVERIES = 3;
+    private boolean rendererRecoveryScheduled;
+
+    @Override
+    protected void load() {
+        bridgeBuilder.addWebViewListener(new WebViewListener() {
+            @Override
+            public boolean onRenderProcessGone(WebView webView, RenderProcessGoneDetail detail) {
+                if (!rendererRecoveryScheduled) {
+                    rendererRecoveryScheduled = true;
+                    new Handler(Looper.getMainLooper()).post(MainActivity.this::recoverFromRendererCrash);
+                }
+                return true;
+            }
+        });
+        super.load();
+    }
+
+    private void recoverFromRendererCrash() {
+        if (isFinishing() || isDestroyed()) return;
+
+        android.content.SharedPreferences preferences =
+            getSharedPreferences(RECOVERY_PREFERENCES, MODE_PRIVATE);
+        long now = System.currentTimeMillis();
+        long previousRecovery = preferences.getLong(RECOVERY_TIMESTAMP, 0);
+        int recoveryCount = now - previousRecovery <= RECOVERY_WINDOW_MS
+            ? preferences.getInt(RECOVERY_COUNT, 0) + 1
+            : 1;
+        preferences.edit()
+            .putInt(RECOVERY_COUNT, recoveryCount)
+            .putLong(RECOVERY_TIMESTAMP, now)
+            .apply();
+
+        if (recoveryCount > MAX_AUTOMATIC_RECOVERIES) {
+            finish();
+            return;
+        }
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (!isFinishing() && !isDestroyed()) recreate();
+        }, 300);
+    }
 
     @Override
     public void onBackPressed() {
@@ -19,12 +70,16 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(android.os.Bundle savedInstanceState) {
+        WebView.setWebContentsDebuggingEnabled(
+            (getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        );
         registerPlugin(DeviceSettingsPlugin.class);
         registerPlugin(PresencePlugin.class);
         super.onCreate(savedInstanceState);
         if (savedInstanceState == null
             && Intent.ACTION_MAIN.equals(getIntent().getAction())
             && getIntent().hasCategory(Intent.CATEGORY_LAUNCHER)) {
+            getSharedPreferences(RECOVERY_PREFERENCES, MODE_PRIVATE).edit().clear().apply();
             getWindow().getDecorView().postDelayed(() -> StartupTune.play(this), 350);
         }
         openNotificationTarget(getIntent());

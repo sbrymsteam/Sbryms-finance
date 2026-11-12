@@ -87,65 +87,265 @@ body { background-color: #071124 !important; background-image: radial-gradient(1
 .icon-box { border: 1px solid rgba(255,255,255,0.08) !important; background: transparent !important; box-shadow: none !important; }
 body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
 </style>
-<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
-<link rel="stylesheet" href="assets/bg.css">
+<link rel="stylesheet" href="assets/bg.css?v=29">
+<style>
+    .profile-page {
+        box-sizing: border-box;
+        width: min(1120px, 100%);
+        margin: 0 auto;
+        padding: 28px 20px 96px;
+    }
+    .profile-page * { box-sizing: border-box; }
+    .profile-hero-card {
+        overflow: hidden;
+        border: 1px solid rgba(148, 163, 184, .2);
+        border-radius: 22px;
+        background: #101a2a;
+        box-shadow: 0 18px 44px rgba(0, 0, 0, .28);
+    }
+    .profile-cover {
+        height: 190px;
+        background:
+            radial-gradient(ellipse at 82% 15%, rgba(87, 190, 222, .28), transparent 34%),
+            repeating-linear-gradient(145deg, transparent 0 72px, rgba(255,255,255,.045) 73px 75px, transparent 76px 120px),
+            linear-gradient(115deg, #16314a, #1d5260 52%, #183248);
+    }
+    .profile-hero-content {
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        gap: 20px;
+        min-height: 132px;
+        padding: 0 26px 22px;
+    }
+    .profile-pic-container {
+        position: relative;
+        width: 116px;
+        height: 116px;
+        flex: 0 0 116px;
+        margin: -58px 0 0;
+        padding: 5px;
+        border: 1px solid rgba(203, 213, 225, .3);
+        border-radius: 50%;
+        background: #101a2a;
+    }
+    .profile-pic {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border: 2px solid rgba(255,255,255,.12);
+        border-radius: 50%;
+        background: linear-gradient(135deg, #357b9b, #5c6fd6);
+    }
+    .profile-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .camera-btn {
+        position: absolute;
+        right: 4px;
+        bottom: 4px;
+        display: grid;
+        width: 32px;
+        height: 32px;
+        place-items: center;
+        border: 1px solid rgba(255,255,255,.22);
+        border-radius: 50%;
+        background: #1d2b3d;
+        color: #fff;
+        cursor: pointer;
+    }
+    .profile-identity { min-width: 0; flex: 1; padding-bottom: 4px; }
+    .profile-identity h1 { margin: 0; color: #f8fafc; font-size: clamp(22px, 3vw, 30px); line-height: 1.2; overflow-wrap: anywhere; }
+    .profile-identity p { margin: 7px 0 0; color: #a9bacd; font-size: 14px; }
+    .profile-actions { display: flex; align-items: center; gap: 10px; padding-bottom: 4px; }
+    .profile-actions .edit-btn { width: auto; margin: 0; padding: 10px 16px; }
+    .profile-hero-content .back-btn { top: -164px; left: 22px; color: #fff; }
+    .profile-identity .profile-designation { color: #68d7c6; font-weight: 650; }
+    .profile-tabs {
+        display: flex;
+        gap: 8px;
+        margin: 20px 0 14px;
+        padding: 5px;
+        overflow-x: auto;
+        border: 1px solid rgba(148, 163, 184, .16);
+        border-radius: 14px;
+        background: rgba(15, 23, 42, .65);
+        scrollbar-width: none;
+    }
+    .profile-tab {
+        flex: 0 0 auto;
+        min-height: 40px;
+        padding: 0 18px;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        color: #a9bacd;
+        font: 600 13px 'Segoe UI', sans-serif;
+        cursor: pointer;
+    }
+    .profile-tab.active { background: rgba(93, 157, 212, .16); color: #eaf5ff; box-shadow: inset 0 0 0 1px rgba(125, 185, 231, .2); }
+    .profile-panel { display: none; }
+    .profile-panel.active { display: block; }
+    .profile-content-card {
+        padding: 24px;
+        border: 1px solid rgba(148, 163, 184, .18);
+        border-radius: 18px;
+        background: linear-gradient(145deg, rgba(17, 28, 44, .96), rgba(11, 19, 32, .96));
+        box-shadow: 0 12px 30px rgba(0, 0, 0, .18);
+    }
+    .profile-content-card h2 { margin: 0 0 20px; color: #f1f5f9; font-size: 17px; }
+    .profile-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
+    .info-item {
+        min-width: 0;
+        margin: 0;
+        padding: 15px 0;
+        border-bottom: 1px solid rgba(148, 163, 184, .13);
+    }
+    .profile-detail-grid .info-item:nth-last-child(-n+2) { border-bottom: 0; }
+    .label { display: block; margin-bottom: 7px; color: #8fa3b8; font-size: 12px; }
+    .display-value { display: block; overflow-wrap: anywhere; color: #f1f5f9; font-size: 14px; font-weight: 600; }
+    .profile-about-copy { min-height: 42px; margin: 0; color: #d3deea; line-height: 1.65; overflow-wrap: anywhere; }
+    .profile-edit .profile-content-card { margin-top: 20px; }
+    .profile-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
+    .profile-edit-grid .info-item { border-bottom: 1px solid rgba(148, 163, 184, .13); }
+    .input-field {
+        width: 100%;
+        min-height: 42px;
+        padding: 9px 11px;
+        border: 1px solid rgba(148, 163, 184, .24);
+        border-radius: 10px;
+        background: rgba(3, 10, 20, .42);
+        color: #f1f5f9;
+        font: inherit;
+    }
+    textarea.input-field { min-height: 92px; resize: vertical; }
+    .location-btn { margin-top: 8px; padding: 8px 11px; border: 1px solid rgba(103, 232, 210, .25); border-radius: 9px; background: rgba(20, 128, 112, .2); color: #b7fff0; cursor: pointer; }
+    .save-btn {
+        width: auto;
+        min-width: 170px;
+        margin: 18px 0 0;
+        padding: 12px 18px;
+        border: 1px solid rgba(111, 226, 204, .32);
+        border-radius: 12px;
+        background: linear-gradient(135deg, #168b7a, #23698a);
+        color: #fff;
+        cursor: pointer;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .profile-hero-card {
+        border: 1px solid rgba(148, 163, 184, .2) !important;
+        border-radius: 22px !important;
+        background: #101a2a !important;
+        background-image: none !important;
+        box-shadow: 0 18px 44px rgba(0,0,0,.28) !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .profile-content-card {
+        border: 1px solid rgba(148,163,184,.18) !important;
+        border-radius: 18px !important;
+        background: linear-gradient(145deg, rgba(17,28,44,.96), rgba(11,19,32,.96)) !important;
+        box-shadow: 0 12px 30px rgba(0,0,0,.18) !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .profile-cover {
+        background:
+            radial-gradient(ellipse at 82% 15%, rgba(87, 190, 222, .28), transparent 34%),
+            repeating-linear-gradient(145deg, transparent 0 72px, rgba(255,255,255,.045) 73px 75px, transparent 76px 120px),
+            linear-gradient(115deg, #16314a, #1d5260 52%, #183248) !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .profile-tab {
+        background: transparent !important;
+        color: #a9bacd !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .profile-tab.active {
+        background: rgba(93,157,212,.16) !important;
+        color: #eaf5ff !important;
+    }
+    html:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .profile-identity h1,
+    html:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .profile-content-card h2,
+    html:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .display-value { color: #f1f5f9 !important; }
+    @media (max-width: 640px) {
+        .profile-page { padding: 16px 12px 92px; }
+        .profile-cover { height: 148px; }
+        .profile-hero-content { align-items: flex-start; flex-wrap: wrap; gap: 10px 14px; padding: 0 16px 17px; }
+        .profile-pic-container { width: 88px; height: 88px; flex-basis: 88px; margin-top: -44px; }
+        .camera-btn { width: 27px; height: 27px; font-size: 12px; }
+        .profile-identity { flex: 1 1 calc(100% - 106px); padding-top: 2px; }
+        .profile-identity h1 { font-size: 21px; }
+        .profile-identity p { margin-top: 5px; font-size: 12px; }
+        .profile-actions { width: 100%; justify-content: flex-end; }
+        .profile-actions .edit-btn { padding: 9px 14px; }
+        .profile-tabs { margin-top: 14px; }
+        .profile-tab { padding: 0 13px; }
+        .profile-content-card { padding: 18px 16px; }
+        .profile-detail-grid, .profile-edit-grid { grid-template-columns: 1fr; }
+        .profile-detail-grid .info-item:nth-last-child(-n+2) { border-bottom: 1px solid rgba(148,163,184,.13); }
+        .profile-detail-grid .info-item:last-child { border-bottom: 0; }
+    }
+</style>
 </head>
 <body>
 
-    <div class="profile-header">
-        <a href="FACE APP.html" class="back-btn">←</a>
-        <div class="profile-pic-container">
-            <div class="profile-pic">
-                <img id="profileImg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23ddd'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23777' font-family='Segoe UI, sans-serif' font-size='16'%3EUser%3C/text%3E%3C/svg%3E" style="width:100%; height:100%; object-fit:cover;">
-            </div>
-            <label for="fileInput" class="camera-btn">📷</label>
-            <input type="file" id="fileInput" style="display:none" accept="image/*" onchange="previewImage(event)">
+    <main class="profile-page">
+      <section class="profile-hero-card">
+        <div class="profile-cover"></div>
+        <div class="profile-hero-content">
+          <a href="FACE APP.html" class="back-btn" aria-label="Back">←</a>
+          <div class="profile-pic-container">
+              <div class="profile-pic">
+                  <img id="profileImg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%2334495e'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23dce8f4' font-family='Segoe UI, sans-serif' font-size='16'%3EUser%3C/text%3E%3C/svg%3E" alt="Profile photo">
+              </div>
+              <label for="fileInput" class="camera-btn" aria-label="Change profile photo">📷</label>
+              <input type="file" id="fileInput" style="display:none" accept="image/*" onchange="previewImage(event)">
+          </div>
+          <div class="profile-identity">
+            <h1 id="topName">SBRYMS Member</h1>
+            <p class="profile-designation"><span id="displayDesignation">Not set</span></p>
+            <p><span id="displayUsername">Not set</span></p>
+          </div>
+          <div class="profile-actions">
+            <button class="edit-btn" onclick="toggleEditMode()">Edit Profile</button>
+          </div>
         </div>
-        <h3 id="topName" style="margin: 5px 0;">SBRYMS Member</h3>
-        <p style="font-size: 12px; opacity: 0.8;">Edit Profile Information</p>
-    </div>
+      </section>
 
-    <div class="info-container">
+      <nav class="profile-tabs" aria-label="Profile sections">
+        <button class="profile-tab active" type="button" data-profile-tab="overview" aria-selected="true">Overview</button>
+        <button class="profile-tab" type="button" data-profile-tab="personal" aria-selected="false">Personal Info</button>
+        <button class="profile-tab" type="button" data-profile-tab="about" aria-selected="false">About</button>
+      </nav>
+
+      <div class="info-container">
         <div class="profile-display">
-            <div class="info-card">
-                <div class="info-item">
-                    <span class="label">Full Name</span>
-                    <span id="displayName" class="display-value">Name</span>
+            <section class="profile-panel active" data-profile-panel="overview">
+              <div class="profile-content-card">
+                <h2>Profile overview</h2>
+                <div class="profile-detail-grid">
+                  <div class="info-item"><span class="label">Full Name</span><span id="displayName" class="display-value">Name</span></div>
+                  <div class="info-item"><span class="label">Email Address</span><span id="displayEmail" class="display-value">email@example.com</span></div>
+                  <div class="info-item"><span class="label">Mobile Number</span><span id="displayPhone" class="display-value">Not set</span></div>
+                  <div class="info-item"><span class="label">Current Location</span><span id="displayLocation" class="display-value">Not set</span></div>
                 </div>
-                <div class="info-item">
-                    <span class="label">Username</span>
-                    <span id="displayUsername" class="display-value">Not set</span>
+              </div>
+            </section>
+            <section class="profile-panel" data-profile-panel="personal">
+              <div class="profile-content-card">
+                <h2>Personal information</h2>
+                <div class="profile-detail-grid">
+                  <div class="info-item"><span class="label">Username</span><span id="displayUsernameDetail" class="display-value" data-profile-copy="displayUsername">Not set</span></div>
+                  <div class="info-item"><span class="label">Designation</span><span id="displayDesignationDetail" class="display-value" data-profile-copy="displayDesignation">Not set</span></div>
+                  <div class="info-item"><span class="label">Email Address</span><span id="displayEmailDetail" class="display-value" data-profile-copy="displayEmail">email@example.com</span></div>
+                  <div class="info-item"><span class="label">Birth Date</span><span id="displayBirthDate" class="display-value">Not set</span></div>
                 </div>
-                <div class="info-item">
-                    <span class="label">Designation</span>
-                    <span id="displayDesignation" class="display-value">Not set</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">Email Address</span>
-                    <span id="displayEmail" class="display-value">email@example.com</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">Mobile Number</span>
-                    <span id="displayPhone" class="display-value">+880 123 456 7890</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">Birth Date</span>
-                    <span id="displayBirthDate" class="display-value">Not set</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">Bio</span>
-                    <span id="displayBio" class="display-value">Not set</span>
-                </div>
-                <div class="info-item">
-                    <span class="label">Current Location</span>
-                    <span id="displayLocation" class="display-value">Not set</span>
-                </div>
-            </div>
-            <button class="edit-btn" onclick="console.log('Edit Profile button clicked'); toggleEditMode()">Edit Profile</button>
+              </div>
+            </section>
+            <section class="profile-panel" data-profile-panel="about">
+              <div class="profile-content-card">
+                <h2>About</h2>
+                <p id="displayBio" class="profile-about-copy">Not set</p>
+              </div>
+            </section>
         </div>
 
         <div class="profile-edit" style="display:none;">
-            <div class="info-card">
+            <div class="profile-content-card">
+              <h2>Edit profile information</h2>
+              <div class="profile-edit-grid">
                 <div class="info-item">
                     <span class="label">Full Name</span>
                     <input type="text" id="editName" class="input-field" placeholder="Type Name">
@@ -179,10 +379,12 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                     <input type="text" id="editLocation" class="input-field" placeholder="Location">
                     <button class="location-btn" onclick="getLocation()">Detect Location</button>
                 </div>
+              </div>
             </div>
             <button class="save-btn" onclick="saveProfile()">Save Changes</button>
         </div>
-    </div>
+      </div>
+    </main>
 
 
     <script>
@@ -223,13 +425,16 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
         }
 
-        const selectedProfileName = localStorage.getItem('selectedProfileName');
-        const selectedProfilePhoto = localStorage.getItem('selectedProfilePhoto') || (selectedProfileName ? createInitialsAvatar(selectedProfileName) : '');
-        const selectedProfileAvatar = localStorage.getItem('selectedProfileAvatar') || selectedProfilePhoto;
-        const selectedProfileUsername = localStorage.getItem('selectedProfileUsername');
-        const selectedProfileDesignation = localStorage.getItem('selectedProfileDesignation');
-        const selectedProfileEmail = localStorage.getItem('selectedProfileEmail');
-        const selectedProfileCurrent = localStorage.getItem('selectedProfileCurrent') === 'true';
+        const isMemberProfileView = new URLSearchParams(window.location.search).get('view') === 'member';
+        const selectedProfileName = isMemberProfileView ? localStorage.getItem('selectedProfileName') : null;
+        const selectedProfilePhoto = isMemberProfileView
+            ? localStorage.getItem('selectedProfilePhoto') || (selectedProfileName ? createInitialsAvatar(selectedProfileName) : '')
+            : '';
+        const selectedProfileAvatar = isMemberProfileView ? localStorage.getItem('selectedProfileAvatar') || selectedProfilePhoto : '';
+        const selectedProfileUsername = isMemberProfileView ? localStorage.getItem('selectedProfileUsername') : null;
+        const selectedProfileDesignation = isMemberProfileView ? localStorage.getItem('selectedProfileDesignation') : null;
+        const selectedProfileEmail = isMemberProfileView ? localStorage.getItem('selectedProfileEmail') : null;
+        const selectedProfileCurrent = isMemberProfileView && localStorage.getItem('selectedProfileCurrent') === 'true';
 
         function getUserStoragePrefix() {
             const uid = localStorage.getItem('currentUserUid');
@@ -279,10 +484,6 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             saveProfileAccounts(accounts);
         }
 
-        if (selectedProfileName && selectedProfileCurrent) {
-            clearSelectedProfile();
-        }
-
         function clearSelectedProfile() {
             localStorage.removeItem('selectedProfileName');
             localStorage.removeItem('selectedProfilePhoto');
@@ -293,6 +494,17 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             localStorage.removeItem('selectedProfileCurrent');
         }
 
+        function syncProfileDetailCopies() {
+            [['displayUsername', 'displayUsernameDetail'], ['displayDesignation', 'displayDesignationDetail'], ['displayEmail', 'displayEmailDetail']]
+                .forEach(([sourceId, targetId]) => {
+                    document.getElementById(targetId).textContent = document.getElementById(sourceId).textContent;
+                });
+        }
+
+        if (!isMemberProfileView) {
+            clearSelectedProfile();
+        }
+
         function toggleEditMode() {
             try {
                 const displayDiv = document.querySelector('.profile-display');
@@ -301,6 +513,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                     // Switch to edit mode
                     displayDiv.style.display = 'none';
                     editDiv.style.display = 'block';
+                document.querySelector('.profile-tabs').style.display = 'none';
                     // Populate edit fields
                     document.getElementById('editName').value = document.getElementById('displayName').textContent !== 'Not set' ? document.getElementById('displayName').textContent : '';
                     document.getElementById('editPhone').value = document.getElementById('displayPhone').textContent !== 'Not set' ? document.getElementById('displayPhone').textContent : '';
@@ -312,6 +525,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                     // Switch to display mode
                     editDiv.style.display = 'none';
                     displayDiv.style.display = 'block';
+                    document.querySelector('.profile-tabs').style.display = 'flex';
                 }
             } catch (e) {
                 console.error('Error in toggleEditMode:', e);
@@ -401,9 +615,21 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                 // চেক করো current user admin কিনা
                 currentUserRole = ADMIN_EMAILS.includes(user.email) ? 'admin' : 'user';
 
-                await ensureSelectedProfileFromFirestore();
+                const targetEmail = String(selectedProfileEmail || '').trim().toLowerCase();
+                const currentEmail = String(user.email || '').trim().toLowerCase();
+                const canViewMemberProfile = isMemberProfileView
+                    && targetEmail
+                    && targetEmail !== 'team-group'
+                    && targetEmail !== currentEmail
+                    && selectedProfileName
+                    && !selectedProfileCurrent;
+                if (canViewMemberProfile) {
+                    await ensureSelectedProfileFromFirestore();
+                } else {
+                    clearSelectedProfile();
+                }
 
-                if (selectedProfileName && !selectedProfileCurrent) {
+                if (canViewMemberProfile && selectedProfileName && !selectedProfileCurrent) {
                     const activeProfileName = localStorage.getItem('selectedProfileName') || selectedProfileName;
                     const activeProfilePhoto = selectedProfileEmail === 'team-group'
                         ? (localStorage.getItem('teamGroupChatPhoto') || createInitialsAvatar(activeProfileName))
@@ -419,6 +645,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                     document.getElementById('displayBirthDate').textContent = 'Not set';
                     document.getElementById('displayBio').textContent = 'Not set';
                     document.getElementById('displayLocation').textContent = 'Not set';
+                    syncProfileDetailCopies();
                     document.getElementById('profileImg').src = activeProfilePhoto;
                     profilePhotoValue = activeProfilePhoto;
                     localStorage.setItem('selectedProfilePhoto', activeProfilePhoto);
@@ -461,6 +688,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                         document.getElementById('displayBirthDate').textContent = data.birthDate || "Not set";
                         document.getElementById('displayBio').textContent = data.bio || "Not set";
                         document.getElementById('displayLocation').textContent = data.location || "Not set";
+                        syncProfileDetailCopies();
                         
                         document.getElementById('editName').value = data.name || storedName || "";
                         document.getElementById('editUsername').value = data.username || userEmail.split('@')[0];
@@ -493,6 +721,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                         document.getElementById('displayBirthDate').textContent = "Not set";
                         document.getElementById('displayBio').textContent = "Not set";
                         document.getElementById('displayLocation').textContent = "Not set";
+                        syncProfileDetailCopies();
                         
                         // Set edit values
                         document.getElementById('editName').value = extractedName;
@@ -639,6 +868,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                 document.getElementById('displayBirthDate').textContent = birthDate || 'Not set';
                 document.getElementById('displayBio').textContent = bio || 'Not set';
                 document.getElementById('displayLocation').textContent = location || 'Not set';
+                syncProfileDetailCopies();
                 document.getElementById('topName').innerText = name;
                 // Switch back to display mode
                 toggleEditMode();
@@ -662,6 +892,20 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
         }
 
         document.addEventListener('DOMContentLoaded', applyThemeSettings);
+        document.querySelectorAll('.profile-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const selectedTab = tab.dataset.profileTab;
+                document.querySelectorAll('.profile-tab').forEach(item => {
+                    const active = item === tab;
+                    item.classList.toggle('active', active);
+                    item.setAttribute('aria-selected', String(active));
+                });
+                document.querySelectorAll('.profile-panel').forEach(panel => {
+                    panel.classList.toggle('active', panel.dataset.profilePanel === selectedTab);
+                });
+            });
+        });
     </script>
 <script src="assets/background-settings.js"></script>
+<script src="assets/mobile-bottom-nav.js"></script>
 </body>

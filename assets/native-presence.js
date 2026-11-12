@@ -10,14 +10,6 @@
   }
 
   function requestNotificationPermission() {
-    if (window.sbrymsPushReady) {
-      return window.sbrymsPushReady.then(function (push) {
-        return push.requestNotificationPermission();
-      });
-    }
-    if (window.sbrymsPush && window.sbrymsPush.requestNotificationPermission) {
-      return window.sbrymsPush.requestNotificationPermission();
-    }
     if (window.__sbrymsNotificationPermissionPromise) {
       return window.__sbrymsNotificationPermissionPromise;
     }

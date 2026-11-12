@@ -70,8 +70,7 @@ body { background-color: #071124 !important; background-image: radial-gradient(1
 .auth-box { backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%); }
 #toast { background: rgba(20,22,26,0.9) !important; color: #fff !important; }
 </style>
-<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
-<link rel="stylesheet" href="assets/bg.css">
+<link rel="stylesheet" href="assets/bg.css?v=29">
 </head>
 <body>
     <div class="page-header">
@@ -228,7 +227,7 @@ body { background-color: #071124 !important; background-image: radial-gradient(1
             localStorage.setItem('selectedProfileUsername', member.username || '');
             localStorage.setItem('selectedProfileDesignation', member.designation || 'Not set');
             localStorage.setItem('selectedProfileCurrent', 'false');
-            window.location.href = 'profile.html';
+            window.location.href = 'profile.html?view=member';
         }
 
         function chatWith(member) {

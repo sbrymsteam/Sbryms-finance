@@ -6,7 +6,7 @@
   <link rel="manifest" href="/manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#081426">
+    <meta name="theme-color" content="#080b10">
     <title>SBRYMS Finance - Company Dashboard</title>
     <script type="importmap">
         {"imports":{"@capacitor/core":"/assets/vendor/capacitor-core/index.js"}}
@@ -141,6 +141,7 @@
         @media(max-width:700px) { .shell{display:block}.sidebar{position:sticky;top:0;z-index:5;display:flex;flex-direction:row;align-items:center;padding:10px 14px;border-right:0;border-bottom:1px solid var(--line)}.brand{margin:0 auto 0 0}.nav-label,.sidebar-footer{display:none}.nav{display:flex}.nav a{padding:9px}.main{padding:22px 14px}.topbar{align-items:flex-start}.top-actions .icon-btn{display:none}.user-chip span{max-width:90px}.dashboard-grid{grid-template-columns:1fr}.activity-card{margin-top:20px} }
         @media(max-width:430px) { .metrics{grid-template-columns:1fr 1fr;gap:9px}.metric{padding:14px}.metric strong{font-size:19px}.topbar h1{font-size:21px}.user-chip{padding-right:7px}.user-chip span{display:none} }
     </style>
+    <link rel="stylesheet" href="assets/bg.css?v=29">
 </head>
 <body>
     <div id="dashboardAuthLoading" role="status" aria-live="polite">
@@ -255,5 +256,6 @@
         document.getElementById('sideLogout').addEventListener('click', logout);
     </script>
     <script src="assets/push-notifications.js"></script>
+    <script src="assets/mobile-bottom-nav.js"></script>
 </body>
 </html>

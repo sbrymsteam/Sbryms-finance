@@ -1,106 +1,486 @@
-/* Shared background image */
-:root{--bg-url: url('bg.png');}
-html,body{
-  height:100%;
-  background: var(--bg-url) center center / cover no-repeat !important;
-  background-attachment: scroll !important;
-}
-body{
-  filter: none !important;
-  margin:0;
-  min-height:100%;
-  position: relative;
-  isolation: isolate;
-  color: #e6eef6;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-/* Keep page content above the shared background. */
-body > *{
-  position: relative;
-  z-index: 1;
+:root {
+  color-scheme: dark;
 }
 
-/* Global background colors for all elements */
-*:focus-visible { outline: 2px solid #5ed5bf; outline-offset: 2px; }
+html:root:root,
+html:root:root body {
+  min-height: 100%;
+  background: #080b10 !important;
+  color: #fff !important;
+}
 
-/* Specific elements get a translucent surface */
-body, html {
+html:root:root body :is(#sbryms-theme-specificity-anchor, *) {
   background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: #fff !important;
 }
 
-.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu, .form-section,
-.info-card, .profile-header, .dashboard-card, .content-card {
-  background-color: rgba(10, 15, 30, 0.8) !important;
+html:root:root body:not(#sbryms-theme-specificity-anchor) button,
+html:root:root body:not(#sbryms-theme-specificity-anchor) [role="button"],
+html:root:root body:not(#sbryms-theme-specificity-anchor) a.btn,
+html:root:root body:not(#sbryms-theme-specificity-anchor) a.button,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .btn-main,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .btn-action,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .btn-primary,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .btn-secondary,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .action-button,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .quick-header-button,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .icon-btn {
+  border: 1px solid rgba(255, 255, 255, .22) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .15), rgba(255, 255, 255, .035)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 6px 18px rgba(0, 0, 0, .2) !important;
+  color: #fff !important;
+  -webkit-backdrop-filter: blur(12px) saturate(135%);
+  backdrop-filter: blur(12px) saturate(135%);
+  transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 
-/* Input fields background */
-input, textarea, .input-field {
-  background-color: rgba(30, 40, 60, 0.6) !important;
-  border: 1px solid rgba(211, 38, 150, 0.3) !important;
+html:root:root body:not(#sbryms-theme-specificity-anchor) button:not(:disabled):not([aria-disabled="true"]):hover,
+html:root:root body:not(#sbryms-theme-specificity-anchor) [role="button"]:not(:disabled):not([aria-disabled="true"]):hover,
+html:root:root body:not(#sbryms-theme-specificity-anchor) a.btn:not(:disabled):not([aria-disabled="true"]):hover,
+html:root:root body:not(#sbryms-theme-specificity-anchor) a.button:not(:disabled):not([aria-disabled="true"]):hover,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .btn-main:not(:disabled):not([aria-disabled="true"]):hover,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .btn-action:not(:disabled):not([aria-disabled="true"]):hover,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .btn-primary:not(:disabled):not([aria-disabled="true"]):hover,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .btn-secondary:not(:disabled):not([aria-disabled="true"]):hover,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .action-button:not(:disabled):not([aria-disabled="true"]):hover,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .quick-header-button:not(:disabled):not([aria-disabled="true"]):hover,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .icon-btn:not(:disabled):not([aria-disabled="true"]):hover {
+  border-color: rgba(255, 255, 255, .36) !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .06)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .24), 0 8px 22px rgba(0, 0, 0, .26) !important;
 }
 
-/* Convert all dark/gray text to light for dark theme */
-p, span, div, h1, h2, h3, h4, h5, h6, label, li, a, td, th {
-  color: #e6eef6 !important;
+html:root:root body:not(#sbryms-theme-specificity-anchor) button:not(:disabled):not([aria-disabled="true"]):active,
+html:root:root body:not(#sbryms-theme-specificity-anchor) [role="button"]:not(:disabled):not([aria-disabled="true"]):active,
+html:root:root body:not(#sbryms-theme-specificity-anchor) a.btn:not(:disabled):not([aria-disabled="true"]):active,
+html:root:root body:not(#sbryms-theme-specificity-anchor) a.button:not(:disabled):not([aria-disabled="true"]):active,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .btn-main:not(:disabled):not([aria-disabled="true"]):active,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .btn-action:not(:disabled):not([aria-disabled="true"]):active,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .btn-primary:not(:disabled):not([aria-disabled="true"]):active,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .btn-secondary:not(:disabled):not([aria-disabled="true"]):active,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .action-button:not(:disabled):not([aria-disabled="true"]):active,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .quick-header-button:not(:disabled):not([aria-disabled="true"]):active,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .icon-btn:not(:disabled):not([aria-disabled="true"]):active {
+  transform: translateY(1px) scale(.985);
 }
 
-/* Fix specific dark gray colors in inline styles */
-[style*="color:#333"],
-[style*="color: #333"],
-[style*="color:#666"],
-[style*="color: #666"],
-[style*="color:#777"],
-[style*="color: #777"],
-[style*="color:#888"],
-[style*="color: #888"],
-[style*="color:#999"],
-[style*="color: #999"],
-[style*="color:#000"],
-[style*="color: #000"],
-[style*="color:black"],
-[style*="color: black"] {
-  color: #e6eef6 !important;
+html:root:root body:not(#sbryms-theme-specificity-anchor) .card,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .metric,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .panel,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .table-card,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .deposit-card,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .profile-card,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .settings-card,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .modal-content,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .sbryms-mobile-nav {
+  border: 1px solid rgba(255, 255, 255, .16) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12) !important;
 }
 
-/* Allow specific linear gradient borders only - selective restoration */
-.icon-box {
-  border: 1px solid rgba(211, 38, 150, 0.3) !important;
+html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container > .card {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
 }
 
-.btn-main, .btn-primary, button:not(.nav-item) {
-  border: 2px solid transparent !important;
-  background-image: linear-gradient(rgba(10, 15, 30, 0.8), rgba(10, 15, 30, 0.8)), 
-                    linear-gradient(135deg, rgba(211,38,150,0.8), rgba(6,182,212,0.8)) !important;
-  background-origin: border-box !important;
-  background-clip: padding-box, border-box !important;
+html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container .icon-box.c-1 .cat-svg { color: #38bdf8 !important; }
+html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container .icon-box.c-2 .cat-svg { color: #fbbf24 !important; }
+html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container .icon-box.c-3 .cat-svg { color: #c084fc !important; }
+html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container .icon-box.c-4 .cat-svg { color: #4ade80 !important; }
+html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container .icon-box.c-5 .cat-svg { color: #f472b6 !important; }
+html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container .icon-box.c-6 .cat-svg { color: #fb7185 !important; }
+html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container .icon-box.c-7 .cat-svg { color: #fb923c !important; }
+html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container .icon-box.c-8 .cat-svg { color: #818cf8 !important; }
+html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container .icon-box.c-9 .cat-svg { color: #22d3ee !important; }
+html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container .icon-box.c-10 .cat-svg { color: #2dd4bf !important; }
+html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container .cat-svg > .icon-fill {
+  color: inherit !important;
+  fill: currentColor !important;
 }
 
-/* Restore borders for specific components that need them */
-.input-field, input, textarea {
-  border: 1px solid rgba(211, 38, 150, 0.3) !important;
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .pay-pill.is-paid {
+  color: #15803d !important;
 }
 
-.card, .modal-content {
-  border: 1px solid rgba(211, 38, 150, 0.2) !important;
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .pay-pill.is-unpaid {
+  color: #dc2626 !important;
 }
 
-/* Navigation bottom bar border */
-.bottom-nav {
-  border-top: 1px solid rgba(211, 38, 150, 0.3) !important;
+@media (max-width: 600px) {
+  html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .deposit-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
 }
 
-/* Header borders */
-.app-header {
-  border-bottom: 1px solid rgba(211, 38, 150, 0.2) !important;
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .total-deposit-stat {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(52, 211, 153, .72) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, rgba(16, 185, 129, .2), rgba(15, 23, 42, .94)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 0 16px rgba(16, 185, 129, .16) !important;
 }
 
-button, input, textarea, select { font: inherit; }
-button { -webkit-tap-highlight-color: transparent; }
-img { max-width: 100%; height: auto; }
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .total-deposit-stat .stat-title {
+  color: #d1fae5 !important;
+}
 
-@media (max-width: 640px) {
-  body { background-attachment: scroll !important; }
-  .container { width: min(100% - 24px, 1120px); margin-inline: auto; }
-  .card, .content-card, .form-section { border-radius: 16px !important; }
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .total-deposit-stat .stat-value {
+  color: #6ee7b7 !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .stat-title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .summary-stat-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .total-fine-stat {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(251, 113, 133, .72) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, rgba(244, 63, 94, .2), rgba(15, 23, 42, .94)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 0 16px rgba(244, 63, 94, .16) !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .total-fine-stat .stat-title,
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .total-fine-stat .summary-stat-icon {
+  color: #fecdd3 !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .total-fine-stat .stat-value {
+  color: #fda4af !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .total-star-stat {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(251, 191, 36, .72) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(135deg, rgba(245, 158, 11, .2), rgba(15, 23, 42, .94)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .16), 0 0 16px rgba(245, 158, 11, .16) !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .total-star-stat .stat-title,
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .total-star-stat .summary-stat-icon {
+  color: #fef3c7 !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .total-star-stat .stat-value {
+  color: #fcd34d !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .profile-chip-text {
+  min-width: 0;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .profile-name {
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .profile-chip.account-profile-chip,
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .profile-chip.all-accounts-chip {
+  min-width: 86px !important;
+  min-height: 92px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px !important;
+  border: 1px solid rgba(148, 163, 184, .2) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(145deg, rgba(20, 30, 48, .96), rgba(11, 18, 32, .96)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06) !important;
+  text-align: center;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .profile-chip.account-profile-chip.active,
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .profile-chip.all-accounts-chip.active {
+  border-color: rgba(96, 165, 250, .72) !important;
+  background: linear-gradient(145deg, rgba(30, 58, 95, .96), rgba(17, 29, 49, .98)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12), 0 0 14px rgba(59, 130, 246, .16) !important;
+  animation: none !important;
+  transform: none !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .account-profile-chip .profile-avatar,
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-accounts-chip .profile-avatar {
+  width: 44px !important;
+  height: 44px !important;
+  flex: 0 0 44px;
+  border-radius: 50% !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-accounts-chip .profile-avatar {
+  background: linear-gradient(135deg, #2563eb, #7c3aed) !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-accounts-chip .profile-avatar svg {
+  width: 28px;
+  height: 28px;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .account-profile-chip .profile-chip-text,
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-accounts-chip .profile-chip-text {
+  width: 100%;
+  align-items: center;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .account-profile-chip .profile-name,
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-accounts-chip .profile-name {
+  max-width: 112px;
+  margin: 0;
+  color: #f1f5f9 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .deposit-card.all-account-card {
+  height: auto !important;
+  min-height: 122px !important;
+  align-items: stretch;
+  gap: 7px !important;
+  padding: 10px !important;
+  border: 1px solid rgba(148, 163, 184, .24) !important;
+  border-radius: 14px !important;
+  background: linear-gradient(145deg, #121c2c, #0b1220) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 8px 18px rgba(0, 0, 0, .22) !important;
+  color: #f8fafc !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card.is-paid-card {
+  border-color: rgba(52, 211, 153, .52) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 0 12px rgba(16, 185, 129, .1) !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card.is-unpaid-card {
+  border-color: rgba(248, 113, 113, .38) !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card .deposit-card-header {
+  min-width: 0;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card .deposit-date {
+  color: #e2e8f0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card .card-menu {
+  color: #94a3b8 !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-identity {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #334155, #475569);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-name {
+  min-width: 0;
+  overflow: hidden;
+  color: #f1f5f9 !important;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card .deposit-fee-row,
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card .deposit-star-row {
+  display: none !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card .fine-row {
+  margin-top: auto;
+  align-items: center;
+  gap: 4px;
+  color: #cbd5e1 !important;
+  font-size: 10px !important;
+}
+
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card .fine-row .deposit-meta-label,
+html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card .fine-value {
+  color: #cbd5e1 !important;
+}
+
+@media (max-width: 600px) {
+  html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .deposit-card.all-account-card {
+    min-height: 96px !important;
+    padding: 6px 5px !important;
+    gap: 5px !important;
+  }
+
+  html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card .deposit-date {
+    font-size: 9px !important;
+  }
+
+  html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-identity {
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-avatar {
+    width: 20px;
+    height: 20px;
+    flex-basis: 20px;
+    font-size: 9px;
+  }
+
+  html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-name {
+    font-size: 9px;
+  }
+
+  html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card .fine-row {
+    font-size: 8px !important;
+  }
+
+  html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card .fine-row .deposit-meta-label,
+  html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card .fine-value,
+  html.deposit-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .all-account-card .pay-pill {
+    font-size: 8px !important;
+  }
+}
+
+html:root:root body:not(#sbryms-theme-specificity-anchor) input,
+html:root:root body:not(#sbryms-theme-specificity-anchor) textarea,
+html:root:root body:not(#sbryms-theme-specificity-anchor) select {
+  border: 1px solid rgba(255, 255, 255, .2) !important;
+  border-radius: 12px !important;
+  background: rgba(255, 255, 255, .055) !important;
+}
+
+html:root:root body {
+  min-height: 100vh;
+  background-color: #080b10 !important;
+  background-image: none !important;
+}
+
+body::before,
+body::after {
+  display: none !important;
+  content: none !important;
+}
+
+button,
+input,
+textarea,
+select {
+  color: #fff !important;
+}
+
+button {
+  border-color: rgba(255,255,255,.32) !important;
+}
+
+input,
+textarea,
+select {
+  border-color: rgba(255,255,255,.28) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255,255,255,.72) !important;
+}
+
+.toggle {
+  border: 1px solid rgba(255,255,255,.55) !important;
+}
+
+.toggle::after,
+.toggle::before {
+  background-color: #fff !important;
+}
+
+.toggle.on {
+  border-color: #5ed5bf !important;
+}
+
+*:focus-visible {
+  outline: 2px solid #5ed5bf !important;
+  outline-offset: 2px;
+}
+
+.background-section-container,
+.background-section,
+.background-row,
+[data-theme-choice] {
+  display: none !important;
+}
+
+.section:has([data-theme-choice]) {
+  display: none !important;
+}
+
+.side-menu-item.theme-light,
+.side-menu-item.theme-dark {
+  display: none !important;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+img {
+  max-width: 100%;
+}
+
+html:root:root body:not(#sbryms-theme-specificity-anchor) .notification-badge,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .category-badge,
+html:root:root body:not(#sbryms-theme-specificity-anchor) .unread-badge {
+  border-color: rgba(255, 255, 255, .9) !important;
+  background: #e11d48 !important;
+  background-image: none !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, .45) !important;
 }

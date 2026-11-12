@@ -22,3 +22,6 @@ android/app/google-services.json
 *.keystore
 *.bak
 *.deleted
+
+.vercel
+.env*

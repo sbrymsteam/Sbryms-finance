@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/app-icon-192.png?v=22">
+  <link rel="apple-touch-icon" href="/assets/app-icon-192.png?v=22">
+  <link rel="manifest" href="/manifest.json">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080b10">
+  <title>SBRYMS Finance - Notifications</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --page: #080b10;
+      --surface: #111a29;
+      --surface-soft: rgba(22, 33, 50, .78);
+      --line: rgba(188, 205, 225, .14);
+      --text: #f2f6fc;
+      --muted: #9aabc0;
+      --pink: #f04e9b;
+      --mint: #58d7b3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: radial-gradient(ellipse at 50% -18%, rgba(55, 119, 161, .19), transparent 52%), var(--page);
+      color: var(--text);
+      font: 14px/1.45 'Segoe UI', sans-serif;
+    }
+    .page { width: min(820px, 100%); margin: 0 auto; padding: 18px 18px 96px; }
+    .topbar { display: flex; align-items: center; gap: 14px; padding: 8px 0 18px; }
+    .back-link, .clear-button, .tab, .filter-chip { font: inherit; }
+    .back-link {
+      display: grid; width: 42px; height: 42px; flex: 0 0 42px; place-items: center;
+      border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.04);
+      color: var(--text); font-size: 22px; text-decoration: none;
+    }
+    .title-wrap { flex: 1; min-width: 0; }
+    h1 { margin: 0; font-size: 22px; line-height: 1.2; }
+    .subtitle { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+    .clear-button {
+      padding: 9px 12px; border: 1px solid rgba(240,78,155,.32); border-radius: 11px;
+      background: rgba(240,78,155,.1); color: #ff9cc9; font-size: 12px; font-weight: 700; cursor: pointer;
+    }
+    .tabs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 5px;
+      border: 1px solid var(--line); border-radius: 15px; background: rgba(16, 24, 37, .88);
+    }
+    .tab {
+      min-height: 43px; border: 0; border-radius: 11px; background: transparent;
+      color: var(--muted); font-weight: 700; cursor: pointer;
+    }
+    .tab.active { background: rgba(240,78,155,.15); color: #ffe4f1; box-shadow: inset 0 0 0 1px rgba(240,78,155,.22); }
+    .search-row { display: flex; gap: 10px; margin: 16px 0 13px; }
+    .search-wrap {
+      display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;
+      padding: 0 13px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-soft);
+    }
+    .search-wrap svg { width: 19px; height: 19px; flex: 0 0 19px; stroke: var(--muted); fill: none; stroke-width: 1.8; }
+    #searchInput { width: 100%; min-height: 44px; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; }
+    #searchInput::placeholder { color: #8092a8; }
+    .filter-chip {
+      min-width: 82px; padding: 0 13px; border: 1px solid var(--line); border-radius: 13px;
+      background: var(--surface-soft); color: #d7e3ef; font-weight: 650; cursor: pointer;
+    }
+    .filter-chip.active { border-color: rgba(94,213,191,.5); color: #8eefd9; }
+    .filter-list { display: flex; gap: 7px; overflow-x: auto; padding: 1px 0 13px; scrollbar-width: none; }
+    .filter-list::-webkit-scrollbar { display: none; }
+    .filter-chip[data-filter] { min-height: 32px; min-width: 0; padding: 0 12px; border-radius: 999px; font-size: 11px; white-space: nowrap; }
+    .notification-count { margin-left: 5px; color: #ff9cc9; }
+    .section-heading {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      margin: 12px 2px 8px; color: #a7b6c8; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+    }
+    .section-heading span:last-child { color: #7e91a8; font-weight: 600; letter-spacing: 0; text-transform: none; }
+    .notification-card, .transaction-card {
+      display: flex; align-items: flex-start; gap: 12px; position: relative; margin-bottom: 9px;
+      padding: 13px; border: 1px solid var(--line); border-radius: 15px;
+      background: linear-gradient(145deg, rgba(20,31,47,.94), rgba(13,21,34,.97));
+      box-shadow: 0 8px 20px rgba(0,0,0,.14); cursor: pointer;
+    }
+    .notification-card.unread { border-color: rgba(95,164,235,.32); background: linear-gradient(145deg, rgba(31,48,72,.72), rgba(15,24,39,.97)); }
+    .notification-card.unread::before { position: absolute; top: 12px; bottom: 12px; left: 0; width: 3px; border-radius: 0 4px 4px 0; background: #5da9f7; content: ''; }
+    .notification-icon {
+      display: grid; width: 42px; height: 42px; flex: 0 0 42px; place-items: center;
+      border: 1px solid rgba(255,255,255,.08); border-radius: 13px; background: rgba(97,151,226,.13); color: #8dbbff;
+    }
+    .notification-icon svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .type-payment_success .notification-icon, .type-payment_received .notification-icon { background: rgba(56,189,145,.13); color: #61dfb3; }
+    .type-payment_pending .notification-icon, .type-fine_reminder .notification-icon, .type-payment_failed .notification-icon { background: rgba(249,115,98,.13); color: #ffa08e; }
+    .type-rank_level .notification-icon { background: rgba(239,185,76,.15); color: #ffd26b; }
+    .notification-content { min-width: 0; flex: 1; }
+    .card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .card-title { margin: 1px 0 0; color: #f4f7fb; font-size: 13px; font-weight: 750; }
+    .card-time { flex: 0 0 auto; color: #91a2b7; font-size: 10px; white-space: nowrap; }
+    .card-message { margin: 5px 0 0; color: #b7c5d5; font-size: 12px; line-height: 1.48; overflow-wrap: anywhere; }
+    .card-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; margin-top: 8px; color: #8194aa; font-size: 10px; }
+    .status-tag { padding: 2px 7px; border-radius: 999px; background: rgba(87,211,172,.13); color: #73e5bf; font-weight: 750; }
+    .status-tag.pending { background: rgba(246,179,73,.13); color: #ffd17a; }
+    .status-tag.failed { background: rgba(248,113,113,.13); color: #ff9d9d; }
+    .amount { color: #6de0bc; font-weight: 800; }
+    .amount.negative { color: #ff9b9b; }
+    .empty-state, .loading-state, .error-state {
+      padding: 35px 20px; border: 1px dashed rgba(148,163,184,.22); border-radius: 16px;
+      color: var(--muted); text-align: center;
+    }
+    .empty-state svg { display: block; width: 40px; height: 40px; margin: 0 auto 10px; stroke: #71859d; fill: none; stroke-width: 1.4; }
+    .error-state { margin: 10px 0; border-color: rgba(248,113,113,.3); color: #ffb1b1; }
+    .hidden { display: none !important; }
+    @media (max-width: 480px) {
+      .page { padding: 12px 12px calc(88px + env(safe-area-inset-bottom)); }
+      .topbar { gap: 10px; padding-bottom: 14px; }
+      .back-link { width: 38px; height: 38px; flex-basis: 38px; }
+      h1 { font-size: 20px; }
+      .clear-button { padding: 8px 9px; }
+      .search-row { gap: 7px; }
+      .filter-chip { min-width: 72px; padding: 0 9px; }
+      .notification-card, .transaction-card { gap: 10px; padding: 11px; }
+      .notification-icon { width: 38px; height: 38px; flex-basis: 38px; }
+      .card-heading { flex-wrap: wrap; }
+      .card-time { margin-left: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="back-link" href="FACE APP.html" aria-label="Back to home">←</a>
+      <div class="title-wrap">
+        <h1>Notifications</h1>
+        <p class="subtitle">Payment, reminders and account updates</p>
+      </div>
+      <button class="clear-button" id="clearButton" type="button">Clear all</button>
+    </header>
+
+    <nav class="tabs" aria-label="Activity type">
+      <button class="tab active" type="button" data-tab="notifications" aria-selected="true">Notifications <span class="notification-count" id="unreadCount"></span></button>
+      <button class="tab" type="button" data-tab="transactions" aria-selected="false">Transactions</button>
+    </nav>
+
+    <div class="search-row">
+      <label class="search-wrap">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.5 4.5"></path></svg>
+        <input id="searchInput" type="search" placeholder="Search notifications or transaction ID" autocomplete="off">
+      </label>
+      <button class="filter-chip" id="filterButton" type="button" aria-label="Show unread only">Unread</button>
+    </div>
+
+    <div class="filter-list" id="filterList" aria-label="Notification category">
+      <button class="filter-chip active" type="button" data-filter="all">All</button>
+      <button class="filter-chip" type="button" data-filter="payment">Payments</button>
+      <button class="filter-chip" type="button" data-filter="reminder">Reminders</button>
+      <button class="filter-chip" type="button" data-filter="rank">Rank &amp; level</button>
+      <button class="filter-chip" type="button" data-filter="message">Messages</button>
+    </div>
+
+    <div id="statusMessage" class="error-state hidden" role="status"></div>
+    <section id="activityList" aria-live="polite"><div class="loading-state">Loading your activity...</div></section>
+  </main>
+
+  <script>
+    (() => {
+      const firebaseConfig = {
+        apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
+        authDomain: "sbryms-finance.firebaseapp.com",
+        projectId: "sbryms-finance",
+        storageBucket: "sbryms-finance.firebasestorage.app",
+        messagingSenderId: "1087018056369",
+        appId: "1:1087018056369:web:81bc39017385a649500090"
+      };
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+      const LOCAL_NOTIFICATIONS_KEY = 'sbryms_finance_notifications';
+      const state = {
+        user: null,
+        notifications: [],
+        transactions: [],
+        tab: 'notifications',
+        filter: 'all',
+        unreadOnly: false,
+        search: '',
+        dismissed: new Set(),
+        locallyRead: new Set(),
+        db: null,
+        hasLoadWarning: false
+      };
+      const list = document.getElementById('activityList');
+      const status = document.getElementById('statusMessage');
+
+      function safeArray(key) {
+        try {
+          const value = JSON.parse(localStorage.getItem(key) || '[]');
+          return Array.isArray(value) ? value : [];
+        } catch (error) {
+          console.warn(`Could not read ${key}:`, error);
+          return [];
+        }
+      }
+
+      function writeSet(key, values) {
+        try {
+          localStorage.setItem(key, JSON.stringify([...values]));
+        } catch (error) {
+          console.error(`Could not save ${key}:`, error);
+          status.textContent = 'Could not save notification changes on this device.';
+          status.classList.remove('hidden');
+        }
+      }
+
+      function normalizeEmail(value) {
+        return String(value || '').trim().toLowerCase();
+      }
+
+      function toDate(value) {
+        if (value && typeof value.toDate === 'function') return value.toDate();
+        if (value && typeof value.toMillis === 'function') return new Date(value.toMillis());
+        if (typeof value === 'number') return new Date(value);
+        if (typeof value === 'string') {
+          const parsed = new Date(value);
+          return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        return null;
+      }
+
+      function timestampValue(item) {
+        return toDate(item.createdAt || item.timestamp || item.paidAt || item.updatedAt);
+      }
+
+      function typeFor(item) {
+        const type = String(item.type || '').toLowerCase().replace(/[\s-]+/g, '_');
+        const words = `${item.title || ''} ${item.subject || ''} ${item.message || ''} ${item.status || ''}`.toLowerCase();
+        if (/fine|জরিমানা/.test(type) || /fine reminder|fine due|জরিমানা/.test(words)) return 'fine_reminder';
+        if (/rank|level|star/.test(type) || /rank|level|র‍্যাংক|র‍্যাঙ্ক|স্তর/.test(words)) return 'rank_level';
+        if (/fail|declin|unsuccess|ব্যর্থ/.test(type) || /payment failed|payment unsuccessful|পেমেন্ট ব্যর্থ/.test(words)) return 'payment_failed';
+        if (/pending|confirm/.test(type) || /pending confirmation|awaiting confirmation/.test(words) || String(item.status || '').toLowerCase().includes('pending')) return 'payment_pending';
+        if (/payment|cash_payment/.test(type) || /payment received|payment confirmation|payment successful|পেমেন্ট সফল/.test(words)) return 'payment_success';
+        if (/message|team_call|chat/.test(type)) return 'message';
+        return 'general';
+      }
+
+      function isPayment(item) {
+        return ['payment_success', 'payment_pending', 'payment_failed', 'payment_received'].includes(typeFor(item));
+      }
+
+      function iconFor(type) {
+        const paths = {
+          payment_success: '<path d="M4 7h16v12H4z"></path><path d="M4 10h16M8 15h3"></path><path d="m15 15 1.5 1.5L20 13"></path>',
+          payment_received: '<path d="M4 7h16v12H4z"></path><path d="M4 10h16M8 15h3"></path><path d="m14 14 2 2 4-5"></path>',
+          payment_pending: '<circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path>',
+          payment_failed: '<circle cx="12" cy="12" r="9"></circle><path d="m9 9 6 6m0-6-6 6"></path>',
+          fine_reminder: '<path d="M12 3 2.8 19h18.4L12 3Z"></path><path d="M12 9v4m0 3h.01"></path>',
+          rank_level: '<path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"></path>',
+          message: '<path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-5.2A7.5 7.5 0 1 1 20 11.5Z"></path><path d="M8 11h8m-8 3h5"></path>'
+        };
+        return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[type] || '<path d="M12 3a7 7 0 0 0-7 7v3l-2 3h18l-2-3v-3a7 7 0 0 0-7-7Zm-2 16a2 2 0 0 0 4 0"></path>'}</svg>`;
+      }
+
+      function localReadKey() {
+        return `sbryms_read_notifications_${state.user.uid}`;
+      }
+
+      function localDismissedKey() {
+        return `sbryms_dismissed_notifications_${state.user.uid}`;
+      }
+
+      function loadLocalState() {
+        state.locallyRead = new Set(safeArray(localReadKey()));
+        state.dismissed = new Set(safeArray(localDismissedKey()));
+      }
+
+      function addLocalNotifications() {
+        const email = normalizeEmail(state.user.email);
+        const localItems = safeArray(LOCAL_NOTIFICATIONS_KEY)
+          .filter(item => {
+            const recipient = normalizeEmail(item.to);
+            return !recipient || recipient === email || recipient === 'all';
+          })
+          .map((item, index) => ({ ...item, id: `local:${item.id || item.createdAt || index}`, source: 'local' }));
+
+        const paymentHistory = safeArray('payment_gateway_history')
+          .filter(item => normalizeEmail(item.profileEmail || item.profile) === email)
+          .map(item => {
+            const id = String(item.id || `payment-${item.timestamp || item.transactionId}`);
+            const statusValue = String(item.status || '').toLowerCase();
+            const type = /fail|declin|unsuccess/.test(statusValue) ? 'payment_failed'
+              : /pending|confirm/.test(statusValue) ? 'payment_pending' : 'payment_success';
+            const date = item.paidAt || item.timestamp || Date.now();
+            return {
+              id: `payment-history:${id}`,
+              source: 'local',
+              localKey: `payment-history:${id}`,
+              type,
+              title: type === 'payment_failed' ? 'Payment unsuccessful'
+                : type === 'payment_pending' ? 'Payment awaiting confirmation' : 'Payment successful',
+              message: `${item.profileName || 'Your account'} · ৳${Number(item.total || 0).toLocaleString('en-BD')} · ${item.transactionId || id}`,
+              amount: Number(item.total || 0),
+              transactionId: item.transactionId || id,
+              createdAt: date,
+              read: state.locallyRead.has(`payment-history:${id}`),
+              status: item.status || 'Paid'
+            };
+          });
+
+        const knownPaymentIds = new Set([...state.notifications, ...localItems].map(item => String(item.paymentId || '')));
+        const nonDuplicatePayments = paymentHistory.filter(item => !knownPaymentIds.has(String(item.transactionId))
+          && !knownPaymentIds.has(String(item.id).replace('payment-history:', '')));
+        const notificationIds = new Set();
+        state.notifications = [...state.notifications, ...localItems, ...nonDuplicatePayments]
+          .filter(item => {
+            const id = String(item.id || '');
+            if (notificationIds.has(id)) return false;
+            notificationIds.add(id);
+            return true;
+          });
+        const transactionIdentity = item => String(item.paymentRecordId || item.id || '').replace(/^payment-history:/, '');
+        const transactionIds = new Set(state.transactions.map(transactionIdentity));
+        state.transactions = [...state.transactions, ...paymentHistory.filter(item => {
+          const id = transactionIdentity(item);
+          if (transactionIds.has(id)) return false;
+          transactionIds.add(id);
+          return true;
+        })];
+      }
+
+      function formatDate(date) {
+        if (!date) return { group: 'Earlier', text: 'Date unavailable', sort: 0 };
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const day = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+        const diff = Math.floor((today - day) / 86400000);
+        const group = diff <= 0 ? 'Today' : diff === 1 ? 'Yesterday' : diff < 7 ? 'This week' : 'Earlier';
+        return {
+          group,
+          text: date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
+          sort: date.getTime()
+        };
+      }
+
+      function escapeHtml(value) {
+        return String(value || '').replace(/[&<>"']/g, character => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[character]);
+      }
+
+      function visibleItems() {
+        const items = state.tab === 'transactions' ? state.transactions : state.notifications;
+        return items.filter(item => {
+          const id = String(item.id || '');
+          const isRead = item.read === true || state.locallyRead.has(id);
+          if (state.dismissed.has(id)) return false;
+          if (state.unreadOnly && isRead) return false;
+          if (state.tab === 'notifications' && state.filter !== 'all') {
+            const type = typeFor(item);
+            if (state.filter === 'payment' && !isPayment(item)) return false;
+            if (state.filter === 'reminder' && type !== 'fine_reminder') return false;
+            if (state.filter === 'rank' && type !== 'rank_level') return false;
+            if (state.filter === 'message' && type !== 'message') return false;
+          }
+          const text = `${item.title || ''} ${item.subject || ''} ${item.message || ''} ${item.transactionId || ''}`.toLowerCase();
+          return !state.search || text.includes(state.search);
+        }).sort((a, b) => (timestampValue(b)?.getTime() || 0) - (timestampValue(a)?.getTime() || 0));
+      }
+
+      function cardMarkup(item, transaction = false) {
+        const type = typeFor(item);
+        const date = formatDate(timestampValue(item));
+        const title = item.title || item.subject || (
+          type === 'fine_reminder' ? 'Fine reminder'
+            : type === 'rank_level' ? 'Rank level update'
+              : type === 'payment_failed' ? 'Payment unsuccessful'
+                : type === 'payment_pending' ? 'Payment awaiting confirmation'
+                  : type === 'payment_success' ? 'Payment successful' : 'Account update'
+        );
+        const message = item.message || item.body || 'There is a new update on your account.';
+        const read = item.read === true || state.locallyRead.has(String(item.id || ''));
+        const amount = Number(item.amount ?? item.total);
+        const statusText = String(item.status || '').toLowerCase();
+        const statusClass = type === 'payment_failed' ? 'failed'
+          : type === 'payment_pending' || statusText.includes('pending') ? 'pending' : '';
+        const statusLabel = type === 'payment_failed' ? 'Unsuccessful'
+          : type === 'payment_pending' || statusText.includes('pending') ? 'Pending'
+            : type === 'payment_success' || type === 'payment_received' ? 'Successful' : '';
+        const transactionId = item.transactionId || item.paymentId || '';
+        return `
+          <article class="${transaction ? 'transaction-card' : `notification-card type-${type} ${read ? '' : 'unread'}`}" data-id="${escapeHtml(item.id)}" tabindex="0" role="button" aria-label="${escapeHtml(title)}">
+            <div class="notification-icon">${iconFor(type)}</div>
+            <div class="notification-content">
+              <div class="card-heading"><h3 class="card-title">${escapeHtml(title)}</h3><time class="card-time" datetime="${timestampValue(item)?.toISOString() || ''}">${escapeHtml(date.text)}</time></div>
+              <p class="card-message">${escapeHtml(message)}</p>
+              <div class="card-meta">
+                ${statusLabel ? `<span class="status-tag ${statusClass}">${statusLabel}</span>` : ''}
+                ${Number.isFinite(amount) && amount > 0 ? `<span class="amount ${type === 'payment_failed' ? 'negative' : ''}">৳${amount.toLocaleString('en-BD')}</span>` : ''}
+                ${transactionId ? `<span>TrxID: ${escapeHtml(transactionId)}</span>` : ''}
+              </div>
+            </div>
+          </article>`;
+      }
+
+      function render() {
+        const items = visibleItems();
+        const unread = state.notifications.filter(item => item.read !== true && !state.locallyRead.has(String(item.id || '')) && !state.dismissed.has(String(item.id || ''))).length;
+        document.getElementById('unreadCount').textContent = unread ? `· ${unread > 99 ? '99+' : unread}` : '';
+        document.getElementById('filterList').classList.toggle('hidden', state.tab !== 'notifications');
+        document.getElementById('filterButton').classList.toggle('active', state.unreadOnly);
+        document.getElementById('filterButton').textContent = state.unreadOnly ? 'Unread ✓' : 'Unread';
+        document.getElementById('clearButton').textContent = state.tab === 'notifications' ? 'Clear all' : 'Clear all';
+
+        if (!items.length) {
+          list.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"></path></svg>${state.search ? 'No matching activity found.' : state.tab === 'transactions' ? 'No payment transactions found for this account.' : 'You are all caught up. New updates will appear here.'}</div>`;
+          return;
+        }
+
+        let lastGroup = '';
+        list.innerHTML = items.map(item => {
+          const group = formatDate(timestampValue(item)).group;
+          const heading = group !== lastGroup ? `<div class="section-heading"><span>${escapeHtml(group)}</span><span>${items.filter(candidate => formatDate(timestampValue(candidate)).group === group).length} updates</span></div>` : '';
+          lastGroup = group;
+          return `${heading}${cardMarkup(item, state.tab === 'transactions')}`;
+        }).join('');
+      }
+
+      async function loadFirestoreItems(user) {
+        const notifications = [];
+        const errors = [];
+        const email = normalizeEmail(user.email);
+        const requests = [
+          state.db.collection('notifications').where('to', '==', email).limit(100).get(),
+          state.db.collection('notifications').where('to', '==', 'all').limit(100).get(),
+          state.db.collection('payments').where('profileEmail', '==', email).limit(100).get()
+        ];
+        const results = await Promise.allSettled(requests);
+        results.forEach((result, index) => {
+          if (result.status === 'rejected') {
+            errors.push(result.reason);
+            return;
+          }
+          result.value.forEach(document => {
+            const data = document.data() || {};
+            const item = { id: document.id, ...data, source: index === 2 ? 'payment' : 'firestore' };
+            if (index === 2) {
+              item.type = item.status && /fail|declin|unsuccess/i.test(item.status) ? 'payment_failed'
+                : item.status && /pending|confirm/i.test(item.status) ? 'payment_pending' : 'payment_success';
+              item.title = item.type === 'payment_failed' ? 'Payment unsuccessful'
+                : item.type === 'payment_pending' ? 'Payment awaiting confirmation' : 'Payment successful';
+              item.message = item.message || `${item.profileName || 'Your account'} payment recorded`;
+              item.amount = item.total || (Number(item.fee) || 0) + (Number(item.fine) || 0);
+              item.transactionId = item.transactionId || item.paymentRecordId;
+              const paymentIdentity = String(item.paymentRecordId || item.id || '');
+              if (!state.transactions.some(existing => String(existing.paymentRecordId || existing.id || '').replace(/^payment-history:/, '') === paymentIdentity)) {
+                state.transactions.push(item);
+              }
+            } else {
+              notifications.push(item);
+            }
+          });
+        });
+        state.notifications = notifications;
+        if (errors.length === requests.length) throw errors[0];
+        if (errors.length) {
+          state.hasLoadWarning = true;
+          status.textContent = 'Some account activity could not be loaded. Showing available notifications.';
+          status.classList.remove('hidden');
+        }
+      }
+
+      async function markAsRead(item) {
+        const id = String(item.id || '');
+        state.locallyRead.add(id);
+        writeSet(localReadKey(), state.locallyRead);
+        if (item.source === 'firestore' && normalizeEmail(item.to) === normalizeEmail(state.user.email)) {
+          try {
+            await state.db.collection('notifications').doc(id).update({ read: true });
+            item.read = true;
+          } catch (error) {
+            console.error('Could not mark notification as read:', error);
+            status.textContent = 'Saved as read on this device, but could not update the server.';
+            status.classList.remove('hidden');
+          }
+        }
+      }
+
+      async function clearAll() {
+        const button = document.getElementById('clearButton');
+        button.disabled = true;
+        const items = visibleItems();
+        for (const item of items) {
+          state.dismissed.add(String(item.id || ''));
+          await markAsRead(item);
+        }
+        writeSet(localDismissedKey(), state.dismissed);
+        button.disabled = false;
+        render();
+      }
+
+      async function refresh() {
+        try {
+          state.hasLoadWarning = false;
+          loadLocalState();
+          state.transactions = safeArray('payment_gateway_history')
+            .filter(item => normalizeEmail(item.profileEmail || item.profile) === normalizeEmail(state.user.email))
+            .map(item => ({ ...item, id: `payment-history:${item.id || item.transactionId}`, source: 'local' }));
+          addLocalNotifications();
+          await loadFirestoreItems(state.user);
+          const historyItems = safeArray('payment_gateway_history')
+            .filter(item => normalizeEmail(item.profileEmail || item.profile) === normalizeEmail(state.user.email))
+            .map(item => {
+              const id = String(item.id || `payment-${item.timestamp || item.transactionId}`);
+              const statusValue = String(item.status || '').toLowerCase();
+              const type = /fail|declin|unsuccess/.test(statusValue) ? 'payment_failed'
+                : /pending|confirm/.test(statusValue) ? 'payment_pending' : 'payment_success';
+              return {
+                id: `payment-history:${id}`,
+                source: 'local',
+                type,
+                title: type === 'payment_failed' ? 'Payment unsuccessful'
+                  : type === 'payment_pending' ? 'Payment awaiting confirmation' : 'Payment successful',
+                message: `${item.profileName || 'Your account'} · ${item.dateRange || ''} ${item.year || ''}`.trim(),
+                amount: Number(item.total || 0),
+                transactionId: item.transactionId || id,
+                createdAt: item.paidAt || item.timestamp || Date.now(),
+                status: item.status || 'Paid'
+              };
+            });
+          const transactionIdentity = item => String(item.paymentRecordId || item.id || '').replace(/^payment-history:/, '');
+          const transactionIds = new Set(state.transactions.map(transactionIdentity));
+          state.transactions = [...state.transactions, ...historyItems.filter(item => !transactionIds.has(transactionIdentity(item)))];
+          addLocalNotifications();
+          if (!state.hasLoadWarning) status.classList.add('hidden');
+        } catch (error) {
+          console.error('Could not load notifications:', error);
+          status.textContent = 'Could not connect to the notification service. Showing activity saved on this device.';
+          status.classList.remove('hidden');
+          loadLocalState();
+          state.transactions = safeArray('payment_gateway_history')
+            .filter(item => normalizeEmail(item.profileEmail || item.profile) === normalizeEmail(state.user.email))
+            .map(item => ({ ...item, id: `payment-history:${item.id || item.transactionId}`, source: 'local' }));
+          addLocalNotifications();
+        }
+        render();
+      }
+
+      document.querySelectorAll('.tab').forEach(button => {
+        button.addEventListener('click', () => {
+          state.tab = button.dataset.tab;
+          document.querySelectorAll('.tab').forEach(tab => {
+            const active = tab === button;
+            tab.classList.toggle('active', active);
+            tab.setAttribute('aria-selected', String(active));
+          });
+          render();
+        });
+      });
+      document.querySelectorAll('[data-filter]').forEach(button => {
+        button.addEventListener('click', () => {
+          state.filter = button.dataset.filter;
+          document.querySelectorAll('[data-filter]').forEach(item => item.classList.toggle('active', item === button));
+          render();
+        });
+      });
+      document.getElementById('filterButton').addEventListener('click', () => {
+        state.unreadOnly = !state.unreadOnly;
+        render();
+      });
+      document.getElementById('clearButton').addEventListener('click', clearAll);
+      document.getElementById('searchInput').addEventListener('input', event => {
+        state.search = event.target.value.trim().toLowerCase();
+        render();
+      });
+      list.addEventListener('click', async event => {
+        const card = event.target.closest('[data-id]');
+        if (!card) return;
+        const item = [...state.notifications, ...state.transactions].find(entry => String(entry.id) === card.dataset.id);
+        if (item) await markAsRead(item);
+        render();
+      });
+      list.addEventListener('keydown', event => {
+        if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('[data-id]')) {
+          event.preventDefault();
+          event.target.click();
+        }
+      });
+
+      firebase.auth().onAuthStateChanged(async user => {
+        if (!user) {
+          window.location.replace('login.html');
+          return;
+        }
+        state.user = user;
+        localStorage.setItem('currentUserEmail', user.email || '');
+        localStorage.setItem('currentUserUid', user.uid);
+        state.db = firebase.firestore();
+        await refresh();
+      }, error => {
+        console.error('Could not verify notification page login:', error);
+        list.innerHTML = '<div class="error-state">Could not verify your account. Please return to sign in.</div>';
+      });
+    })();
+  </script>
+  <script src="assets/mobile-bottom-nav.js"></script>
+</body>
+</html>

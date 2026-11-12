@@ -1,24 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="face-app-page">
 <head>
   <link rel="icon" type="image/png" sizes="192x192" href="/assets/app-icon-192.png?v=22">
   <link rel="apple-touch-icon" href="/assets/app-icon-192.png?v=22">
   <link rel="manifest" href="/manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
     <title>SBRYMS Finance - Dashboard</title>
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="assets/native-presence.js"></script>
     <script type="importmap">
         {"imports":{"@capacitor/core":"/assets/vendor/capacitor-core/index.js"}}
     </script>
     <script>
         document.documentElement.classList.add('auth-pending');
+        const isFaceAppNativeWebView = window.location.protocol === 'http:'
+            && window.location.hostname === 'localhost'
+            && window.location.port === '';
+        if (!isFaceAppNativeWebView) {
+            document.write('<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"><\/script>');
+        }
         const mainPageFirebaseConfig = {
             apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
             authDomain: "sbryms-finance.firebaseapp.com",
@@ -30,16 +34,9 @@
         if (firebase.apps && !firebase.apps.length) {
             firebase.initializeApp(mainPageFirebaseConfig);
         }
-
-        firebase.auth().onAuthStateChanged((user) => {
-            if (!user) {
-                window.location.replace('index.html');
-                return;
-            }
-            localStorage.setItem('currentUserEmail', user.email || '');
-            localStorage.setItem('currentUserUid', user.uid);
+        if (sessionStorage.getItem('sbrymsNativeLaunchAuthenticated') === 'true') {
             document.documentElement.classList.remove('auth-pending');
-        });
+        }
     </script>
     <style>
         html.auth-pending body > :not(#faceAppAuthLoading) { visibility: hidden; }
@@ -95,7 +92,7 @@
     border-radius: 10px !important;
 }
 .profile-photo { border-radius: 50% !important; }
-.menu-icon, .header-action { border-radius: 12px !important; }
+.header-action { border-radius: 12px !important; }
 .btn-main { border-radius: 999px !important; }
             .container, .card, .app-header, .bottom-nav, .balance-container, .header-action, .icon-box, .profile-photo, .input-field, .btn-main { border: 1px solid rgba(0,0,0,0.06); }
 
@@ -156,47 +153,14 @@
 
         .header-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
         .header-left { display: flex; align-items: center; gap: 12px; }
-        .menu-icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 14px; background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 24px; }
         .header-info { display: flex; flex-direction: column; gap: 6px; }
         .user-details p { margin: 0; font-size: 14px; font-weight: bold; }
-        .header-icons { display: flex; gap: 8px; align-items: center; }
+        .header-icons { display: flex; align-items: center; }
         .header-action { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 14px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.08); cursor: pointer; font-size: 18px; }
-        .quick-header-actions {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-right: 0;
-        }
-        .quick-header-button {
-            position: relative;
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 20px; height: 20px;
-            background: transparent !important;
-            border: none !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            cursor: pointer;
-            color: rgba(255,255,255,0.96);
-            padding: 0;
-            margin: 0;
-            line-height: 1;
-            outline: none;
-            opacity: 1;
-            filter: none;
-        }
-        .quick-header-button svg {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 1.8;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
         .notification-bar {
             position: relative;
             display: inline-flex; align-items: center; justify-content: center;
-            width: 22px; height: 22px;
+            width: 38px; height: 38px;
             background: transparent !important;
             border: none !important;
             border-radius: 0 !important;
@@ -208,10 +172,11 @@
             line-height: 1;
             opacity: 0.96;
             filter: none;
+            text-decoration: none;
         }
         .notification-bar svg {
-            width: 18px;
-            height: 18px;
+            width: 27px;
+            height: 27px;
             stroke: currentColor;
             fill: none;
             stroke-width: 1.8;
@@ -222,35 +187,7 @@
         .notification-bar::after {
             display: none !important;
         }
-        .notification-badge { min-width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; background: #dc1107; color: #e01919; border-radius: 999px; font-size: 11px; font-weight: 800; line-height: 1; position: absolute; right: 4px; top: 4px; box-shadow: 0 0 0 2px rgba(255,255,255,0.08); }
-        .menu-icon {
-            position: relative;
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 24px; height: 24px;
-            background: transparent !important;
-            border: none !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            cursor: pointer;
-            color: rgba(255,255,255,0.96);
-            font-size: 24px;
-            padding: 0;
-            opacity: 0.96;
-            filter: none;
-        }
-        .menu-icon svg {
-            width: 22px;
-            height: 22px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 1.9;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-        .menu-icon::before,
-        .menu-icon::after {
-            display: none;
-        }
+        .notification-badge { min-width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; background: #e11d48; color: #fff; border: 2px solid #fff; border-radius: 999px; font-size: 10px; font-weight: 800; line-height: 1; position: absolute; right: -5px; top: -5px; z-index: 2; pointer-events: none; box-shadow: 0 4px 12px rgba(225,29,72,0.45); }
 
         /* ২. ১০টি ক্যাটাগরি গ্রিড (সঠিক সিরিয়াল) */
         .container { 
@@ -260,18 +197,19 @@
                     border: none !important;
                     box-shadow: none !important;
                 }
-        .grid-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-        .card { text-align: center; cursor: pointer; transition: 0.2s; background: transparent !important; border: none !important; box-shadow: none !important; padding: 10px 6px !important; position: relative; }
+        .grid-container { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; max-width: 500px; margin-inline: auto; }
+        .card { min-width: 0; text-align: center; cursor: pointer; transition: 0.2s; background: transparent !important; border: none !important; box-shadow: none !important; padding: 4px 2px !important; position: relative; }
+        .card-link { display: block; color: inherit; text-decoration: none; touch-action: manipulation; }
         .card:active { transform: scale(0.96); }
 
         .icon-box {
-                    width: 58px;
-                    height: 58px;
-                    margin: 0 auto 8px;
+                    width: 40px;
+                    height: 40px;
+                    margin: 0 auto 4px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    padding: 10px;
+                    padding: 8px;
                     border-radius: 16px !important;
                     position: relative;
                     overflow: hidden;
@@ -302,19 +240,17 @@
                     display: block;
                     position: relative;
                     z-index: 1;
-                    color: rgba(255,255,255,0.96);
                     stroke: currentColor;
-                    fill: currentColor;
-                    fill-opacity: 0.24;
+                    fill: none;
                     filter: none;
-                    stroke-width: 2.1;
+                    stroke-width: 1.8;
                     stroke-linecap: round;
                     stroke-linejoin: round;
-                                }
-                                .cat-svg circle,
-                                .cat-svg rect {
-                    fill-opacity: 0.9;
-                                }
+                }
+                .cat-svg .icon-fill {
+                    fill: currentColor;
+                    fill-opacity: .2;
+                }
 
                 /* Remove icon box borders in all themes */
                 body.dark-mode .icon-box, body:not(.dark-mode) .icon-box { border: none !important; }
@@ -347,7 +283,7 @@
         .c-7 { background: #ffedd5; color: #f97316; } .c-8 { background: #e0e7ff; color: #6366f1; }
         .c-9 { background: #f1f5f9; color: #64748b; } .c-10 { background: #ccfbf1; color: #14b8a6; }
 
-        .card h3 { font-size: 10px; margin: 0; color: #555; font-weight: 600; line-height: 1.2; }
+        .card h3 { font-size: 9px; margin: 0; color: #555; font-weight: 600; line-height: 1.2; }
         .category-badge {
             position: absolute;
             top: -6px;
@@ -415,14 +351,6 @@
             text-align: center;
         }
 
-
-        /* সাইড মেনু */
-        .side-menu { position: fixed; top: 0; left: 0; transform: translateX(-100%); width: 280px; height: 100vh; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 2000; transition: transform 0.3s ease; padding: 20px; }
-        .side-menu.open { transform: translateX(0); }
-        .side-menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1999; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; }
-        .side-menu-overlay.show { opacity: 1; visibility: visible; }
-
-        .menu-icon { display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; border-radius: 14px; background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 24px; }
 
         /* Modal Styles */
         .modal { position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; overflow-y: auto; padding: 18px 0; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
@@ -504,18 +432,6 @@
         .btn-action.primary { background: linear-gradient(135deg, #df146e, #ff5db1); color:white; }
         .btn-action.secondary { background: rgba(128,128,128,0.08); color: inherit; }
         .delete-btn { background: #dc3545; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; }
-        .side-menu-header { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
-        .side-menu-avatar { width: 50px; height: 50px; border-radius: 50%; background: #df146e; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .side-menu-info { flex: 1; }
-        .side-menu-info p { margin: 0; font-size: 16px; font-weight: bold; }
-        .side-menu-info span { font-size: 12px; color: #666; }
-        .side-menu-close { font-size: 24px; cursor: pointer; color: #666; }
-        .side-menu-item { display: flex; align-items: center; gap: 15px; padding: 15px 0; border-bottom: 1px solid #eee; cursor: pointer; }
-        .side-menu-item:last-child { border-bottom: none; }
-        .side-menu-item:hover { background: #f9f9f9; }
-        .side-menu-item.active { background: #fde8f6; color: #df146e; }
-        .side-menu-icon { font-size: 20px; width: 24px; text-align: center; }
-        .side-menu-text { font-size: 16px; }
         .theme-options { display: flex; gap: 10px; margin-top: 10px; }
         .theme-btn { padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; font-size: 12px; }
         .theme-btn.active { background: #df146e; color: white; border-color: #df146e; }
@@ -654,10 +570,17 @@ body.custom-image-background::before {
     50% { background-position: 100% 80%; transform: scale(1.08) rotate(2deg); }
     100% { background-position: 15% 100%; transform: scale(1.02) rotate(-2deg); }
 }
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+    body.motion-background::before,
+    body.custom-image-background::before {
+        animation: none;
+        filter: none;
+    }
+}
 /* Site chrome borders removed; preserve only .icon-box borders */
-.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu { border: none !important; box-shadow: none !important; background: transparent !important; }
+.container, .card, .app-header, .bottom-nav, .modal-content { border: none !important; box-shadow: none !important; background: transparent !important; }
 .icon-box { border: 1px solid rgba(255,255,255,0.08) !important; background: transparent !important; box-shadow: none !important; }
-.container, .card, .app-header, .bottom-nav, .modal-content, .side-menu { background: transparent !important; color: #e6eef6 !important; border-color: transparent !important; box-shadow: none !important; }
+.container, .card, .app-header, .bottom-nav, .modal-content { background: transparent !important; color: #e6eef6 !important; border-color: transparent !important; box-shadow: none !important; }
 .card h3, .container h2, .app-header h1, .app-header h2 { color: #e6eef6 !important; }
 .input-field { background: rgba(255,255,255,0.02) !important; color: #e6eef6 !important; border: 1px solid rgba(255,255,255,0.06) !important; }
 .link, a { color: rgba(255,255,255,0.95) !important; }
@@ -668,7 +591,7 @@ body.custom-image-background::before {
 </style>
 <style>
 /* category icons: clean line-art, no surrounding border */
-.container, .card, .app-header, .modal-content, .side-menu, .balance-container {
+.container, .card, .app-header, .modal-content, .balance-container {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
@@ -679,8 +602,8 @@ body.custom-image-background::before {
 }
 .card { background: transparent !important; }
 .icon-box {
-  width: 58px;
-  height: 58px;
+  width: 40px;
+  height: 40px;
   background: transparent !important;
   border: none !important;
   border-radius: 0 !important;
@@ -693,7 +616,7 @@ body.custom-image-background::before {
 .cat-svg {
  width: 30px;
  height: 30px;
- stroke: url(#iconFlowGradient);
+ stroke: currentColor;
  fill: none;
  stroke-width: 1.8;
  stroke-linecap: round;
@@ -706,19 +629,14 @@ body.custom-image-background::before {
  filter: none;
 }
 </style>
-<style>
-    /* Keep the hamburger drawer above the page-level theme overrides. */
-    .side-menu.open { transform: translateX(0) !important; }
-    .side-menu-overlay.show { opacity: 1 !important; visibility: visible !important; }
-</style>
-<link rel="stylesheet" href="assets/bg.css">
+<link rel="stylesheet" href="assets/bg.css?v=33">
 </head>
-<body>
+<body class="motion-background">
     <div id="faceAppAuthLoading" role="status" aria-live="polite">
-        <span id="faceAppAuthStatus">Checking your login...</span>
+        <span id="faceAppAuthStatus">Loading your account...</span>
         <div id="faceAppAuthActions" style="display:none;gap:12px;flex-wrap:wrap;justify-content:center;">
             <button type="button" onclick="window.location.reload()">Try again</button>
-            <a href="index.html">Back to login</a>
+            <a href="login.html">Back to login</a>
         </div>
     </div>
 <svg width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute; left:-9999px; top:-9999px;">
@@ -748,63 +666,18 @@ body.custom-image-background::before {
                 </div>
             </div>
             <div class="header-icons">
-               <div class="quick-header-actions">
-                   <button class="quick-header-button" id="teamMeetQuickBtn" type="button" onclick="window.location.href='team-meet.html'" aria-label="Messenger">
-                       <svg viewBox="0 0 24 24" aria-hidden="true">
-                           <path d="M6 18.5V8.5A2.5 2.5 0 0 1 8.5 6h7A2.5 2.5 0 0 1 18 8.5v5A2.5 2.5 0 0 1 15.5 16H11l-5 2.5z"></path>
-                           <path d="M8.5 10.5h7"></path>
-                           <path d="M8.5 13.5h4"></path>
-                       </svg>
-                       <span class="notification-badge" id="teamMeetQuickBadge" style="display:none">0</span>
-                   </button>
-               </div>
-               <div class="notification-bar" id="notifBtn" onclick="toggleNotificationsPanel()" aria-label="Notifications">
+               <a class="notification-bar" id="notifBtn" href="notifications.html" aria-label="Open notifications">
                    <svg viewBox="0 0 24 24" aria-hidden="true">
                        <path d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5"></path>
                        <path d="M10 20a2 2 0 0 0 4 0"></path>
                    </svg>
                    <span class="notification-badge" id="notifBadge" style="display:none">0</span>
-               </div>
-               <div class="menu-icon" onclick="toggleSideMenu()" aria-label="Open settings menu" role="button" tabindex="0">
-                   <svg viewBox="0 0 24 24" aria-hidden="true">
-                       <path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"></path>
-                       <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 1.7-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V20h-2.4v-.2a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.7-1.7.06-.06A1.7 1.7 0 0 0 8.4 15a1.7 1.7 0 0 0-1.56-1.03h-.2v-2.4h.2A1.7 1.7 0 0 0 8.4 10a1.7 1.7 0 0 0-.34-1.88L8 8.06l1.7-1.7.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V5h2.4v.2A1.7 1.7 0 0 0 16.1 6.76a1.7 1.7 0 0 0 1.88-.34l.06-.06 1.7 1.7-.06.06A1.7 1.7 0 0 0 19.4 10a1.7 1.7 0 0 0 1.56 1.03h.2v2.4h-.2A1.7 1.7 0 0 0 19.4 15z"></path>
-                   </svg>
-               </div>
+               </a>
             </div>
         </div>
     </div>
 
     
-
-    <!-- সাইড মেনু -->
-    <div class="side-menu-overlay" id="sideMenuOverlay" onclick="closeSideMenu()"></div>
-    <div class="side-menu" id="sideMenu">
-        <div class="side-menu-header">
-            <div class="side-menu-avatar" id="sideMenuAvatar">M</div>
-            <div class="side-menu-info">
-                <p id="sideMenuName">Mahdi Hasan</p>
-                <span>SBRYMS Member</span>
-            </div>
-            <div class="side-menu-close" onclick="closeSideMenu()">×</div>
-        </div>
-        <div class="side-menu-item theme-light" onclick="toggleTheme('light')">
-            <div class="side-menu-icon">☀️</div>
-            <div class="side-menu-text">Light Theme</div>
-        </div>
-        <div class="side-menu-item theme-dark" onclick="toggleTheme('dark')">
-            <div class="side-menu-icon">🌙</div>
-            <div class="side-menu-text">Dark Theme</div>
-        </div>
-        <div class="side-menu-item" onclick="openSettings()">
-            <div class="side-menu-icon">⚙️</div>
-            <div class="side-menu-text">Settings</div>
-        </div>
-        <div class="side-menu-item" onclick="logout()">
-            <div class="side-menu-icon">🚪</div>
-            <div class="side-menu-text">Logout</div>
-        </div>
-    </div>
 
     <!-- ১০টি ক্যাটাগরি গ্রিড -->
     <div class="container">
@@ -822,87 +695,105 @@ body.custom-image-background::before {
         </div>
         <div class="grid-container">
                     <div class="card" onclick="window.location.href='deposit.html'" style="cursor:pointer"><div class="icon-box c-1" id="depositIconBox">
-                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <!-- wallet with coin icon -->
-                                <path d="M2 7h20v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z"></path>
-                                <path d="M16 7v4"></path>
-                                <circle cx="18" cy="6" r="2"></circle>
-                            </svg>
-                    </div><h3>Deposit</h3></div>
-                    <div class="card" onclick="window.location.href='dashboard.html'" style="cursor:pointer"><div class="icon-box c-2">
-                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <rect x="3" y="12" width="4" height="6" rx="1"></rect>
-                            <rect x="10" y="8" width="4" height="10" rx="1"></rect>
-                            <rect x="17" y="4" width="4" height="14" rx="1"></rect>
+                        <svg class="cat-svg" viewBox="0 0 32 32" aria-hidden="true">
+                            <path class="icon-fill" d="M4 10.5h23v13a2.5 2.5 0 0 1-2.5 2.5H6.5A2.5 2.5 0 0 1 4 23.5z"></path>
+                            <path d="M4 11V8.5A2.5 2.5 0 0 1 6.5 6H25"></path>
+                            <path d="M4 11h21.5A2.5 2.5 0 0 1 28 13.5v7a2.5 2.5 0 0 1-2.5 2.5H21a3.5 3.5 0 0 1 0-7h7"></path>
+                            <circle cx="21.5" cy="19.5" r=".8"></circle>
+                            <path d="M9 10V8"></path>
                         </svg>
-                    </div><h3>Dashboard</h3></div>
+                    </div><h3>Deposit</h3></div>
+                    <a class="card card-link" href="dashboard.html"><div class="icon-box c-2">
+                        <svg class="cat-svg" viewBox="0 0 32 32" aria-hidden="true">
+                            <rect class="icon-fill" x="4" y="5" width="24" height="21" rx="3"></rect>
+                            <path d="M4 11h24M11 11v15"></path>
+                            <path d="M8 8h.1M11 8h.1"></path>
+                            <path d="M16 22v-5M20 22v-8M24 22v-3"></path>
+                            <path d="M15 14h10"></path>
+                        </svg>
+                    </div><h3>Dashboard</h3></a>
                     <div class="card" onclick="window.location.href='profile-rank.html'" style="cursor:pointer"><div class="icon-box c-3">
-                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="7" r="3"></circle>
-                            <path d="M5 21c1.5-3 4.5-5 7-5s5.5 2 7 5"></path>
-                            <path d="M12 10v6"></path>
+                        <svg class="cat-svg" viewBox="0 0 32 32" aria-hidden="true">
+                            <circle class="icon-fill" cx="14" cy="10" r="5"></circle>
+                            <path d="M4.5 27c.8-5.3 4.4-8.5 9.5-8.5s8.7 3.2 9.5 8.5"></path>
+                            <path d="m25 5 1.2 2.4 2.7.4-1.9 1.9.4 2.7-2.4-1.3-2.4 1.3.5-2.7-2-1.9 2.7-.4z"></path>
+                            <path d="m24 14-1 5 2-1.2 2 1.2-1-5"></path>
                         </svg>
                     </div><h3>Profile-Rank</h3></div>
                     <div class="card" onclick="window.location.href='members.html'" style="cursor:pointer"><div class="icon-box c-9">
-                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M17 20v-2a3 3 0 0 0-3-3H10a3 3 0 0 0-3 3v2"></path>
-                            <circle cx="9" cy="7" r="3"></circle>
-                            <circle cx="17" cy="7" r="3"></circle>
+                        <svg class="cat-svg" viewBox="0 0 32 32" aria-hidden="true">
+                            <circle class="icon-fill" cx="12" cy="10" r="4"></circle>
+                            <circle class="icon-fill" cx="23" cy="11" r="3.5"></circle>
+                            <path d="M3.5 27c.5-5 3.5-8 8.5-8s8 3 8.5 8"></path>
+                            <path d="M20 20c4.5-.8 7.5 1.7 8.5 6"></path>
+                            <path d="M21 5.5a4 4 0 0 1 0 7"></path>
                         </svg>
                     </div><h3>Members</h3></div>
                     <div class="card" onclick="window.location.href='income.html'" style="cursor:pointer"><div class="icon-box c-4">
-                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M21 10v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7"></path>
-                            <path d="M8 11l4-4 4 4"></path>
+                        <svg class="cat-svg" viewBox="0 0 32 32" aria-hidden="true">
+                            <path class="icon-fill" d="M5 21h5v7H5zm9-7h5v14h-5zm9-6h5v20h-5z"></path>
+                            <path d="M4 28h25M6 17l7-7 5 4 8-9"></path>
+                            <path d="M21 5h5v5"></path>
                         </svg>
                     </div><h3>Income</h3></div>
                     <div class="card" onclick="window.location.href='loans.html'" style="cursor:pointer"><div class="icon-box c-5">
-                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M3 10h18"></path>
-                            <path d="M5 10v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"></path>
-                            <path d="M12 2v6"></path>
-                            <path d="M8 6h8"></path>
+                        <svg class="cat-svg" viewBox="0 0 32 32" aria-hidden="true">
+                            <path class="icon-fill" d="m3 11 13-7 13 7v3H3z"></path>
+                            <path d="m3 11 13-7 13 7M3 14h26M5 27h22M7 14v13m6-13v13m6-13v13m6-13v13"></path>
+                            <circle cx="23" cy="21" r="5"></circle>
+                            <path d="M23 18.5v5m-1.5-3.8h2.3a1.2 1.2 0 0 1 0 2.4h-1.6"></path>
                         </svg>
                     </div><h3>Loans</h3></div>
                     <div class="card" onclick="window.location.href='expense.html'" style="cursor:pointer"><div class="icon-box c-6">
-                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <rect x="2" y="7" width="20" height="10" rx="2"></rect>
-                            <path d="M7 12h10"></path>
+                        <svg class="cat-svg" viewBox="0 0 32 32" aria-hidden="true">
+                            <rect class="icon-fill" x="3.5" y="7" width="25" height="18" rx="3"></rect>
+                            <path d="M4 12h24M8 17h5M8 21h3"></path>
+                            <circle cx="22" cy="19" r="3"></circle>
+                            <path d="M20.5 20.5 24 17"></path>
                         </svg>
                     </div><h3>Expense</h3></div>
                     <div class="card" onclick="window.location.href='donation.html'" style="cursor:pointer"><div class="icon-box c-7">
-                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M12 21s-6-4.35-8-6.36C2.68 12.73 4 9 7 7c2-1.5 5-1 5-1s3-.5 5 1c3 2 4.32 5.73 3 7.64C18 16.65 12 21 12 21z"></path>
-                            <circle cx="12" cy="8" r="2"></circle>
+                        <svg class="cat-svg" viewBox="0 0 32 32" aria-hidden="true">
+                            <path class="icon-fill" d="M16 27S4 20 4 12a6 6 0 0 1 11-3l1 1 1-1a6 6 0 0 1 11 3c0 8-12 15-12 15z"></path>
+                            <path d="M16 27S4 20 4 12a6 6 0 0 1 11-3l1 1 1-1a6 6 0 0 1 11 3c0 8-12 15-12 15z"></path>
+                            <path d="M9 16h4l2-4 3.5 8 2-4H25"></path>
                         </svg>
                     </div><h3>Donation</h3></div>
                     <div class="card" onclick="window.location.href='project.html'" style="cursor:pointer"><div class="icon-box c-8">
-                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <rect x="3" y="7" width="18" height="13" rx="1"></rect>
-                            <path d="M7 7v-3h10v3"></path>
-                            <path d="M7 12h2M11 12h2M15 12h2"></path>
+                        <svg class="cat-svg" viewBox="0 0 32 32" aria-hidden="true">
+                            <rect class="icon-fill" x="4" y="9" width="24" height="18" rx="2"></rect>
+                            <path d="M4 12a3 3 0 0 1 3-3h18a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z"></path>
+                            <path d="M11 9V6h10v3M4 15h24"></path>
+                            <path d="m10 21 2 2 4-4M19 21h4"></path>
                         </svg>
                     </div><h3>Project</h3></div>
-                    <div class="card team-meet-card" onclick="window.location.href='team-meet.html'" style="cursor:pointer; position:relative;">
+                    <a class="card card-link team-meet-card" href="team-meet.html" aria-label="Open Team Meet">
                         <span class="category-badge" id="teamMeetUnreadBadge" style="display:none;">0</span>
                         <div class="icon-box c-9">
-                            <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <circle cx="12" cy="8" r="2"></circle>
-                                <path d="M5 18c1.5-2 4-3 7-3s5.5 1 7 3"></path>
+                            <svg class="cat-svg" viewBox="0 0 32 32" aria-hidden="true">
+                                <rect x="3" y="7" width="19" height="18" rx="3"></rect>
+                                <path d="m22 13 7-4v14l-7-4z"></path>
+                                <circle class="icon-fill" cx="9" cy="13" r="2"></circle>
+                                <circle class="icon-fill" cx="16" cy="13" r="2"></circle>
+                                <path d="M6 21v-1a3 3 0 0 1 6 0v1m1 0v-1a3 3 0 0 1 6 0v1"></path>
                             </svg>
                         </div><h3>Team Meet</h3>
-                    </div>
+                        </a>
                     <div class="card" onclick="window.location.href='profile.html'" style="cursor:pointer"><div class="icon-box c-3">
-                       <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                           <circle cx="12" cy="8" r="3"></circle>
-                           <path d="M5 21c.8-3.6 3.2-6 7-6s6.2 2.4 7 6"></path>
-                           <path d="M19 4v4M17 6h4"></path>
+                       <svg class="cat-svg" viewBox="0 0 32 32" aria-hidden="true">
+                           <circle class="icon-fill" cx="15" cy="10" r="5"></circle>
+                           <path d="M5 27c.7-5.4 4.3-8.5 10-8.5S24.3 21.6 25 27"></path>
+                           <circle cx="25" cy="23" r="5"></circle>
+                           <path d="m23 23 1.4 1.4L27.5 21"></path>
                        </svg>
                     </div><h3>My Profile</h3></div>
                     <div class="card" onclick="openSettings()" style="cursor:pointer"><div class="icon-box c-10">
-                        <svg class="cat-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 1.7-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V20h-2.4v-.2a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06-1.7-1.7.06-.06A1.7 1.7 0 0 0 8.4 15a1.7 1.7 0 0 0-1.56-1.03h-.2v-2.4h.2A1.7 1.7 0 0 0 8.4 10a1.7 1.7 0 0 0-.34-1.88L8 8.06l1.7-1.7.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.56V5h2.4v.2A1.7 1.7 0 0 0 16.1 6.76a1.7 1.7 0 0 0 1.88-.34l.06-.06 1.7 1.7-.06.06A1.7 1.7 0 0 0 19.4 10a1.7 1.7 0 0 0 1.56 1.03h.2v2.4h-.2A1.7 1.7 0 0 0 19.4 15z"></path>
+                        <svg class="cat-svg" viewBox="0 0 32 32" aria-hidden="true">
+                            <circle class="icon-fill" cx="16" cy="16" r="9"></circle>
+                            <path d="M16 3.5v3M16 25.5v3M3.5 16h3M25.5 16h3M7.2 7.2l2.1 2.1m13.4 13.4 2.1 2.1M24.8 7.2l-2.1 2.1M9.3 22.7l-2.1 2.1"></path>
+                            <circle cx="16" cy="16" r="9"></circle>
+                            <circle cx="16" cy="17" r="5"></circle>
+                            <circle class="icon-fill" cx="16" cy="17" r="2"></circle>
                         </svg>
                     </div><h3>Settings</h3></div>
         </div>
@@ -944,33 +835,6 @@ body.custom-image-background::before {
                         <span>Manage account security settings</span>
                     </div>
                     <button class="theme-btn" type="button" onclick="window.location.href='security.html'">Open</button>
-                </div>
-
-                <div class="background-section-container">
-                    <button class="background-section-toggle" type="button" onclick="toggleBackgroundOptions()" aria-expanded="false">
-                        <span><strong>Background</strong><span>Pick a wallpaper</span></span>
-                        <span class="background-section-arrow" id="backgroundSectionArrow">⌄</span>
-                    </button>
-                    <div class="background-section" id="backgroundSection">
-                    <div class="background-grid">
-                        <div class="bg-option active" data-bg="pinkBlue" onclick="selectBackgroundPreset('pinkBlue')" style="background:linear-gradient(135deg,#ff3cac,#784ba0,#2b86c5);"><span class="bg-option-label">Pink + Blue</span></div>
-                        <div class="bg-option" data-bg="orangeBlue" onclick="selectBackgroundPreset('orangeBlue')" style="background:linear-gradient(135deg,#ff7a18,#ffb347,#2193b0);"><span class="bg-option-label">Orange + Blue</span></div>
-                        <div class="bg-option" data-bg="mintPurple" onclick="selectBackgroundPreset('mintPurple')" style="background:linear-gradient(135deg,#43e97b,#38f9d7,#7f53ac);"><span class="bg-option-label">Mint + Purple</span></div>
-                        <div class="bg-option" data-bg="peachSky" onclick="selectBackgroundPreset('peachSky')" style="background:linear-gradient(135deg,#ff9a9e,#fad0c4,#a1c4fd);"><span class="bg-option-label">Peach + Sky</span></div>
-                        <div class="bg-option" data-bg="candy" onclick="selectBackgroundPreset('candy')" style="background:linear-gradient(135deg,#fbc2eb,#a6c1ee,#84fab0);"><span class="bg-option-label">Cute Candy</span></div>
-                        <div class="bg-option" data-bg="lavender" onclick="selectBackgroundPreset('lavender')" style="background:linear-gradient(135deg,#c471f5,#fa71cd,#12c2e9);"><span class="bg-option-label">Lavender Glow</span></div>
-                        <div class="bg-option" data-bg="sunset" onclick="selectBackgroundPreset('sunset')" style="background:linear-gradient(135deg,#ee0979,#ff6a00,#ffd200);"><span class="bg-option-label">Sunset</span></div>
-                        <div class="bg-option" data-bg="skyNight" onclick="selectBackgroundPreset('skyNight')" style="background:linear-gradient(135deg,#141e30,#243b55,#00c6ff);"><span class="bg-option-label">Blue Night</span></div>
-                        <div class="bg-option" id="customImageBackgroundOption" data-bg="customImage" onclick="document.getElementById('customBackgroundInput').click()" style="background:linear-gradient(135deg,#252b48,#5963a8);"><span class="bg-option-label">Your Image</span></div>
-                        <div class="bg-option" data-bg="solidBlue" onclick="selectBackgroundPreset('solidBlue')" style="background:#2563eb;"><span class="bg-option-label">Solid Blue</span></div>
-                        <div class="bg-option" data-bg="solidPink" onclick="selectBackgroundPreset('solidPink')" style="background:#ec4899;"><span class="bg-option-label">Solid Pink</span></div>
-                        <div class="bg-option" data-bg="solidOrange" onclick="selectBackgroundPreset('solidOrange')" style="background:#f97316;"><span class="bg-option-label">Solid Orange</span></div>
-                        <div class="bg-option" data-bg="solidPurple" onclick="selectBackgroundPreset('solidPurple')" style="background:#8b5cf6;"><span class="bg-option-label">Solid Purple</span></div>
-                        <div class="bg-option" data-bg="solidGreen" onclick="selectBackgroundPreset('solidGreen')" style="background:#10b981;"><span class="bg-option-label">Solid Green</span></div>
-                        <div class="bg-option" data-bg="solidBlack" onclick="selectBackgroundPreset('solidBlack')" style="background:#000000;"><span class="bg-option-label">Solid Black</span></div>
-                    </div>
-                    <input id="customBackgroundInput" type="file" accept="image/*" onchange="handleCustomBackgroundUpload(event)" style="display:none;">
-                    </div>
                 </div>
 
                 <div class="settings-row">
@@ -1037,22 +901,14 @@ body.custom-image-background::before {
             const photo = localStorage.getItem(storageKey('profile_photo'));
             const headerName = document.getElementById('headerName');
             const headerImg = document.getElementById('headerProfileImg');
-            const sideName = document.getElementById('sideMenuName');
-            const sideAvatar = document.getElementById('sideMenuAvatar');
             const modalName = document.getElementById('modalName');
             const modalProfileImg = document.getElementById('modalProfileImg');
 
             if (headerName) headerName.innerText = name;
-            if (sideName) sideName.innerText = name;
             if (modalName) modalName.innerText = name;
             if (photo) {
                 if (headerImg) headerImg.src = photo;
                 if (modalProfileImg) modalProfileImg.src = photo;
-                if (sideAvatar) {
-                    sideAvatar.innerHTML = `<img src="${photo}" alt="Avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-                }
-            } else if (sideAvatar) {
-                sideAvatar.textContent = name ? name.charAt(0).toUpperCase() : 'M';
             }
         }
 
@@ -1069,22 +925,24 @@ body.custom-image-background::before {
             firebase.initializeApp(firebaseConfig);
         }
 
+        function showFaceAppAuthRecovery(message) {
+            document.documentElement.classList.add('auth-timeout');
+            const status = document.getElementById('faceAppAuthStatus');
+            const actions = document.getElementById('faceAppAuthActions');
+            if (status) status.textContent = message;
+            if (actions) actions.style.display = 'flex';
+        }
+
         if (typeof firebase !== 'undefined' && firebase.auth) {
-            function showFaceAppAuthRecovery(message) {
-                document.documentElement.classList.add('auth-timeout');
-                const status = document.getElementById('faceAppAuthStatus');
-                const actions = document.getElementById('faceAppAuthActions');
-                if (status) status.textContent = message;
-                if (actions) actions.style.display = 'flex';
-            }
             const faceAppAuthLoadingTimer = setTimeout(() => {
                 if (!document.documentElement.classList.contains('auth-pending')) return;
-                showFaceAppAuthRecovery('Login check is taking longer than expected. Check your internet connection.');
+                showFaceAppAuthRecovery('Your dashboard is taking longer to open. Check your internet connection.');
             }, 12000);
             firebase.auth().onAuthStateChanged((user) => {
                 if (!user) {
                     clearTimeout(faceAppAuthLoadingTimer);
-                    window.location.replace('index.html');
+                    sessionStorage.removeItem('sbrymsNativeLaunchAuthenticated');
+                    window.location.replace('login.html');
                     return;
                 }
                 localStorage.setItem('currentUserEmail', user.email || '');
@@ -1095,38 +953,77 @@ body.custom-image-background::before {
             }, (error) => {
                 console.error('Could not verify the saved login session:', error);
                 clearTimeout(faceAppAuthLoadingTimer);
-                showFaceAppAuthRecovery('Could not check your login. Check your connection and try again.');
+                showFaceAppAuthRecovery('Could not open your saved session. Check your connection and try again.');
             });
         } else {
-            window.location.replace('index.html');
+            showFaceAppAuthRecovery('Sign-in is unavailable. Check your connection and open the login page.');
         }
 
         // Firestore instance (if available)
-        const db = (typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null;
+        let db = (typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null;
+        let nativeFirestoreLoad = null;
 
         // Notification helpers: load from Firestore where possible, fallback to localStorage
         function getCurrentUserEmail() {
             return localStorage.getItem('currentUserEmail') || '';
         }
 
+        function isNativeApp() {
+            return isFaceAppNativeWebView || Boolean(window.Capacitor
+                && typeof window.Capacitor.isNativePlatform === 'function'
+                && window.Capacitor.isNativePlatform());
+        }
+
+        function loadNativeFirestore() {
+            if (db) return Promise.resolve(db);
+            if (nativeFirestoreLoad) return nativeFirestoreLoad;
+            nativeFirestoreLoad = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js';
+                script.onload = () => {
+                    if (typeof firebase === 'undefined' || !firebase.firestore) {
+                        nativeFirestoreLoad = null;
+                        reject(new Error('Firebase notifications could not be initialized.'));
+                        return;
+                    }
+                    db = firebase.firestore();
+                    resolve(db);
+                };
+                script.onerror = () => {
+                    nativeFirestoreLoad = null;
+                    reject(new Error('Firebase notifications could not be loaded.'));
+                };
+                document.head.appendChild(script);
+            });
+            return nativeFirestoreLoad;
+        }
+
         async function fetchNotifications() {
             const email = getCurrentUserEmail();
+            const limit = isNativeApp() ? 10 : 50;
+            if (!db && isNativeApp()) {
+                try {
+                    await loadNativeFirestore();
+                } catch (error) {
+                    console.error('Could not load Firebase for notifications:', error);
+                }
+            }
             // if firestore available, query notifications addressed to this user or to 'all'
             if (db) {
                 try {
-                    const q1 = db.collection('notifications').where('to', '==', email).orderBy('createdAt', 'desc').limit(50).get();
-                    const q2 = db.collection('notifications').where('to', '==', 'all').orderBy('createdAt', 'desc').limit(50).get();
+                    const q1 = db.collection('notifications').where('to', '==', email).limit(limit).get();
+                    const q2 = db.collection('notifications').where('to', '==', 'all').limit(limit).get();
                     const [r1, r2] = await Promise.all([q1, q2]);
                     const items = [];
                     r1.forEach(d => items.push({ id: d.id, ...d.data() }));
                     r2.forEach(d => items.push({ id: d.id, ...d.data() }));
                     // sort by createdAt if present
                     items.sort((a,b)=>{
-                        const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : (a.createdAt || 0);
-                        const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : (b.createdAt || 0);
+                        const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : new Date(a.createdAt || 0).getTime();
+                        const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : new Date(b.createdAt || 0).getTime();
                         return tb - ta;
                     });
-                    return items.slice(0,50);
+                    return items.slice(0, limit);
                 } catch(e){ console.error('fetchNotifications firestore error', e); }
             }
             // Fallback: look for payment history or last_completed_payment in localStorage
@@ -1210,6 +1107,21 @@ body.custom-image-background::before {
         }
 
         function getTeamMeetUnreadCount() {
+            if (isNativeApp()) {
+                let total = 0;
+                for (let index = 0; index < localStorage.length; index += 1) {
+                    const key = localStorage.key(index);
+                    if (!key || !key.startsWith('team_meet_preview_')) continue;
+                    try {
+                        const preview = JSON.parse(localStorage.getItem(key) || 'null');
+                        const count = Number(preview && preview.unreadCount);
+                        if (Number.isFinite(count) && count > 0) total += count;
+                    } catch (error) {
+                        console.warn('Could not read a cached Team Meet preview:', error);
+                    }
+                }
+                return total;
+            }
             const counts = getUnreadMessageCounts();
             const teamKey = 'team_meet_messages_shared';
             return Number(counts[teamKey] || 0);
@@ -1217,7 +1129,6 @@ body.custom-image-background::before {
 
         function updateTeamMeetBadge() {
             const badge = document.getElementById('teamMeetUnreadBadge');
-            const quickBadge = document.getElementById('teamMeetQuickBadge');
             const total = getTeamMeetUnreadCount();
 
             if (badge) {
@@ -1229,25 +1140,20 @@ body.custom-image-background::before {
                     badge.textContent = '0';
                 }
             }
-            if (quickBadge) {
-                if (total > 0) {
-                    quickBadge.style.display = 'inline-flex';
-                    quickBadge.textContent = total > 99 ? '99+' : String(total);
-                } else {
-                    quickBadge.style.display = 'none';
-                    quickBadge.textContent = '0';
-                }
-            }
         }
 
         function syncTeamMeetUnreadCountFromFirestore() {
             if (!db) return;
+            if (isNativeApp()) {
+                updateTeamMeetBadge();
+                return;
+            }
             const currentEmail = (getCurrentUserEmail() || '').toLowerCase();
             const currentUid = localStorage.getItem('currentUserUid') || '';
 
             db.collection('team_meet_messages_shared')
                 .orderBy('createdAt', 'desc')
-                .limit(100)
+                .limit(20)
                 .onSnapshot(snapshot => {
                     if (!snapshot || snapshot.empty) {
                         const counts = getUnreadMessageCounts();
@@ -1300,6 +1206,10 @@ body.custom-image-background::before {
                 updateTeamMeetBadge();
             });
         });
+        window.addEventListener('pageshow', updateTeamMeetBadge);
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') updateTeamMeetBadge();
+        });
 
         // --- Real-time notification badge subscription (updates red count beside icon) ---
         let _notifPersonalCount = 0;
@@ -1312,8 +1222,9 @@ body.custom-image-background::before {
         function updateBadgeCount(count) {
             const badge = document.getElementById('notifBadge');
             if (badge) {
-                badge.style.display = 'none';
-                badge.textContent = '0';
+                const unread = Math.max(0, Number(count) || 0);
+                badge.textContent = unread > 99 ? '99+' : String(unread);
+                badge.style.display = unread > 0 ? 'inline-flex' : 'none';
             }
         }
 
@@ -1350,6 +1261,10 @@ body.custom-image-background::before {
         function subscribeNotificationsRealtime() {
             if (_notifRealtimeStarted) return;
             _notifRealtimeStarted = true;
+            if (isNativeApp()) {
+                stopNotificationPolling();
+                return;
+            }
             // If Firestore is available, use onSnapshot for instant updates; otherwise fallback to polling
             const email = getCurrentUserEmail();
             if (!db) { startNotificationPolling(); return; }
@@ -1357,7 +1272,10 @@ body.custom-image-background::before {
             try {
                 // personal unread listener
                 if (email) {
-                    const qPersonal = db.collection('notifications').where('to', '==', email).where('read', '==', false);
+                    const qPersonal = db.collection('notifications')
+                        .where('to', '==', email)
+                        .where('read', '==', false)
+                        .limit(20);
                     _notifUnsubPersonal = qPersonal.onSnapshot(snap => {
                         try {
                             _notifPersonalCount = snap.size || 0;
@@ -1375,7 +1293,10 @@ body.custom-image-background::before {
                 }
 
                 // global (to == 'all') unread listener
-                const qAll = db.collection('notifications').where('to', '==', 'all').where('read', '==', false);
+                const qAll = db.collection('notifications')
+                    .where('to', '==', 'all')
+                    .where('read', '==', false)
+                    .limit(20);
                 _notifUnsubAll = qAll.onSnapshot(snap => {
                     try { _notifAllCount = snap.size || 0; updateBadgeCount(_notifPersonalCount + _notifAllCount); } catch(e){}
                 }, err => { console.error('all snapshot error', err); startNotificationPolling(); });
@@ -1400,92 +1321,17 @@ body.custom-image-background::before {
 
         // Theme mode system
         let currentTheme = 'light'; // 'light' or 'dark'
-        const backgroundPresets = {
-            pinkBlue: "linear-gradient(135deg, #ff3cac, #784ba0, #2b86c5)",
-            orangeBlue: "linear-gradient(135deg, #ff7a18, #ffb347, #2193b0)",
-            mintPurple: "linear-gradient(135deg, #43e97b, #38f9d7, #7f53ac)",
-            peachSky: "linear-gradient(135deg, #ff9a9e, #fad0c4, #a1c4fd)",
-            candy: "linear-gradient(135deg, #fbc2eb, #a6c1ee, #84fab0)",
-            lavender: "linear-gradient(135deg, #c471f5, #fa71cd, #12c2e9)",
-            sunset: "linear-gradient(135deg, #ee0979, #ff6a00, #ffd200)",
-            skyNight: "linear-gradient(135deg, #141e30, #243b55, #00c6ff)",
-            solidBlue: "#2563eb",
-            solidPink: "#ec4899",
-            solidOrange: "#f97316",
-            solidPurple: "#8b5cf6",
-            solidGreen: "#10b981",
-            solidBlack: "#000000"
-        };
-
         function applyBackgroundSettings() {
-            const selectedPreset = localStorage.getItem('appBackgroundPreset') || 'pinkBlue';
-            const customImage = localStorage.getItem('customBackgroundImage');
-            if (selectedPreset === 'customImage' && customImage) {
-                document.documentElement.style.setProperty('--custom-bg-image', `url("${customImage}")`);
-                document.body.classList.remove('solid-background');
-                document.body.classList.add('motion-background', 'custom-image-background');
-                document.body.style.setProperty('background-image', 'none', 'important');
-                const customOption = document.getElementById('customImageBackgroundOption');
-                if (customOption) customOption.style.backgroundImage = `url("${customImage}")`;
-            } else if (selectedPreset.indexOf('solid') === 0) {
-                document.documentElement.style.setProperty('--solid-bg-color', backgroundPresets[selectedPreset] || backgroundPresets.solidBlue);
-                document.body.classList.remove('custom-image-background', 'motion-background');
-                document.body.classList.add('solid-background');
-                document.body.style.setProperty('background-image', 'none', 'important');
-            } else {
-                document.body.classList.remove('custom-image-background', 'solid-background');
-                const backgroundValue = backgroundPresets[selectedPreset] || backgroundPresets.pinkBlue;
-                document.documentElement.style.setProperty('--motion-gradient', backgroundValue);
-                document.body.classList.add('motion-background');
-                document.body.style.setProperty('background-image', 'none', 'important');
-            }
-            const bgOptions = document.querySelectorAll('.bg-option');
-            bgOptions.forEach(option => {
-                option.classList.toggle('active', option.dataset.bg === selectedPreset);
-            });
-        }
-
-        function selectBackgroundPreset(presetKey) {
-            if (!backgroundPresets[presetKey] && !(presetKey === 'customImage' && localStorage.getItem('customBackgroundImage'))) return;
-            localStorage.setItem('appBackgroundPreset', presetKey);
-            applyBackgroundSettings();
-        }
-
-        function toggleBackgroundOptions() {
-            const section = document.getElementById('backgroundSection');
-            const toggle = document.querySelector('.background-section-toggle');
-            if (!section || !toggle) return;
-            const isOpen = section.classList.toggle('open');
-            toggle.setAttribute('aria-expanded', String(isOpen));
-        }
-
-        function handleCustomBackgroundUpload(event) {
-            const file = event.target.files && event.target.files[0];
-            if (!file || !file.type.startsWith('image/')) return;
-            if (file.size > 10 * 1024 * 1024) {
-                alert('Image size must be 10MB or less.');
-                event.target.value = '';
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = function() {
-                const image = new Image();
-                image.onload = function() {
-                    const maxSide = 1600;
-                    const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
-                    const canvas = document.createElement('canvas');
-                    canvas.width = Math.max(1, Math.round(image.width * scale));
-                    canvas.height = Math.max(1, Math.round(image.height * scale));
-                    canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-                    const compressedImage = canvas.toDataURL('image/jpeg', 0.82);
-                    localStorage.setItem('customBackgroundImage', compressedImage);
-                    localStorage.setItem('appBackgroundPreset', 'customImage');
-                    applyBackgroundSettings();
-                };
-                image.src = reader.result;
-            };
-            reader.readAsDataURL(file);
-            event.target.value = '';
+            const root = document.documentElement;
+            root.style.removeProperty('--bg-url');
+            root.style.removeProperty('--motion-gradient');
+            root.style.removeProperty('--solid-bg-color');
+            root.style.removeProperty('--custom-bg-image');
+            document.body.classList.remove(
+                'solid-background',
+                'motion-background',
+                'custom-image-background'
+            );
         }
 
         function applyThemeSettings() {
@@ -1512,7 +1358,6 @@ body.custom-image-background::before {
             localStorage.setItem('theme', currentTheme);
             applyThemeSettings();
             updateSettingsControls();
-            closeSideMenu();
         }
 
         function updateSettingsControls() {
@@ -1521,15 +1366,6 @@ body.custom-image-background::before {
                 const isActive = button.dataset.theme === currentTheme;
                 button.classList.toggle('active', isActive);
             });
-
-            const bgOptions = document.querySelectorAll('.bg-option');
-            const selectedPreset = localStorage.getItem('appBackgroundPreset') || 'pinkBlue';
-            bgOptions.forEach(option => {
-                option.classList.toggle('active', option.dataset.bg === selectedPreset);
-            });
-            const customImage = localStorage.getItem('customBackgroundImage');
-            const customOption = document.getElementById('customImageBackgroundOption');
-            if (customOption && customImage) customOption.style.backgroundImage = `url("${customImage}")`;
 
             const notifToggle = document.getElementById('browserNotifToggle');
             if (notifToggle) {
@@ -1558,30 +1394,6 @@ body.custom-image-background::before {
                 option.classList.toggle('active', isActive);
                 option.setAttribute('aria-checked', String(isActive));
             });
-        }
-
-        function toggleSideMenu() {
-            const menu = document.getElementById('sideMenu');
-            const overlay = document.getElementById('sideMenuOverlay');
-            menu.classList.add('open');
-            menu.style.setProperty('left', '0', 'important');
-            menu.style.setProperty('transform', 'none', 'important');
-            menu.style.setProperty('transition', 'none', 'important');
-            overlay.classList.add('show');
-            overlay.style.setProperty('opacity', '1', 'important');
-            overlay.style.setProperty('visibility', 'visible', 'important');
-        }
-
-        function closeSideMenu() {
-            const menu = document.getElementById('sideMenu');
-            const overlay = document.getElementById('sideMenuOverlay');
-            menu.classList.remove('open');
-            menu.style.setProperty('left', '-100%', 'important');
-            menu.style.setProperty('transform', 'none', 'important');
-            menu.style.setProperty('transition', 'none', 'important');
-            overlay.classList.remove('show');
-            overlay.style.setProperty('opacity', '0', 'important');
-            overlay.style.setProperty('visibility', 'hidden', 'important');
         }
 
         function openSettings() {
@@ -1725,23 +1537,15 @@ body.custom-image-background::before {
             if (typeof initDepositIcon === 'function') initDepositIcon();
             updateTeamMeetBadge();
             refreshUnreadBadges();
-            // Preload notifications badge (non-blocking)
-            try {
-                fetchNotifications().then(items => {
-                    const badge = document.getElementById('notifBadge');
-                    if (!badge) return;
-                    const unread = (items || []).filter(i => !i.read).length;
-                    if (unread > 0) { badge.style.display = 'inline-flex'; badge.textContent = String(unread); }
-                    else { badge.style.display = 'none'; }
-                }).catch(()=>{});
-            } catch(e){}
+            fetchNotifications().then(items => updateBadgeCount((items || []).filter(i => !i.read).length))
+                .catch(error => console.error('Could not preload notifications:', error));
         };
 
         window.updateTeamMeetBadge = updateTeamMeetBadge;
     </script>
     <style>
     /* User override: remove border overlays on background */
-    .container, .card, .app-header, .bottom-nav, .balance-container, .notification-bar, .header-action, .menu-icon, .icon-box, .profile-photo, .input-field, .btn-main {
+    .container, .card, .app-header, .bottom-nav, .balance-container, .notification-bar, .header-action, .icon-box, .profile-photo, .input-field, .btn-main {
         border: none !important;
         background-image: none !important;
         box-shadow: none !important;
@@ -1751,5 +1555,6 @@ body.custom-image-background::before {
     </style>
 <script src="assets/background-settings.js"></script>
 <script src="assets/push-notifications.js"></script>
+<script src="assets/mobile-bottom-nav.js"></script>
 </body>
 </html>

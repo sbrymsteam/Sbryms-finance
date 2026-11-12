@@ -381,8 +381,7 @@ body { background-color: #071124 !important; background-image: radial-gradient(1
 .icon-box { border: 1px solid rgba(255,255,255,0.08) !important; background: transparent !important; box-shadow: none !important; }
 body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
 </style>
-<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
-<link rel="stylesheet" href="assets/bg.css">
+<link rel="stylesheet" href="assets/bg.css?v=29">
 </head>
 <body>
     <div class="page-header">
@@ -616,6 +615,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
         }
 
         const PAYMENT_HISTORY_KEY = 'payment_gateway_history';
+        const LOCAL_NOTIFICATIONS_KEY = 'sbryms_finance_notifications';
         const SELECTED_PROFILE_KEY = 'payment_selected_profile';
         const PAYMENT_METHOD_KEY = 'payment_selected_method';
 
@@ -643,6 +643,32 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
 
         let selectedProfile = localStorage.getItem(SELECTED_PROFILE_KEY) || '';
         let selectedPaymentMethod = localStorage.getItem(PAYMENT_METHOD_KEY) || '';
+
+        function saveActivityNotification(notification) {
+            let notifications = [];
+            try {
+                const stored = JSON.parse(localStorage.getItem(LOCAL_NOTIFICATIONS_KEY) || '[]');
+                notifications = Array.isArray(stored) ? stored : [];
+            } catch (error) {
+                console.error('Could not read saved notifications:', error);
+            }
+            const alreadySaved = notifications.some(item => item.id === notification.id);
+            if (!alreadySaved) {
+                notifications.unshift(notification);
+                try {
+                    localStorage.setItem(LOCAL_NOTIFICATIONS_KEY, JSON.stringify(notifications.slice(0, 100)));
+                } catch (error) {
+                    console.error('Could not save payment notification locally:', error);
+                    showError('নোটিফিকেশন সংরক্ষণ করা যায়নি।');
+                }
+            }
+            if (!alreadySaved && db && notification.to) {
+                db.collection('notifications').doc(notification.id).set({
+                    ...notification,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true }).catch(error => console.error('Could not save payment notification to Firestore:', error));
+            }
+        }
 
         function initializeForm() {
             // Check URL parameters for pre-selected profile
@@ -686,6 +712,24 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             `).join('');
             // If a profile was preselected via URL or storage, mark it as selected in the UI
             if (selectedProfile) selectProfile(selectedProfile);
+            const fineAmount = Number(document.getElementById('fine').value) || 0;
+            if (fineAmount > 0 && selectedProfile) {
+                const dateRange = document.getElementById('dateRange').value || 'current payment period';
+                const year = document.getElementById('year').value || new Date().getFullYear();
+                const fineId = `fine-reminder-${selectedProfile.replace(/[^a-z0-9]/gi, '-')}-${dateRange.replace(/[^a-z0-9]/gi, '-')}-${year}`;
+                const profileName = (profiles.find(profile => profile.email === selectedProfile) || {}).name || 'Your account';
+                saveActivityNotification({
+                    id: fineId,
+                    to: selectedProfile.toLowerCase(),
+                    type: 'fine_reminder',
+                    title: 'Fine reminder',
+                    message: `${profileName}, an outstanding fine of ৳${fineAmount.toLocaleString('en-BD')} is due for ${dateRange} ${year}.`,
+                    amount: fineAmount,
+                    status: 'Due',
+                    read: false,
+                    createdAt: new Date().toISOString()
+                });
+            }
 
             // Initialize year dropdown
             const yearSelect = document.getElementById('year');
@@ -829,6 +873,19 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                         : payment.transactionId
                 };
                 savePaymentToHistory(pendingCashPayment);
+                saveActivityNotification({
+                    id: `payment-pending-${payment.id}`,
+                    to: payment.profile.toLowerCase(),
+                    type: 'payment_pending',
+                    title: 'Payment awaiting confirmation',
+                    message: `Your cash payment of ৳${payment.total.toLocaleString('en-BD')} is awaiting confirmation.`,
+                    amount: payment.total,
+                    status: 'Pending Confirmation',
+                    transactionId: pendingCashPayment.transactionId,
+                    paymentId: payment.id,
+                    read: false,
+                    createdAt: new Date().toISOString()
+                });
 
                 const pendingRaw = localStorage.getItem('pending_payment');
                 let pending = {};
@@ -856,6 +913,22 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                             read: false,
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
+                    }).then(() => {
+                        const payerEmail = pending.profileEmail || pending.profile || payment.profile;
+                        if (!payerEmail) return;
+                        return db.collection('notifications').doc(`payment-pending-${payment.id}`).set({
+                            to: payerEmail.toLowerCase(),
+                            subject: 'Payment awaiting confirmation',
+                            title: 'Payment awaiting confirmation',
+                            message: `Your cash payment of ৳${payment.total} is awaiting confirmation.`,
+                            amount: payment.total,
+                            status: 'Pending Confirmation',
+                            transactionId: pendingCashPayment.transactionId,
+                            paymentId: payment.id,
+                            type: 'payment_pending',
+                            read: false,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
                     }).catch(error => {
                         console.error('cash payment confirmation write error', error);
                         showError('Cash payment request সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।');
@@ -871,6 +944,19 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             }
 
             savePaymentToHistory(payment);
+            saveActivityNotification({
+                id: `payment-success-${payment.id}`,
+                to: payment.profile.toLowerCase(),
+                type: 'payment_success',
+                title: 'Payment successful',
+                message: `Your payment of ৳${payment.total.toLocaleString('en-BD')} has been recorded. Transaction ID: ${payment.transactionId}`,
+                amount: payment.total,
+                status: 'Paid',
+                transactionId: payment.transactionId,
+                paymentId: payment.id,
+                read: false,
+                createdAt: new Date().toISOString()
+            });
             // If there is a pending_payment from deposit page, mark it completed so deposit page can update
             try {
                 const pendingRaw = localStorage.getItem('pending_payment');
@@ -898,6 +984,8 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                                 paymentRecordId: payment.id,
                                 profileEmail: pending.profileEmail || pending.profile || payment.profile,
                                 profileName: payment.profileName,
+                                type: 'payment_success',
+                                status: 'Paid',
                                 fee: payment.fee,
                                 fine: payment.fine,
                                 total: payment.total,
@@ -914,6 +1002,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                                 to: 'sbrymsteam@gmail.com',
                                 subject: `Payment received: ${payment.profileName} ৳${payment.total}`,
                                 message: `Payment ${payment.id} received from ${payment.profileName} (${pending.profileEmail || payment.profile}). Amount: ৳${payment.total}. Transaction: ${payment.transactionId}`,
+                                type: 'payment_received',
                                 paymentId: payment.id,
                                 read: false,
                                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -926,6 +1015,10 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                                     to: payerEmail,
                                     subject: 'Payment confirmation',
                                     message: `Dear ${payment.profileName}, your payment of ৳${payment.total} has been received. Transaction ID: ${payment.transactionId}`,
+                                    type: 'payment_success',
+                                    status: 'Paid',
+                                    amount: payment.total,
+                                    transactionId: payment.transactionId,
                                     paymentId: payment.id,
                                     read: false,
                                     createdAt: firebase.firestore.FieldValue.serverTimestamp()

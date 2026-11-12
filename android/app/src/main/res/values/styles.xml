@@ -13,6 +13,10 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <item name="android:windowBackground">#080b10</item>
+        <item name="android:statusBarColor">#080b10</item>
+        <item name="android:navigationBarColor">#080b10</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 
 
@@ -21,5 +25,8 @@
         <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
         <item name="android:background">@drawable/splash</item>
+        <item name="android:statusBarColor">#080b10</item>
+        <item name="android:navigationBarColor">#080b10</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>

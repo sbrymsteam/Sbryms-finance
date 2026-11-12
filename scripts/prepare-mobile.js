@@ -59,6 +59,8 @@ for (const entry of fs.readdirSync(root)) {
   });
 }
 
+fs.copyFileSync(path.join(target, 'login.html'), path.join(target, 'index.html'));
+
 const capacitorVendor = path.join(target, 'assets', 'vendor');
 const coreSource = path.join(root, 'node_modules', '@capacitor', 'core', 'dist', 'index.js');
 const capacitorRuntimeSource = path.join(root, 'node_modules', '@capacitor', 'core', 'dist', 'capacitor.js');
@@ -76,10 +78,10 @@ fs.writeFileSync(
   "export const PushNotifications = window.Capacitor.Plugins.PushNotifications;\n"
 );
 
-for (const requiredFile of ['index.html', 'login.html', 'manifest.json']) {
+for (const requiredFile of ['index.html', 'login.html', 'FACE APP.html', 'manifest.json']) {
   if (!fs.existsSync(path.join(target, requiredFile))) {
     throw new Error(`Required web file was not included in mobile bundle: ${requiredFile}`);
   }
 }
 
-console.log('Prepared the latest web files in www for Capacitor.');
+console.log('Prepared the login page as the Android entry page and copied the latest web files to www.');

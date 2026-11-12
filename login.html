@@ -6,8 +6,7 @@
   <link rel="manifest" href="/manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<link rel="preload" as="image" href="assets/bg.png" fetchpriority="high">
-<meta name="theme-color" content="#071124">
+<meta name="theme-color" content="#080b10">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -66,6 +65,13 @@ body {
     border: 1px solid rgba(255,255,255,0.04);
     backdrop-filter: blur(8px) saturate(120%);
     -webkit-backdrop-filter: blur(8px) saturate(120%);
+}
+
+.auth-logo {
+    display: block;
+    width: 112px;
+    height: auto;
+    margin: 0 auto 12px;
 }
 
 /* subtle decorative wave inside the box (shows background through with blend) */
@@ -201,12 +207,18 @@ input, select, textarea { font-size: 16px; }
 
 #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(20,22,26,0.9); color: #fff; padding: 10px 14px; border-radius: 8px; display: none; z-index: 9999; font-size: 14px; opacity: 0; transition: opacity 0.25s ease; pointer-events: none; }
 
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+    body { animation: none; }
+    .auth-box { backdrop-filter: none; -webkit-backdrop-filter: none; }
+    .auth-box::before { display: none; }
+}
 </style>
-<link rel="stylesheet" href="assets/bg.css">
+<link rel="stylesheet" href="assets/bg.css?v=29">
 </head>
 <body>
 
 <div class="auth-box">
+<img class="auth-logo" src="assets/app-icon.svg" alt="SBRYMS Finance">
 <h2 id="auth-title" style="color: #5ed5bf;">SBRYMS Login</h2>
 
     <div id="registration-form">
@@ -334,8 +346,12 @@ let currentEmail = '';
 let currentCode = '';
 let resetEmail = '';
 let suppressSignedInRedirect = false;
+let faceAppRedirectStarted = false;
 
 function redirectToFaceApp() {
+    if (faceAppRedirectStarted) return;
+    faceAppRedirectStarted = true;
+    sessionStorage.setItem('sbrymsNativeLaunchAuthenticated', 'true');
     const targetUrl = new URL('FACE%20APP.html', window.location.href).toString();
     window.location.replace(targetUrl);
 }
