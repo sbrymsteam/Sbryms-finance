@@ -1,9 +1,12 @@
-const CACHE_NAME = 'sbryms-finance-v55';
+const CACHE_NAME = 'sbryms-finance-v56';
 const urlsToCache = [
   '/',
   '/index.html',
   '/login.html',
   '/FACE%20APP.html',
+  '/assets/app-icon.svg',
+  '/assets/page-loader.js',
+  '/assets/page-loader-mark.svg',
   '/notifications.html',
   '/manifest.json',
   '/assets/app-icon-192.png',

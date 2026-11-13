@@ -59,6 +59,23 @@ for (const entry of fs.readdirSync(root)) {
   });
 }
 
+const pageLoaderPath = path.join(target, 'assets', 'page-loader.js');
+if (!fs.existsSync(pageLoaderPath)) {
+  throw new Error('The mobile page-loading animation was not included in the app bundle.');
+}
+for (const entry of fs.readdirSync(target, { withFileTypes: true })) {
+  if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.html')) continue;
+  const htmlPath = path.join(target, entry.name);
+  const html = fs.readFileSync(htmlPath, 'utf8');
+  if (html.includes('data-sbryms-page-loader')) continue;
+  if (!/<\/body\s*>/i.test(html)) continue;
+  const updatedHtml = html.replace(
+    /<\/body\s*>/i,
+    '<script src="assets/page-loader.js" data-sbryms-page-loader defer></script></body>'
+  );
+  fs.writeFileSync(htmlPath, updatedHtml);
+}
+
 const capacitorVendor = path.join(target, 'assets', 'vendor');
 const coreSource = path.join(root, 'node_modules', '@capacitor', 'core', 'dist', 'index.js');
 const capacitorRuntimeSource = path.join(root, 'node_modules', '@capacitor', 'core', 'dist', 'capacitor.js');
