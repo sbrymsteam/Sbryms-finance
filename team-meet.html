@@ -938,13 +938,13 @@
       const conversationRef = db.collection('team_meet_conversations').doc('team_group_chat');
       const invite = {
         id: `call-${Date.now()}`,
+        callId: groupCallId,
         sender: 'me',
         senderEmail: currentUserEmail,
         senderName: 'You',
         self: true,
         type: 'call-invite',
         callType: type,
-        roomId,
         text: `${type === 'video' ? 'Video' : 'Audio'} group call started`,
         createdAt: new Date().toISOString(),
         time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
@@ -977,7 +977,6 @@
         title: 'Team group call',
         body: `${type === 'video' ? 'Video' : 'Audio'} group call started`,
         callId: groupCallId,
-        roomId,
         groupCall: true,
         callType: type,
         callerName: localStorage.getItem('currentUserName') || 'SBRYMS member'
@@ -1019,7 +1018,7 @@
       localStorage.removeItem('selectedProfileAvatar');
       localStorage.setItem('selectedProfileDesignation', 'Everyone');
       localStorage.setItem('selectedProfileCurrent', 'false');
-      window.location.href = 'team-meet-call.html?chat=team-group&group=true&room=' + encodeURIComponent(roomId) + '&role=caller&type=' + encodeURIComponent(type);
+      window.location.href = 'team-meet-call.html?chat=team-group&group=true&call=' + encodeURIComponent(groupCallId) + '&role=caller&type=' + encodeURIComponent(type);
     }
 
     document.getElementById('groupPhotoInput').addEventListener('change', handleGroupPhotoUpload);
@@ -1089,7 +1088,7 @@
                 groupIncomingAudio.pause();
                 groupIncomingAudio = null;
               }
-              window.location.href = `team-meet-call.html?chat=team-group&group=true&room=${encodeURIComponent(data.roomId || '')}&role=callee&type=${encodeURIComponent(data.callType || 'audio')}`;
+              window.location.href = `team-meet-call.html?chat=team-group&group=true&call=${encodeURIComponent(callDoc.id)}&role=callee&type=${encodeURIComponent(data.callType || 'audio')}`;
             };
             document.getElementById('rejectTeamGroupCall').onclick = () => {
               rejectedGroupCallIds.add(callDoc.id);

@@ -361,6 +361,81 @@
       padding: 9px 16px; background: rgba(255,255,255,0.08); color: var(--text);
       font: inherit; font-weight: 700; cursor: pointer;
     }
+    html:root:root body.video-call {
+      min-height: 100dvh;
+      padding: 0;
+    }
+    html:root:root body.video-call .call-shell {
+      position: relative;
+      width: 100%;
+      height: 100dvh;
+      min-height: 100dvh;
+      max-width: none;
+      border: 0;
+      border-radius: 0;
+    }
+    html:root:root body.video-call .header {
+      position: absolute;
+      z-index: 4;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: max(16px, env(safe-area-inset-top)) 20px 14px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.48), transparent);
+    }
+    html:root:root body.video-call .video-grid.active {
+      position: absolute;
+      z-index: 1;
+      inset: 0;
+      padding: 0;
+    }
+    html:root:root body.video-call .video-grid #remoteVideo {
+      width: 100%;
+      height: 100%;
+      aspect-ratio: auto;
+      border-radius: 0;
+    }
+    html:root:root body.video-call .video-grid #localVideo {
+      top: max(76px, calc(env(safe-area-inset-top) + 60px));
+      right: 16px;
+      width: min(28vw, 128px);
+      height: auto;
+      aspect-ratio: 3 / 4;
+    }
+    html:root:root body.video-call.video-connected .profile {
+      position: absolute;
+      z-index: 3;
+      top: max(68px, calc(env(safe-area-inset-top) + 54px));
+      left: 12px;
+      right: 12px;
+      flex: 0 0 auto;
+      padding: 10px 12px;
+      text-align: left;
+      align-items: flex-start;
+      pointer-events: none;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+    html:root:root body.video-call.video-connected .profile .avatar {
+      display: none;
+    }
+    html:root:root body.video-call.video-connected .profile .status {
+      margin-top: 4px;
+    }
+    html:root:root body.video-call.video-connected .controls {
+      position: absolute;
+      z-index: 4;
+      right: 16px;
+      bottom: max(16px, env(safe-area-inset-bottom));
+      left: 16px;
+      margin: 0;
+      background: rgba(10, 16, 20, 0.78);
+      backdrop-filter: blur(18px);
+    }
+    @media (max-width: 520px) {
+      html:root:root body.video-call .call-shell {
+        min-height: 100dvh;
+      }
+    }
   </style>
   <link rel="stylesheet" href="assets/bg.css?v=29">
   <style>
@@ -474,20 +549,14 @@
         <span class="control-label">End</span>
       </button>
       <div class="more-menu" id="moreCallMenu" hidden>
-        <span>Manage microphone, speaker, and call details.</span>
+        <span>Camera and call options.</span>
         <br>
-        <button type="button" id="copyCallIdButton">Copy call ID</button>
         <button class="video-control" type="button" aria-label="Camera switch" title="Switch camera">Switch camera</button>
       </div>
     </div>
 
     <div class="panel" id="callPanel">
       <span id="callModeDescription">You are currently in a <strong id="callModeText">audio</strong> call.</span>
-      <div class="room-tools">
-        <input id="roomIdInput" type="text" placeholder="Room ID" autocomplete="off">
-        <button type="button" onclick="createRoom()">Create</button>
-        <button type="button" onclick="joinRoom()">Join</button>
-      </div>
       <div id="roomInfo"></div>
     </div>
   </div>
@@ -515,21 +584,19 @@
     const callType = params.get('type') || 'audio';
     let videoEnabled = callType === 'video';
     const isGroupCall = params.get('group') === 'true' || chatEmail.toLowerCase() === 'team-group';
-    const initialRoomId = (params.get('room') || '').trim();
+    let initialRoomId = '';
     const callRole = params.get('role') || 'callee';
     const directCallId = (params.get('call') || '').trim();
     let currentUserEmail = (localStorage.getItem('currentUserEmail') || '').trim().toLowerCase();
-    const roomTools = document.querySelector('.room-tools');
-    if (roomTools) roomTools.style.display = 'none';
     document.body.classList.toggle('audio-call', callType !== 'video');
     document.body.classList.toggle('video-call', videoEnabled);
-    document.body.classList.toggle('direct-call', Boolean(directCallId));
+    document.body.classList.toggle('direct-call', Boolean(directCallId && !isGroupCall));
     document.getElementById('callTypeBadge').textContent = callType === 'video' ? 'Video' : 'Audio';
     document.getElementById('callModeText').textContent = callType;
     const roomInfo = document.getElementById('roomInfo');
     const callPanel = document.getElementById('callPanel');
     const updateCallPanelVisibility = () => {
-      if (callPanel && directCallId) {
+      if (callPanel && directCallId && !isGroupCall) {
         callPanel.hidden = !roomInfo.textContent.trim();
       }
     };
@@ -537,7 +604,7 @@
       new MutationObserver(updateCallPanelVisibility).observe(roomInfo, { childList: true, characterData: true, subtree: true });
       updateCallPanelVisibility();
     }
-    const autoJoin = Boolean(initialRoomId);
+    let autoJoin = Boolean(initialRoomId);
     const savedProfileEmail = (localStorage.getItem('selectedProfileEmail') || '').trim().toLowerCase();
     const savedProfileName = localStorage.getItem('selectedProfileName') || '';
     const savedProfilePhoto = localStorage.getItem('selectedProfilePhoto') || '';
@@ -966,7 +1033,9 @@
         : { audio: true, video: false };
       localStream = await navigator.mediaDevices.getUserMedia(constraints);
       document.getElementById('localVideo').srcObject = localStream;
-      document.getElementById('videoGrid').classList.remove('active', 'connected');
+      if (callType !== 'video') {
+        document.getElementById('videoGrid').classList.remove('active', 'connected');
+      }
       return localStream;
     }
 
@@ -1112,6 +1181,7 @@
         videoEnabled = false;
         document.getElementById('localVideo').style.visibility = 'hidden';
         updateVideoControl();
+        showConnectedVideoLayout();
         return;
       }
 
@@ -1200,9 +1270,14 @@
       const remoteStream = document.getElementById('remoteVideo').srcObject;
       const remoteHasVideo = remoteStream && typeof remoteStream.getVideoTracks === 'function'
         && remoteStream.getVideoTracks().some(track => track.readyState === 'live');
-      if (!videoEnabled && !remoteHasVideo) return;
       const videoGrid = document.getElementById('videoGrid');
+      if (!videoEnabled && !remoteHasVideo) {
+        videoGrid.classList.remove('active', 'connected');
+        document.body.classList.remove('video-connected');
+        return;
+      }
       videoGrid.classList.add('active', 'connected');
+      document.body.classList.add('video-connected');
       document.getElementById('localVideo').play().catch(() => {});
       document.getElementById('remoteVideo').play().catch(() => {});
     }
@@ -1458,12 +1533,9 @@
 
     async function createRoom() {
       if (peerConnection) return;
-      const id = document.getElementById('roomIdInput').value.trim();
-      roomRef = id ? db.collection('rooms').doc(id) : db.collection('rooms').doc();
-      document.getElementById('roomIdInput').value = roomRef.id;
-      document.getElementById('roomInfo').textContent = isGroupCall
-        ? 'Team Group call is connecting automatically...'
-        : `Share this Room ID: ${roomRef.id}`;
+      if (!initialRoomId) throw new Error('This call link is invalid. Start a new call from Team Meet.');
+      roomRef = db.collection('rooms').doc(initialRoomId);
+      document.getElementById('roomInfo').textContent = 'Connecting to the group call...';
       await preparePeerConnection(roomRef);
       const offer = await peerConnection.createOffer();
       await peerConnection.setLocalDescription(offer);
@@ -1481,12 +1553,8 @@
 
     async function joinRoom() {
       if (peerConnection) return;
-      const id = document.getElementById('roomIdInput').value.trim();
-      if (!id) {
-        document.getElementById('roomInfo').textContent = 'Enter a Room ID first.';
-        return;
-      }
-      roomRef = db.collection('rooms').doc(id);
+      if (!initialRoomId) throw new Error('This call link is invalid. Open the invitation from Team Meet.');
+      roomRef = db.collection('rooms').doc(initialRoomId);
       const snapshot = await roomRef.get();
       const data = snapshot.data();
       if (!snapshot.exists || !data || !data.offer) {
@@ -1552,25 +1620,6 @@
       event.currentTarget.setAttribute('aria-expanded', String(!isExpanded));
       menu.hidden = isExpanded;
     });
-    document.getElementById('copyCallIdButton').addEventListener('click', async () => {
-      const callIdToCopy = directCallId || initialRoomId;
-      if (!callIdToCopy) {
-        document.getElementById('roomInfo').textContent = 'There is no call ID for this call.';
-        return;
-      }
-      if (!navigator.clipboard || typeof navigator.clipboard.writeText !== 'function') {
-        document.getElementById('roomInfo').textContent = 'Clipboard access is unavailable on this device.';
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(callIdToCopy);
-        document.getElementById('roomInfo').textContent = 'Call ID copied.';
-      } catch (error) {
-        console.error('Could not copy the call ID:', error);
-        document.getElementById('roomInfo').textContent = 'Could not copy the call ID.';
-      }
-    });
-
     document.querySelector('[aria-label="End call"]').addEventListener('click', async () => {
       if (callEnding) return;
       callEnding = true;
@@ -1614,13 +1663,6 @@
       window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
     });
 
-    if (initialRoomId) {
-      document.getElementById('roomIdInput').value = initialRoomId;
-      document.getElementById('roomInfo').textContent = isGroupCall
-        ? 'Group call invite. Press Join to connect.'
-        : 'Press Join to connect to this call.';
-    }
-
     async function initializeCall() {
       const authenticatedUser = await new Promise(resolve => {
         let unsubscribe = () => {};
@@ -1643,6 +1685,16 @@
       localStorage.setItem('currentUserEmail', currentUserEmail);
       localStorage.setItem('currentUserUid', authenticatedUser.uid || '');
       loadMemberFromFirestore();
+
+      if (isGroupCall && directCallId && !initialRoomId) {
+        const groupCallSnapshot = await db.collection('calls').doc(directCallId).get();
+        const groupCall = groupCallSnapshot.data();
+        if (!groupCallSnapshot.exists || !groupCall || !groupCall.roomId) {
+          throw new Error('This group call has expired or is no longer available.');
+        }
+        initialRoomId = String(groupCall.roomId).trim();
+        autoJoin = Boolean(initialRoomId);
+      }
 
       if (params.get('action') === 'decline' && directCallId) {
         stopConnectingTone();

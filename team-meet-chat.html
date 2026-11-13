@@ -2658,10 +2658,9 @@
 
     }
 
-    function joinGroupCall(encodedRoomId, type) {
-      const roomId = decodeURIComponent(encodedRoomId || '');
-      if (!roomId) return;
-      window.location.href = `team-meet-call.html?chat=team-group&group=true&room=${encodeURIComponent(roomId)}&type=${encodeURIComponent(type || 'audio')}`;
+    function joinGroupCall(callId, type) {
+      if (!callId) return;
+      window.location.href = `team-meet-call.html?chat=team-group&group=true&call=${encodeURIComponent(callId)}&role=callee&type=${encodeURIComponent(type || 'audio')}`;
     }
 
     function listenForIncomingCalls() {
@@ -2729,7 +2728,7 @@
           document.getElementById('acceptIncomingCall').onclick = () => {
             stopIncomingCallTone();
             const groupParams = isGroupCall
-              ? `chat=team-group&group=true&room=${encodeURIComponent(data.roomId || '')}&role=callee`
+              ? `chat=team-group&group=true&call=${encodeURIComponent(call.id)}&role=callee`
               : `chat=${encodeURIComponent(data.callerId || '')}&call=${encodeURIComponent(call.id)}&role=callee`;
             window.location.href = `team-meet-call.html?${groupParams}&type=${encodeURIComponent(data.callType || 'audio')}`;
           };
@@ -2998,6 +2997,7 @@
       const messages = getMessages();
         const inviteMessage = {
           id: `call-${Date.now()}`,
+          callId: groupCallId,
           sender: 'me',
           senderEmail: currentUserEmail,
           senderName: getCurrentSenderProfile().name,
@@ -3005,7 +3005,6 @@
           self: true,
           type: 'call-invite',
           callType: type,
-          roomId,
           text: `${type === 'video' ? 'Video' : 'Audio'} group call started`,
           createdAt: new Date().toISOString(),
           time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
@@ -3036,12 +3035,11 @@
           title: 'Team group call',
           body: `${type === 'video' ? 'Video' : 'Audio'} group call started`,
           callId: groupCallId,
-          roomId,
           groupCall: true,
           callType: type,
           callerName: getCurrentSenderProfile().name
         });
-        const url = `team-meet-call.html?chat=team-group&group=true&room=${encodeURIComponent(roomId)}&role=caller&type=${type}`;
+        const url = `team-meet-call.html?chat=team-group&group=true&call=${encodeURIComponent(groupCallId)}&role=caller&type=${type}`;
         window.location.href = url;
         return;
       }
