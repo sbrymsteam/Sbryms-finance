@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sbryms-finance-v57';
+const CACHE_NAME = 'sbryms-finance-v58';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -134,17 +134,23 @@ self.addEventListener('fetch', event => {
   }
 
   if (request.mode === 'navigate' || request.destination === 'document') {
-    event.respondWith((async () => {
-      const cached = await caches.match(request, { ignoreSearch: true });
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
-      try {
-        const response = await fetch(request, { signal: controller.signal });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const refresh = fetch(request, { signal: controller.signal })
+      .then(async response => {
         if (response.ok) {
           const cache = await caches.open(CACHE_NAME);
           await cache.put(request, response.clone());
         }
         return response;
+      })
+      .finally(() => clearTimeout(timeoutId));
+    event.waitUntil(refresh.then(() => undefined).catch(() => undefined));
+    event.respondWith((async () => {
+      const cached = await caches.match(request, { ignoreSearch: true });
+      if (cached) return cached;
+      try {
+        return await refresh;
       } catch (error) {
         if (cached) return cached;
         if (url.pathname === '/' || url.pathname === '/index.html') {
@@ -163,8 +169,6 @@ self.addEventListener('fetch', event => {
           '<!doctype html><html lang="bn"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline</title><body><h1>ইন্টারনেট সংযোগ নেই</h1><p>এই পেজটি আগে খোলা হয়নি। সংযোগ ফিরে এলে আবার চেষ্টা করুন।</p></body></html>',
           { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
         );
-      } finally {
-        clearTimeout(timeoutId);
       }
     })());
     return;

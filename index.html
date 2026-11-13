@@ -282,7 +282,11 @@
     </script>
     <script>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
+                    .then(registration => registration.update())
+                    .catch(error => console.warn('Service worker update check failed:', error));
+            });
         }
     </script>
 </body>

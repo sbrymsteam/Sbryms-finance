@@ -116,7 +116,8 @@
     if (!configResponse.ok || !config.vapidKey) {
       throw new Error(config.error || 'Web push is not configured on the server.');
     }
-    const worker = await navigator.serviceWorker.register('/sw.js');
+    const worker = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+    await worker.update();
     await navigator.serviceWorker.ready;
     const messaging = firebase.messaging();
     if (!foregroundMessageListenerAttached) {
