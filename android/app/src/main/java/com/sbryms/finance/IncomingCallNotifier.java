@@ -6,12 +6,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.app.KeyguardManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.RectF;
 import android.media.AudioAttributes;
 import android.media.RingtoneManager;
 import android.os.Build;
@@ -20,11 +14,6 @@ import android.util.Log;
 import android.widget.RemoteViews;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.Map;
 
 final class IncomingCallNotifier {
@@ -39,8 +28,6 @@ final class IncomingCallNotifier {
     static final String CHANNEL_CALLS_FOREGROUND = "sbryms_incoming_calls_foreground_v3";
     static final String CHANNEL_MESSAGES = "sbryms_messages_v3";
     private static final String TAG = "IncomingCallNotifier";
-    private static final int MAX_PROFILE_PHOTO_BYTES = 4 * 1024 * 1024;
-
     private IncomingCallNotifier() {}
 
     static void show(Context context, Map<String, String> data) {
@@ -135,9 +122,6 @@ final class IncomingCallNotifier {
         }
 
         NotificationManagerCompat.from(context).notify(notificationId, notification.build());
-        if (!call && messageView != null) {
-            loadSenderPhoto(context, notificationId, messageView, notification, data.get("senderPhoto"));
-        }
         if (launchCallScreenDirectly) {
             openIntent.addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK
@@ -171,82 +155,6 @@ final class IncomingCallNotifier {
         view.setImageViewResource(R.id.message_sender_photo, R.mipmap.ic_launcher_round);
         view.setImageViewResource(R.id.message_app_badge, R.mipmap.ic_launcher_round);
         return view;
-    }
-
-    private static void loadSenderPhoto(
-        Context context,
-        int notificationId,
-        RemoteViews messageView,
-        NotificationCompat.Builder notification,
-        String photoUrl
-    ) {
-        if (photoUrl == null || !photoUrl.startsWith("https://")) return;
-        Thread photoLoader = new Thread(() -> {
-            try {
-                Bitmap photo = downloadCircularPhoto(photoUrl);
-                if (photo == null) return;
-                messageView.setImageViewBitmap(R.id.message_sender_photo, photo);
-                NotificationManagerCompat.from(context).notify(notificationId, notification.build());
-            } catch (IOException | IllegalArgumentException error) {
-                Log.w(TAG, "Could not load the sender profile photo for a notification.", error);
-            }
-        }, "sbryms-notification-photo");
-        photoLoader.setDaemon(true);
-        photoLoader.start();
-    }
-
-    private static Bitmap downloadCircularPhoto(String photoUrl) throws IOException {
-        URL url = new URL(photoUrl);
-        if (!"https".equalsIgnoreCase(url.getProtocol())) return null;
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setConnectTimeout(2500);
-        connection.setReadTimeout(2500);
-        try {
-            int responseCode = connection.getResponseCode();
-            if (responseCode < 200 || responseCode >= 300
-                || !"https".equalsIgnoreCase(connection.getURL().getProtocol())) return null;
-            long contentLength = connection.getContentLengthLong();
-            if (contentLength > MAX_PROFILE_PHOTO_BYTES) return null;
-
-            byte[] imageBytes;
-            try (InputStream input = connection.getInputStream();
-                 ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-                byte[] buffer = new byte[8192];
-                int count;
-                while ((count = input.read(buffer)) != -1) {
-                    if (output.size() + count > MAX_PROFILE_PHOTO_BYTES) return null;
-                    output.write(buffer, 0, count);
-                }
-                imageBytes = output.toByteArray();
-            }
-
-            BitmapFactory.Options bounds = new BitmapFactory.Options();
-            bounds.inJustDecodeBounds = true;
-            BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length, bounds);
-            if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null;
-
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inSampleSize = Math.max(1, Math.min(bounds.outWidth, bounds.outHeight) / 192);
-            Bitmap source = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length, options);
-            if (source == null) return null;
-            int side = Math.min(source.getWidth(), source.getHeight());
-            int left = (source.getWidth() - side) / 2;
-            int top = (source.getHeight() - side) / 2;
-            Bitmap square = Bitmap.createBitmap(source, left, top, side, side);
-            if (square != source) source.recycle();
-
-            Bitmap circular = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888);
-            Canvas canvas = new Canvas(circular);
-            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            Path clip = new Path();
-            clip.addOval(new RectF(0, 0, side, side), Path.Direction.CW);
-            canvas.clipPath(clip);
-            canvas.drawBitmap(square, 0, 0, paint);
-            square.recycle();
-            return circular;
-        } finally {
-            connection.disconnect();
-        }
     }
 
     static String createCallUrl(Map<String, String> data) {

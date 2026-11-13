@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sbryms-finance-v56';
+const CACHE_NAME = 'sbryms-finance-v57';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -45,14 +45,9 @@ self.addEventListener('push', event => {
   const title = isCall
     ? (notification.title || data.callerName || data.title || 'Incoming call')
     : (data.senderName || data.title || notification.title || 'SBRYMS Finance');
-  const senderPhoto = !isCall && typeof data.senderPhoto === 'string'
-    && data.senderPhoto.startsWith('https://')
-    ? data.senderPhoto
-    : '';
   const options = {
     body: notification.body || data.body || 'You have a new message or call.',
-    icon: isCall ? '/assets/app-icon-192.png' : (senderPhoto || '/assets/app-icon-192.png'),
-    image: senderPhoto || undefined,
+    icon: '/assets/app-icon-192.png',
     badge: '/assets/app-icon-192.png',
     tag: isCall && callId
       ? `sbryms-call-${callId}`

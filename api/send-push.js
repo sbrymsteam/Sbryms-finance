@@ -78,10 +78,6 @@ module.exports = async function sendPush(req, res) {
     const senderName = typeof req.body?.senderName === 'string'
       ? req.body.senderName.trim().slice(0, 80)
       : '';
-    const senderPhoto = typeof req.body?.senderPhoto === 'string'
-      && req.body.senderPhoto.startsWith('https://')
-      ? req.body.senderPhoto.slice(0, 1500)
-      : '';
     if ((!recipient || (recipient !== 'all' && !recipient.includes('@')))
       || !allowedTypes.has(type) || !title || !body) {
       res.status(400).json({ error: 'A valid recipient, type, title, and message are required.' });
@@ -99,6 +95,8 @@ module.exports = async function sendPush(req, res) {
 
     const targets = await getRecipientTokens(services.db, recipient, user.uid);
     let sent = 0;
+    let failed = 0;
+    const errorCodes = new Set();
     for (let index = 0; index < targets.length; index += 500) {
       const batch = targets.slice(index, index + 500);
       const senderEmail = String(user.email || '').trim().toLowerCase();
@@ -132,7 +130,6 @@ module.exports = async function sendPush(req, res) {
         const messageChat = recipient === 'all' ? 'team-group' : senderEmail;
         Object.assign(notificationData, {
           senderName: messageSenderName,
-          senderPhoto,
           messageId,
           chat: messageChat,
           url: `/team-meet-chat.html?chat=${encodeURIComponent(messageChat)}`
@@ -147,18 +144,28 @@ module.exports = async function sendPush(req, res) {
         android: { priority: 'high', ttl: 600_000 }
       });
       sent += result.successCount;
+      failed += result.failureCount;
       const staleTokens = [];
       result.responses.forEach((response, responseIndex) => {
-        if (!response.success && [
-          'messaging/invalid-registration-token',
-          'messaging/registration-token-not-registered'
-        ].includes(response.error?.code)) {
-          staleTokens.push(batch[responseIndex].ref.delete());
+        if (!response.success) {
+          const errorCode = response.error?.code || 'messaging/unknown-error';
+          errorCodes.add(errorCode);
+          if ([
+            'messaging/invalid-registration-token',
+            'messaging/registration-token-not-registered'
+          ].includes(errorCode)) {
+            staleTokens.push(batch[responseIndex].ref.delete());
+          }
         }
       });
       await Promise.all(staleTokens);
     }
-    res.status(200).json({ sent });
+    res.status(200).json({
+      targets: targets.length,
+      sent,
+      failed,
+      errorCodes: Array.from(errorCodes)
+    });
   } catch (error) {
     console.error('Push delivery failed:', error.message);
     res.status(503).json({ error: 'Push delivery is temporarily unavailable.' });

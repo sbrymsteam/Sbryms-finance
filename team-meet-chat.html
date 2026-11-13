@@ -1992,12 +1992,10 @@
         || document.visibilityState !== 'visible'
         || !('Notification' in window) || Notification.permission !== 'granted') return;
       const senderName = message.senderName || selectedMember.name || 'New message';
-      const senderPhoto = message.senderPhoto || selectedMember.photo || '';
       const body = message.deleted ? 'Message deleted' : (message.text || 'New voice message');
       const notificationOptions = {
         body,
-        icon: senderPhoto || '/assets/app-icon-192.png',
-        image: senderPhoto || undefined,
+        icon: '/assets/app-icon-192.png',
         badge: '/assets/app-icon-192.png',
         tag: `sbryms-message-${conversationId}`,
         data: { url: `/team-meet-chat.html?chat=${encodeURIComponent(conversationId)}` }
@@ -2276,14 +2274,34 @@
         read: false,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       }).catch(error => console.error('Failed to create in-app notification:', error));
-      if (type === 'message' && window.sbrymsPush) window.sbrymsPush.send({
-        recipient,
-        type,
-        title,
-        senderName: getCurrentSenderProfile().name,
-        senderPhoto: getCurrentSenderProfile().photo,
-        body: message
-      });
+      if (type === 'message') {
+        const pushReady = window.sbrymsPushReady || Promise.resolve(window.sbrymsPush);
+        pushReady
+          .then(push => {
+            if (!push) throw new Error('Push notification service is unavailable.');
+            return push.send({
+              recipient,
+              type,
+              title,
+              senderName: getCurrentSenderProfile().name,
+              body: message
+            });
+          })
+          .then(result => {
+            if (result.targets === 0) {
+              showAttachmentNotice('Message sent, but this recipient has no registered notification device.');
+            } else if (result.sent === 0) {
+              showAttachmentNotice('Message sent, but push delivery failed. Check notification setup on the recipient device.');
+              console.error('Push delivery failed for all recipient devices:', result.errorCodes);
+            } else if (result.failed > 0) {
+              console.warn('Push delivery reached some devices but failed for others:', result.errorCodes);
+            }
+          })
+          .catch(error => {
+            console.error('Could not send a push notification for this message:', error);
+            showAttachmentNotice('Message sent, but its push notification could not be delivered.');
+          });
+      }
     }
 
     function cancelReply() {
@@ -2701,7 +2719,7 @@
                 && activeIncomingCallId === call.id) {
               const notification = new Notification(data.callerName || 'Incoming call', {
                 body: `${data.callType === 'video' ? 'Video' : 'Audio'} call`,
-                icon: buildAvatarSvg(data.callerName || 'Caller'),
+                icon: '/assets/app-icon-192.png',
                 tag: `incoming-call-${call.id}`
               });
               notification.onclick = () => {

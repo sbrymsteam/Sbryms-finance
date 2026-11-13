@@ -36,39 +36,8 @@
     return user;
   }
 
-  async function uploadProfilePhotoDataUrl(photoDataUrl, user) {
-    const cacheKey = `profilePhotoCloudinary_${user.uid}`;
-    const cachedPhoto = localStorage.getItem(cacheKey);
-    if (cachedPhoto && cachedPhoto.startsWith('https://')) return cachedPhoto;
-
-    const signature = await apiRequest('/api/cloudinary-signature', { purpose: 'profile-photo' });
-    const formData = new FormData();
-    formData.append('file', photoDataUrl);
-    formData.append('api_key', signature.apiKey);
-    formData.append('timestamp', String(signature.timestamp));
-    formData.append('folder', signature.folder);
-    formData.append('signature', signature.signature);
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${encodeURIComponent(signature.cloudName)}/image/upload`,
-      { method: 'POST', body: formData }
-    );
-    const uploaded = await response.json();
-    if (!response.ok || typeof uploaded.secure_url !== 'string'
-      || !uploaded.secure_url.startsWith('https://')) {
-      throw new Error(uploaded.error && uploaded.error.message
-        ? uploaded.error.message
-        : 'Profile photo upload failed.');
-    }
-
-    localStorage.setItem(cacheKey, uploaded.secure_url);
-    if (window.firebase && firebase.firestore) {
-      await firebase.firestore().collection('users').doc(user.uid)
-        .set({ photo: uploaded.secure_url }, { merge: true });
-    }
-    return uploaded.secure_url;
-  }
-
   async function apiRequest(path, payload) {
+    await nativeReady;
     const user = await getCurrentUser();
     const response = await fetch(`${getApiBase()}${path}`, {
       method: 'POST',
@@ -106,18 +75,13 @@
     const url = data.url || notification.url || '/team-meet.html';
     const answerUrl = data.answerUrl || '';
     const eventId = data.messageId || data.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const senderPhoto = !isCall && typeof data.senderPhoto === 'string'
-      && data.senderPhoto.startsWith('https://')
-      ? data.senderPhoto
-      : '';
     if (isCall && String(data.groupCall) === 'true'
       && window.location.pathname === '/team-meet.html'
       && document.visibilityState === 'visible') return;
     const registration = await navigator.serviceWorker.ready;
     await registration.showNotification(title, {
       body,
-      icon: isCall ? '/assets/app-icon-192.png' : (senderPhoto || '/assets/app-icon-192.png'),
-      image: senderPhoto || undefined,
+      icon: '/assets/app-icon-192.png',
       badge: '/assets/app-icon-192.png',
       tag: isCall && callId
         ? `sbryms-call-${callId}`
@@ -329,33 +293,9 @@
   }
 
   async function send(payload) {
-    try {
-      const notificationPayload = { ...payload };
-      if (typeof notificationPayload.senderPhoto === 'string'
-        && /^data:image\/(jpeg|png|webp);base64,/i.test(notificationPayload.senderPhoto)) {
-        try {
-          const user = await getCurrentUser();
-          notificationPayload.senderPhoto = await uploadProfilePhotoDataUrl(
-            notificationPayload.senderPhoto,
-            user
-          );
-        } catch (error) {
-          console.error('Could not prepare the sender profile photo for push:', error);
-          delete notificationPayload.senderPhoto;
-        }
-      } else if (typeof notificationPayload.senderPhoto !== 'string'
-        || !notificationPayload.senderPhoto.startsWith('https://')) {
-        delete notificationPayload.senderPhoto;
-      }
-      const result = await apiRequest('/api/send-push', notificationPayload);
-      if (notificationPayload.type === 'message' && result.sent === 0) {
-        console.warn('No recipient device has a registered push token. Open the APK and allow notifications on the recipient device.');
-      }
-      return result;
-    } catch (error) {
-      console.error('Could not send push notification:', error);
-      return null;
-    }
+    const notificationPayload = { ...payload };
+    delete notificationPayload.senderPhoto;
+    return apiRequest('/api/send-push', notificationPayload);
   }
 
   async function restoreIfEnabled() {

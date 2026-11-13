@@ -1239,7 +1239,12 @@ body.custom-image-background::before {
             const senderName = data.fromName || (type === 'team_call' ? 'Team Meet' : 'New message');
             const body = data.message || (type === 'team_call' ? 'A team call has started.' : 'You have a new message');
             const tag = type === 'team_call' ? 'sbryms-team-call' : 'sbryms-message';
-            new Notification(senderName, { body, tag, renotify: true });
+            new Notification(senderName, {
+                body,
+                icon: '/assets/app-icon-192.png',
+                tag,
+                renotify: true
+            });
         }
 
         function startNotificationPolling() {
