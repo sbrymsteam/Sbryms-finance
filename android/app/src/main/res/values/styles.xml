@@ -21,12 +21,13 @@
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenBackground">#050505</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon_blank</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
-        <item name="android:background">@drawable/splash</item>
-        <item name="android:statusBarColor">#080b10</item>
-        <item name="android:navigationBarColor">#080b10</item>
+        <item name="android:background">#050505</item>
+        <item name="android:windowBackground">#050505</item>
+        <item name="android:statusBarColor">#050505</item>
+        <item name="android:navigationBarColor">#050505</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>
