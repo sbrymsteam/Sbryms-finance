@@ -3047,6 +3047,7 @@
           roomId,
           callerId: currentUserEmail,
           callerName: localStorage.getItem('currentUserName') || 'SBRYMS member',
+          callerPhoto: getCurrentSenderProfile().photo,
           callType: type,
           status: 'ringing',
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -3062,7 +3063,8 @@
           callId: groupCallId,
           groupCall: true,
           callType: type,
-          callerName: getCurrentSenderProfile().name
+          callerName: getCurrentSenderProfile().name,
+          senderPhoto: getCurrentSenderProfile().photo
         });
         const url = `team-meet-call.html?chat=team-group&group=true&call=${encodeURIComponent(groupCallId)}&role=caller&type=${type}`;
         window.location.href = url;

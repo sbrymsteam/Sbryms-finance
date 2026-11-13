@@ -125,6 +125,7 @@ module.exports = async function sendPush(req, res) {
           callType,
           groupCall: String(groupCall),
           callerName: callerName || String(user.name || user.email || 'SBRYMS member').slice(0, 80),
+          callerPhoto: senderPhoto,
           url: answerUrl,
           chatUrl: `/team-meet-chat.html?chat=${encodeURIComponent(callChat)}`,
           answerUrl

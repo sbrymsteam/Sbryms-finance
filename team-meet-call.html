@@ -19,6 +19,7 @@
       --muted: #9bb0c9;
       --border: rgba(255,255,255,0.1);
     }
+
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -46,6 +47,7 @@
       overflow: hidden;
       box-shadow: 0 28px 90px rgba(0,0,0,0.5), inset 0 1px rgba(255,255,255,0.05);
     }
+
     body.audio-call {
       background:
         radial-gradient(ellipse at 50% 34%, rgba(35, 122, 102, 0.3), transparent 38%),
@@ -128,6 +130,7 @@
       margin: 0 auto 10px;
       display: grid; place-items: center;
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border: 3px solid rgba(130, 235, 211, 0.82);
       font-size: 26px; font-weight: 700;
       box-shadow: 0 0 0 5px rgba(90,225,215,0.05), 0 0 0 10px rgba(90,225,215,0.025), 0 14px 30px rgba(44,201,245,0.16);
       animation: avatarPulse 2.8s ease-in-out infinite;
@@ -152,7 +155,15 @@
       0%, 100% { box-shadow: 0 0 0 8px rgba(55, 190, 143, 0.07), 0 0 0 18px rgba(55, 190, 143, 0.035), 0 18px 48px rgba(0,0,0,0.4); }
       50% { box-shadow: 0 0 0 12px rgba(55, 190, 143, 0.11), 0 0 0 25px rgba(55, 190, 143, 0.045), 0 20px 52px rgba(0,0,0,0.44); }
     }
-    .avatar img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 50%; background: #050a12; }
+    .avatar img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      clip-path: circle(50%);
+      background: #050a12;
+    }
     @keyframes avatarPulse {
       0%, 100% { transform: scale(1); box-shadow: 0 0 0 5px rgba(90,225,215,0.05), 0 0 0 10px rgba(90,225,215,0.025), 0 14px 30px rgba(44,201,245,0.16); }
       50% { transform: scale(1.02); box-shadow: 0 0 0 7px rgba(90,225,215,0.06), 0 0 0 13px rgba(90,225,215,0.02), 0 16px 34px rgba(44,201,245,0.2); }
@@ -492,7 +503,7 @@
 <body>
   <div class="call-shell">
     <div class="header">
-      <button class="back-btn" type="button" aria-label="Back" onclick="window.location.href='team-meet-chat.html#chat=' + encodeURIComponent(chatEmail)">←</button>
+      <button class="back-btn" id="callBackButton" type="button" aria-label="Back">←</button>
       <span class="call-type" id="callTypeBadge">Audio</span>
     </div>
 
@@ -654,7 +665,7 @@
       document.getElementById('callModeText').textContent = callType;
       const avatarEl = document.getElementById('avatar');
       const avatarSrc = member.photo || buildAvatarSvg(member.name);
-      avatarEl.innerHTML = `<img src="${avatarSrc}" alt="${member.name}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;background:#050a12" />`;
+      avatarEl.innerHTML = `<img src="${avatarSrc}" alt="${member.name}" />`;
       const image = avatarEl.querySelector('img');
       if (image) image.addEventListener('error', () => {
         image.onerror = null;
@@ -718,6 +729,7 @@
     let incomingToneTimer = null;
     let incomingToneAudio = null;
     let unansweredCallTimer = null;
+    let remoteDisconnectTimer = null;
     let connectedTonePlayed = false;
     let callEnding = false;
     let callHistorySaved = false;
@@ -735,6 +747,62 @@
       document.body.classList.toggle('call-connecting', !errorState && !connectedState);
       document.body.classList.toggle('call-connected', connectedState);
       document.body.classList.toggle('call-error', errorState);
+    }
+
+    function getCallControls() {
+      return window.Capacitor
+        && typeof window.Capacitor.isNativePlatform === 'function'
+        && window.Capacitor.isNativePlatform()
+        && window.Capacitor.Plugins
+        ? window.Capacitor.Plugins.CallControls
+        : null;
+    }
+
+    let callNotificationStarted = false;
+
+    function stopNativeCallNotification() {
+      const controls = getCallControls();
+      callNotificationStarted = false;
+      if (controls && typeof controls.stop === 'function') {
+        controls.stop().catch(error => console.error('Could not clear the active-call notification:', error));
+      }
+    }
+
+    async function startNativeCallNotification() {
+      const controls = getCallControls();
+      if (!controls || typeof controls.start !== 'function' || callNotificationStarted) return;
+      try {
+        await controls.start({
+          callId: directCallId || initialRoomId || `call-${Date.now()}`,
+          name: document.getElementById('targetName').textContent || 'SBRYMS member',
+          callType,
+          url: `${window.location.pathname}${window.location.search}`
+        });
+        callNotificationStarted = true;
+      } catch (error) {
+        console.error('Could not show the active-call notification:', error);
+      }
+    }
+
+    async function minimizeCallToNotification() {
+      const controls = getCallControls();
+      if (!controls || typeof controls.minimize !== 'function') return false;
+      await controls.minimize();
+      return true;
+    }
+
+    function handleCallBack() {
+      if (callEnding) {
+        window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
+        return;
+      }
+      if ((callStartedAt || callNotificationStarted) && getCallControls()) {
+        startNativeCallNotification()
+          .then(minimizeCallToNotification)
+          .catch(error => console.error('Could not minimize the active call:', error));
+        return;
+      }
+      endCall();
     }
 
     function updateVideoControl() {
@@ -774,6 +842,55 @@
         console.error('Could not check the recipient presence before calling:', error);
         return null;
       }
+    }
+
+    async function getCurrentCallProfile(user) {
+      let data = {};
+      try {
+        const userSnapshot = await db.collection('users').doc(user.uid).get();
+        if (userSnapshot.exists) data = userSnapshot.data();
+      } catch (error) {
+        console.error('Could not load the caller profile from Firestore:', error);
+      }
+      let photo = data.photo || data.profilePhoto || data.photoURL || data.avatar
+        || localStorage.getItem(`profilePhotoCloudinary_${user.uid}`)
+        || '';
+      if (!photo) {
+        try {
+          const accountSnapshot = await db.collection('users')
+            .where('email', '==', user.email.trim().toLowerCase())
+            .limit(1)
+            .get();
+          if (!accountSnapshot.empty) {
+            const account = accountSnapshot.docs[0].data();
+            photo = account.photo || account.profilePhoto || account.photoURL || account.avatar || '';
+          }
+        } catch (error) {
+          console.error('Could not look up the caller profile photo:', error);
+        }
+      }
+      let push = window.sbrymsPush;
+      if (!push && window.sbrymsPushReady) {
+        try {
+          push = await window.sbrymsPushReady;
+        } catch (error) {
+          console.error('Push photo preparation is unavailable:', error);
+        }
+      }
+      if (push && typeof push.prepareProfilePhoto === 'function') {
+        try {
+          photo = await push.prepareProfilePhoto(photo);
+        } catch (error) {
+          console.error('Could not prepare the caller profile photo:', error);
+          photo = '';
+        }
+      } else if (typeof photo !== 'string' || !photo.startsWith('https://')) {
+        photo = '';
+      }
+      return {
+        name: data.name || localStorage.getItem('currentUserName') || user.displayName || 'SBRYMS member',
+        photo
+      };
     }
 
     function playCallTone({ frequency, duration, volume, type = 'sine' }) {
@@ -931,6 +1048,10 @@
     async function handleRemoteCallEnded(endedReason = '') {
       if (callEnding) return;
       callEnding = true;
+      if (remoteDisconnectTimer) {
+        clearTimeout(remoteDisconnectTimer);
+        remoteDisconnectTimer = null;
+      }
       stopConnectingTone();
       stopIncomingTone();
       stopUnansweredCallTimer();
@@ -958,6 +1079,7 @@
         window.screenShareStream.getTracks().forEach(track => track.stop());
         window.screenShareStream = null;
       }
+      stopNativeCallNotification();
       const outcome = ['declined', 'rejected', 'busy'].includes(endedReason)
         ? 'busy'
         : endedReason === 'offline' || endedReason === 'disconnected'
@@ -1021,6 +1143,7 @@
         window.screenShareStream.getTracks().forEach(track => track.stop());
         window.screenShareStream = null;
       }
+      stopNativeCallNotification();
       setTimeout(() => {
         window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
       }, 3000);
@@ -1284,6 +1407,7 @@
 
     async function preparePeerConnection(ref) {
       peerConnection = await new RTCPeerConnection(rtcConfig);
+      const connection = peerConnection;
       const stream = await openUserMedia();
       stream.getTracks().forEach(track => {
         const sender = peerConnection.addTrack(track, stream);
@@ -1300,7 +1424,11 @@
         if (event.candidate) ref.collection('candidates').add(event.candidate.toJSON());
       };
       peerConnection.onconnectionstatechange = () => {
-        const state = peerConnection.connectionState;
+        if (remoteDisconnectTimer) {
+          clearTimeout(remoteDisconnectTimer);
+          remoteDisconnectTimer = null;
+        }
+        const state = connection.connectionState;
         if (state === 'connected') {
           setCallStatus('Connected', 'success');
         } else if (['failed', 'disconnected', 'closed'].includes(state)) {
@@ -1314,6 +1442,12 @@
           stopUnansweredCallTimer();
           playConnectedTone();
           startCallTimer();
+          startNativeCallNotification();
+        } else if (state === 'failed' || state === 'disconnected') {
+          remoteDisconnectTimer = setTimeout(() => {
+            if (peerConnection !== connection || connection.connectionState !== state || callEnding) return;
+            endCall('disconnected');
+          }, state === 'failed' ? 0 : 1500);
         }
       };
     }
@@ -1359,6 +1493,7 @@
         await saveCallHistory('disconnected');
         return;
       }
+      const callerProfile = await getCurrentCallProfile(authenticatedUser);
       directCallRef = db.collection('calls').doc(directCallId);
       await preparePeerConnection(directCallRef);
       peerConnection.onicecandidate = event => {
@@ -1368,7 +1503,8 @@
       await peerConnection.setLocalDescription(offer);
       await directCallRef.set({
         callerId: authenticatedUser.email.trim().toLowerCase(),
-        callerName: localStorage.getItem('currentUserName') || 'SBRYMS member',
+        callerName: callerProfile.name,
+        callerPhoto: callerProfile.photo,
         receiverId: chatEmail.toLowerCase(),
         callType,
         offer: { type: offer.type, sdp: offer.sdp },
@@ -1383,7 +1519,8 @@
         callId: directCallId,
         chat: chatEmail.toLowerCase(),
         callType,
-        callerName: localStorage.getItem('currentUserName') || 'SBRYMS member'
+        callerName: callerProfile.name,
+        senderPhoto: callerProfile.photo
       });
       db.collection('notifications').add({
         to: chatEmail.toLowerCase(),
@@ -1413,6 +1550,13 @@
       if (String(data.receiverId || '').trim().toLowerCase() !== currentUserEmail) {
         throw new Error('This call was not sent to your account.');
       }
+      if (typeof data.callerPhoto === 'string' && data.callerPhoto.startsWith('https://')) {
+        applyMember({
+          name: data.callerName || document.getElementById('targetName').textContent,
+          email: data.callerId || chatEmail,
+          photo: data.callerPhoto
+        });
+      }
       await preparePeerConnection(directCallRef);
       peerConnection.onicecandidate = event => {
         if (event.candidate) directCallRef.collection('receiverCandidates').add(event.candidate.toJSON());
@@ -1430,6 +1574,7 @@
       stopIncomingTone();
       stopUnansweredCallTimer();
       setCallStatus('Connecting...');
+      await startNativeCallNotification();
     }
 
     function startCallTimer() {
@@ -1620,34 +1765,61 @@
       event.currentTarget.setAttribute('aria-expanded', String(!isExpanded));
       menu.hidden = isExpanded;
     });
-    document.querySelector('[aria-label="End call"]').addEventListener('click', async () => {
+    async function endCall(reason = '') {
       if (callEnding) return;
       callEnding = true;
       stopConnectingTone();
       stopIncomingTone();
       stopUnansweredCallTimer();
+      if (remoteDisconnectTimer) {
+        clearTimeout(remoteDisconnectTimer);
+        remoteDisconnectTimer = null;
+      }
       if (callTimer) {
         clearInterval(callTimer);
         callTimer = null;
       }
-      const callOutcome = callStartedAt
-        ? 'completed'
-        : callRole === 'callee' && directCallId
-          ? 'busy'
-          : 'cancelled';
-      await saveCallHistory(callOutcome);
+      stopNativeCallNotification();
       if (roomUnsubscribe) roomUnsubscribe();
       if (candidateUnsubscribe) candidateUnsubscribe();
+      if (!directCallRef && directCallId && !isGroupCall && callRole === 'callee') {
+        directCallRef = db.collection('calls').doc(directCallId);
+      }
       if (directCallUnsubscribe) directCallUnsubscribe();
       if (directCandidateUnsubscribe) directCandidateUnsubscribe();
-      if (directCallRef) directCallRef.update({
-        status: 'ended',
-        endedReason: callStartedAt ? 'completed' : callRole === 'callee' ? 'rejected' : 'cancelled'
-      }).catch(error => console.error('Failed to end call:', error));
       if (peerConnection) peerConnection.close();
+      peerConnection = null;
       if (localStream) localStream.getTracks().forEach(track => track.stop());
+      localStream = null;
+      if (window.screenShareStream) {
+        window.screenShareStream.getTracks().forEach(track => track.stop());
+        window.screenShareStream = null;
+      }
+      const endedReason = reason || (callStartedAt
+        ? 'completed'
+        : callRole === 'callee' && directCallId
+          ? 'rejected'
+          : 'cancelled');
+      const callOutcome = reason === 'disconnected'
+        ? 'disconnected'
+        : endedReason === 'rejected'
+          ? 'busy'
+          : callStartedAt
+            ? 'completed'
+            : 'cancelled';
+      if (directCallRef) {
+        await directCallRef.update({
+          status: 'ended',
+          endedReason,
+          endedBy: currentUserEmail
+        }).catch(error => console.error('Failed to notify the other member that the call ended:', error));
+      }
+      await saveCallHistory(callOutcome);
       window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
-    });
+    }
+
+    document.getElementById('callBackButton').addEventListener('click', handleCallBack);
+    document.querySelector('[aria-label="End call"]').addEventListener('click', () => endCall());
     document.getElementById('retryCallButton').addEventListener('click', () => {
       const nextCallId = `call-${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const retryUrl = new URL('team-meet-call.html', window.location.href);
@@ -1714,6 +1886,17 @@
         return;
       }
 
+      if (params.get('action') === 'end' && directCallId) {
+        await db.collection('calls').doc(directCallId).update({
+          status: 'ended',
+          endedReason: 'completed',
+          endedBy: currentUserEmail
+        });
+        stopNativeCallNotification();
+        window.location.replace('team-meet-chat.html#chat=' + encodeURIComponent(chatEmail));
+        return;
+      }
+
       if (!isGroupCall && directCallId) {
         if (callRole === 'caller') {
           setCallStatus('Calling...');
@@ -1723,6 +1906,7 @@
         const directAction = callRole === 'caller' ? startDirectCall() : answerDirectCall();
         directAction.catch(error => {
         console.error('Direct call setup failed:', error);
+        stopNativeCallNotification();
         stopConnectingTone();
         stopIncomingTone();
         stopUnansweredCallTimer();

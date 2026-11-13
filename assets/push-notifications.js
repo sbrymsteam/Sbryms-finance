@@ -68,6 +68,14 @@
     return uploaded.secure_url;
   }
 
+  async function prepareProfilePhoto(photo) {
+    if (typeof photo !== 'string') return '';
+    if (/^data:image\/(jpeg|png|webp);base64,/i.test(photo)) {
+      return uploadProfilePhotoDataUrl(photo, await getCurrentUser());
+    }
+    return photo.startsWith('https://') ? photo.slice(0, 1500) : '';
+  }
+
   async function apiRequest(path, payload) {
     await nativeReady;
     const user = await getCurrentUser();
@@ -333,12 +341,9 @@
   async function send(payload) {
     const notificationPayload = { ...payload };
     if (typeof notificationPayload.senderPhoto === 'string'
-      && /^data:image\/(jpeg|png|webp);base64,/i.test(notificationPayload.senderPhoto)) {
+      && notificationPayload.senderPhoto.startsWith('data:image/')) {
       try {
-        notificationPayload.senderPhoto = await uploadProfilePhotoDataUrl(
-          notificationPayload.senderPhoto,
-          await getCurrentUser()
-        );
+        notificationPayload.senderPhoto = await prepareProfilePhoto(notificationPayload.senderPhoto);
       } catch (error) {
         console.error('Could not prepare the sender photo for push:', error);
         delete notificationPayload.senderPhoto;
@@ -388,7 +393,14 @@
   })();
   nativeReady.catch(error => console.error('Capacitor push setup could not start:', error));
 
-  window.sbrymsPush = { enable, disable, send, getStatus, requestNotificationPermission };
+  window.sbrymsPush = {
+    enable,
+    disable,
+    send,
+    getStatus,
+    prepareProfilePhoto,
+    requestNotificationPermission
+  };
   window.sbrymsPushReady = nativeReady.then(() => window.sbrymsPush);
   window.sbrymsPushReady.catch(error => {
     console.error('Push notification services could not initialize:', error);

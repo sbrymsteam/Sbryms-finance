@@ -60,6 +60,10 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onBackPressed() {
+        if (ActiveCallService.isRunning()) {
+            moveTaskToBack(true);
+            return;
+        }
         WebView webView = getBridge() == null ? null : getBridge().getWebView();
         if (webView != null && webView.canGoBack()) {
             webView.goBack();
@@ -75,6 +79,7 @@ public class MainActivity extends BridgeActivity {
         );
         registerPlugin(DeviceSettingsPlugin.class);
         registerPlugin(PresencePlugin.class);
+        registerPlugin(CallControlsPlugin.class);
         super.onCreate(savedInstanceState);
         if (savedInstanceState == null
             && Intent.ACTION_MAIN.equals(getIntent().getAction())
@@ -114,6 +119,10 @@ public class MainActivity extends BridgeActivity {
 
         WebView webView = getBridge() == null ? null : getBridge().getWebView();
         if (webView == null) return;
+        if (ActiveCallService.isRunning()
+            && "/team-meet-call.html".equals(path)
+            && webView.getUrl() != null
+            && webView.getUrl().contains("/team-meet-call.html")) return;
         webView.postDelayed(() -> webView.loadUrl(uri.toString()), 700);
     }
 }

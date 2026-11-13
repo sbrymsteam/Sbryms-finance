@@ -33,6 +33,7 @@ final class IncomingCallNotifier {
     static final String EXTRA_TARGET_URL = "com.sbryms.finance.TARGET_URL";
     static final String EXTRA_TITLE = "com.sbryms.finance.CALL_TITLE";
     static final String EXTRA_CALL_TYPE = "com.sbryms.finance.CALL_TYPE";
+    static final String EXTRA_CALLER_PHOTO = "com.sbryms.finance.CALLER_PHOTO";
     static final String EXTRA_NOTIFICATION_ID = "com.sbryms.finance.NOTIFICATION_ID";
     static final String CHANNEL_CALLS = "sbryms_incoming_calls_dnd_v3";
     static final String CHANNEL_CALLS_STANDARD = "sbryms_incoming_calls_v3";
@@ -82,6 +83,7 @@ final class IncomingCallNotifier {
                 ))
                 .putExtra(EXTRA_TITLE, title)
                 .putExtra(EXTRA_CALL_TYPE, value(data.get("callType"), "audio"))
+                .putExtra(EXTRA_CALLER_PHOTO, value(data.get("callerPhoto"), ""))
                 .putExtra(EXTRA_NOTIFICATION_ID, notificationId);
             fullScreenIntent = PendingIntent.getActivity(
                 context,
@@ -195,7 +197,7 @@ final class IncomingCallNotifier {
         photoLoader.start();
     }
 
-    private static Bitmap downloadCircularPhoto(String photoUrl) throws IOException {
+    static Bitmap downloadCircularPhoto(String photoUrl) throws IOException {
         URL url = new URL(photoUrl);
         if (!"https".equalsIgnoreCase(url.getProtocol())) return null;
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();

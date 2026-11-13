@@ -3,11 +3,14 @@ package com.sbryms.finance;
 import android.app.Activity;
 import android.app.NotificationManager;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -16,6 +19,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import java.io.IOException;
 
 public class IncomingCallActivity extends Activity {
     private float answerTouchStartY;
@@ -90,12 +94,7 @@ public class IncomingCallActivity extends Activity {
         infoParams.setMargins(dp(24), dp(122), dp(24), 0);
         root.addView(callInfo, infoParams);
 
-        TextView avatar = new TextView(this);
-        avatar.setText(initials(callerName));
-        avatar.setTextColor(Color.WHITE);
-        avatar.setTextSize(44);
-        avatar.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        avatar.setGravity(Gravity.CENTER);
+        FrameLayout avatar = new FrameLayout(this);
         GradientDrawable avatarBackground = new GradientDrawable(
             GradientDrawable.Orientation.TL_BR,
             new int[] { Color.rgb(52, 194, 163), Color.rgb(33, 104, 151) }
@@ -106,6 +105,30 @@ public class IncomingCallActivity extends Activity {
         FrameLayout.LayoutParams avatarParams = new FrameLayout.LayoutParams(dp(172), dp(172), Gravity.CENTER);
         avatarParams.bottomMargin = dp(12);
         root.addView(avatar, avatarParams);
+        TextView avatarInitials = new TextView(this);
+        avatarInitials.setText(initials(callerName));
+        avatarInitials.setTextColor(Color.WHITE);
+        avatarInitials.setTextSize(44);
+        avatarInitials.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        avatarInitials.setGravity(Gravity.CENTER);
+        avatar.addView(avatarInitials, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ));
+        ImageView callerPhoto = new ImageView(this);
+        callerPhoto.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        GradientDrawable photoMask = new GradientDrawable();
+        photoMask.setShape(GradientDrawable.OVAL);
+        photoMask.setColor(Color.TRANSPARENT);
+        callerPhoto.setBackground(photoMask);
+        callerPhoto.setClipToOutline(true);
+        FrameLayout.LayoutParams photoParams = new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        );
+        photoParams.setMargins(dp(5), dp(5), dp(5), dp(5));
+        avatar.addView(callerPhoto, photoParams);
+        loadCallerPhoto(callerPhoto, avatarInitials);
 
         TextView hint = new TextView(this);
         hint.setText("Swipe up to answer");
@@ -322,6 +345,25 @@ public class IncomingCallActivity extends Activity {
     private void dismissCallNotification() {
         int notificationId = getIntent().getIntExtra(IncomingCallNotifier.EXTRA_NOTIFICATION_ID, 0);
         ((NotificationManager) getSystemService(NOTIFICATION_SERVICE)).cancel(notificationId);
+    }
+
+    private void loadCallerPhoto(ImageView photoView, TextView initialsView) {
+        String photoUrl = getIntent().getStringExtra(IncomingCallNotifier.EXTRA_CALLER_PHOTO);
+        if (photoUrl == null || !photoUrl.startsWith("https://")) return;
+        Thread photoLoader = new Thread(() -> {
+            try {
+                Bitmap photo = IncomingCallNotifier.downloadCircularPhoto(photoUrl);
+                if (photo == null) return;
+                new Handler(Looper.getMainLooper()).post(() -> {
+                    photoView.setImageBitmap(photo);
+                    initialsView.setVisibility(View.GONE);
+                });
+            } catch (IOException | IllegalArgumentException error) {
+                android.util.Log.w("IncomingCallActivity", "Could not load the caller profile photo.", error);
+            }
+        }, "sbryms-incoming-call-photo");
+        photoLoader.setDaemon(true);
+        photoLoader.start();
     }
 
     private int dp(int value) {
