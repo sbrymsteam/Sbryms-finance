@@ -1,9 +1,23 @@
-const CACHE_NAME = 'sbryms-finance-v58';
+const CACHE_NAME = 'sbryms-finance-v59';
 const urlsToCache = [
   '/',
   '/index.html',
   '/login.html',
   '/FACE%20APP.html',
+  '/dashboard.html',
+  '/team-meet.html',
+  '/team-meet-chat.html',
+  '/team-meet-call.html',
+  '/settings.html',
+  '/members.html',
+  '/deposit.html',
+  '/income.html',
+  '/expense.html',
+  '/loans.html',
+  '/donation.html',
+  '/project.html',
+  '/profile.html',
+  '/profile-rank.html',
   '/assets/app-icon.svg',
   '/assets/page-loader.js',
   '/assets/page-loader-mark.svg',
@@ -17,13 +31,18 @@ self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache =>
-      Promise.all(
-        urlsToCache.map(url =>
-          fetch(url)
-            .then(response => response.ok ? cache.put(url, response) : undefined)
-            .catch(() => undefined)
-        )
-      )
+      Promise.all(urlsToCache.map(async url => {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        try {
+          const response = await fetch(url, { signal: controller.signal });
+          if (response.ok) await cache.put(url, response);
+        } catch (error) {
+          console.warn(`Could not precache ${url}:`, error);
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }))
     )
   );
 });
@@ -45,9 +64,14 @@ self.addEventListener('push', event => {
   const title = isCall
     ? (notification.title || data.callerName || data.title || 'Incoming call')
     : (data.senderName || data.title || notification.title || 'SBRYMS Finance');
+  const senderPhoto = !isCall && typeof data.senderPhoto === 'string'
+    && data.senderPhoto.startsWith('https://')
+    ? data.senderPhoto
+    : '';
   const options = {
     body: notification.body || data.body || 'You have a new message or call.',
-    icon: '/assets/app-icon-192.png',
+    icon: senderPhoto || '/assets/app-icon-192.png',
+    image: senderPhoto || undefined,
     badge: '/assets/app-icon-192.png',
     tag: isCall && callId
       ? `sbryms-call-${callId}`

@@ -1580,12 +1580,16 @@
     }
 
     async function loadSenderProfiles() {
-        if (!isGroupChat) return;
         try {
-            const snapshot = await db.collection('users').limit(100).get();
-          snapshot.docs.forEach(doc => {
+          const profiles = isGroupChat
+            ? (await db.collection('users').limit(100).get()).docs
+            : currentUserUid
+              ? [await db.collection('users').doc(currentUserUid).get()]
+              : [];
+          profiles.forEach(doc => {
+            if (!doc.exists) return;
             const data = doc.data();
-            const email = String(data.email || '').trim().toLowerCase();
+            const email = String(data.email || currentUserEmail).trim().toLowerCase();
             if (!email) return;
             senderProfiles.set(email, {
               name: data.name || data.displayName || '',
@@ -1593,7 +1597,7 @@
             });
           });
         } catch (error) {
-          console.error('Could not load group sender profiles:', error);
+          console.error('Could not load sender profiles:', error);
         }
     }
 
@@ -1992,10 +1996,12 @@
         || document.visibilityState !== 'visible'
         || !('Notification' in window) || Notification.permission !== 'granted') return;
       const senderName = message.senderName || selectedMember.name || 'New message';
+      const senderPhoto = message.senderPhoto || selectedMember.photo || '';
       const body = message.deleted ? 'Message deleted' : (message.text || 'New voice message');
       const notificationOptions = {
         body,
-        icon: '/assets/app-icon-192.png',
+        icon: senderPhoto || '/assets/app-icon-192.png',
+        image: senderPhoto || undefined,
         badge: '/assets/app-icon-192.png',
         tag: `sbryms-message-${conversationId}`,
         data: { url: `/team-meet-chat.html?chat=${encodeURIComponent(conversationId)}` }
@@ -2284,6 +2290,7 @@
               type,
               title,
               senderName: getCurrentSenderProfile().name,
+              senderPhoto: getCurrentSenderProfile().photo,
               body: message
             });
           })

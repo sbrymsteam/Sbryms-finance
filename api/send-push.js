@@ -78,6 +78,10 @@ module.exports = async function sendPush(req, res) {
     const senderName = typeof req.body?.senderName === 'string'
       ? req.body.senderName.trim().slice(0, 80)
       : '';
+    const senderPhoto = typeof req.body?.senderPhoto === 'string'
+      && req.body.senderPhoto.startsWith('https://')
+      ? req.body.senderPhoto.slice(0, 1500)
+      : '';
     if ((!recipient || (recipient !== 'all' && !recipient.includes('@')))
       || !allowedTypes.has(type) || !title || !body) {
       res.status(400).json({ error: 'A valid recipient, type, title, and message are required.' });
@@ -130,6 +134,7 @@ module.exports = async function sendPush(req, res) {
         const messageChat = recipient === 'all' ? 'team-group' : senderEmail;
         Object.assign(notificationData, {
           senderName: messageSenderName,
+          senderPhoto,
           messageId,
           chat: messageChat,
           url: `/team-meet-chat.html?chat=${encodeURIComponent(messageChat)}`
