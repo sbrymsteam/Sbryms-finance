@@ -661,6 +661,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                     console.error('Could not save payment notification locally:', error);
                     showError('নোটিফিকেশন সংরক্ষণ করা যায়নি।');
                 }
+                sendAppPush(notification.to, notification.title || notification.subject, notification.message, notification.id);
             }
             if (!alreadySaved && db && notification.to) {
                 db.collection('notifications').doc(notification.id).set({
@@ -668,6 +669,33 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true }).catch(error => console.error('Could not save payment notification to Firestore:', error));
             }
+        }
+
+        function sendAppPush(recipient, title, message, notificationId) {
+            if (!recipient || !message) return;
+            const pushReady = window.sbrymsPushReady
+                || new Promise(resolve => window.addEventListener(
+                    'sbrymsPushReady',
+                    () => resolve(window.sbrymsPush),
+                    { once: true }
+                ));
+            pushReady.then(push => {
+                if (!push) throw new Error('Push notification service is unavailable.');
+                return push.send({
+                    recipient: String(recipient).trim().toLowerCase(),
+                    type: 'app',
+                    title: String(title || 'SBRYMS Finance').slice(0, 100),
+                    body: String(message).slice(0, 240),
+                    notificationId: String(notificationId || ''),
+                    url: '/notifications.html'
+                });
+            }).then(result => {
+                if (result.targets === 0) {
+                    console.info('App alert saved; recipient has no registered notification device.');
+                } else if (result.sent === 0) {
+                    console.error('App push delivery failed:', result.errorCodes);
+                }
+            }).catch(error => console.error('Could not send app notification push:', error));
         }
 
         function initializeForm() {
@@ -914,6 +942,12 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                             createdAt: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     }).then(() => {
+                        sendAppPush(
+                            'sbrymsteam@gmail.com',
+                            `Cash payment confirmation required: ৳${payment.total}`,
+                            `Cash payment from ${payment.profileName} requires admin confirmation. Transaction: ${pendingCashPayment.transactionId}`,
+                            `cash-payment-confirmation-${pendingCashPayment.id}`
+                        );
                         const payerEmail = pending.profileEmail || pending.profile || payment.profile;
                         if (!payerEmail) return;
                         return db.collection('notifications').doc(`payment-pending-${payment.id}`).set({
@@ -1006,7 +1040,12 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                                 paymentId: payment.id,
                                 read: false,
                                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                            }).catch(e => console.error('firestore notifications add error', e));
+                            }).then(() => sendAppPush(
+                                'sbrymsteam@gmail.com',
+                                `Payment received: ${payment.profileName} ৳${payment.total}`,
+                                `Payment ${payment.id} received from ${payment.profileName} (${pending.profileEmail || payment.profile}). Amount: ৳${payment.total}. Transaction: ${payment.transactionId}`,
+                                `payment-received-${payment.id}`
+                            )).catch(e => console.error('firestore notifications add error', e));
 
                             // Create user notification (queued) for the payer
                             const payerEmail = pending.profileEmail || payment.profile;
@@ -1289,5 +1328,6 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
         });
     </script>
 <script src="assets/background-settings.js"></script>
+<script src="assets/push-notifications.js"></script>
 </body>
 </html>

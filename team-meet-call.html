@@ -1521,7 +1521,7 @@
         callType,
         callerName: callerProfile.name,
         senderPhoto: callerProfile.photo
-      });
+      }).catch(error => console.error('Could not send call push notification:', error));
       db.collection('notifications').add({
         to: chatEmail.toLowerCase(),
         from: authenticatedUser.email.trim().toLowerCase(),

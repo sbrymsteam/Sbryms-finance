@@ -977,10 +977,11 @@
         title: 'Team group call',
         body: `${type === 'video' ? 'Video' : 'Audio'} group call started`,
         callId: groupCallId,
+        roomId,
         groupCall: true,
         callType: type,
         callerName: localStorage.getItem('currentUserName') || 'SBRYMS member'
-      });
+      }).catch(error => console.error('Could not send group call push notification:', error));
       const storageKey = 'team_meet_group_chat';
       let messages = [];
       try {

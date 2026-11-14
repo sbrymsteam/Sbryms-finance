@@ -9,34 +9,6 @@
       && window.Capacitor.Plugins.Presence;
   }
 
-  function requestNotificationPermission() {
-    if (window.__sbrymsNotificationPermissionPromise) {
-      return window.__sbrymsNotificationPermissionPromise;
-    }
-    var pushPlugin = window.Capacitor && window.Capacitor.Plugins
-      && window.Capacitor.Plugins.PushNotifications;
-    if (!pushPlugin || !pushPlugin.checkPermissions || !pushPlugin.requestPermissions) {
-      return Promise.reject(new Error('Android notification permissions are unavailable.'));
-    }
-    window.__sbrymsNotificationPermissionPromise = pushPlugin.checkPermissions()
-      .then(function (permission) {
-        return permission.receive === 'granted'
-          ? permission
-          : pushPlugin.requestPermissions();
-      })
-      .then(function (permission) {
-        if (permission.receive !== 'granted') {
-          throw new Error('Android notification permission was not granted.');
-        }
-        return permission;
-      })
-      .finally(function () {
-        window.__sbrymsNotificationPermissionPromise = null;
-      });
-    return window.__sbrymsNotificationPermissionPromise;
-  }
-
-  window.sbrymsEnsureNotificationPermission = requestNotificationPermission;
   window.sbrymsPresence = {
     isAvailable: function () {
       return Boolean(getPlugin());
@@ -51,13 +23,11 @@
       if (pendingStart) return pendingStart.then(function () {
         return window.sbrymsPresence.start(user, firebaseConfig);
       });
-      pendingStart = requestNotificationPermission().then(function () {
-        return plugin.start({
-          uid: user.uid,
-          refreshToken: user.refreshToken,
-          apiKey: firebaseConfig.apiKey,
-          projectId: firebaseConfig.projectId
-        });
+      pendingStart = plugin.start({
+        uid: user.uid,
+        refreshToken: user.refreshToken,
+        apiKey: firebaseConfig.apiKey,
+        projectId: firebaseConfig.projectId
       }).then(function () {
         activeUid = user.uid;
         return true;

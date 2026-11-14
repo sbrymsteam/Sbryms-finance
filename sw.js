@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sbryms-finance-v61';
+const CACHE_NAME = 'sbryms-finance-v62';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -60,7 +60,7 @@ self.addEventListener('push', event => {
   const notification = payload.notification || {};
   const isCall = data.type === 'team_call';
   const callId = data.callId || '';
-  const eventId = data.messageId || data.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const eventId = data.messageId || data.appNotificationId || data.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const title = isCall
     ? (notification.title || data.callerName || data.title || 'Incoming call')
     : (data.senderName || data.title || notification.title || 'SBRYMS Finance');
@@ -83,7 +83,7 @@ self.addEventListener('push', event => {
     vibrate: isCall ? [0, 500, 250, 500] : [0, 150],
     actions: isCall
       ? [{ action: 'answer', title: 'Answer' }, { action: 'decline', title: 'Decline' }]
-      : [{ action: 'open', title: 'Open chat' }],
+      : [{ action: 'open', title: data.type === 'app' ? 'Open notifications' : 'Open chat' }],
     data: {
       url: data.url || notification.url || '/team-meet.html',
       answerUrl: data.answerUrl || '',

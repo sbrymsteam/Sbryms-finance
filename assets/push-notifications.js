@@ -76,7 +76,7 @@
     return photo.startsWith('https://') ? photo.slice(0, 1500) : '';
   }
 
-  async function apiRequest(path, payload) {
+  async function apiRequest(path, payload, options = {}) {
     await nativeReady;
     const user = await getCurrentUser();
     const response = await fetch(`${getApiBase()}${path}`, {
@@ -85,6 +85,7 @@
         'Authorization': `Bearer ${await user.getIdToken()}`,
         'Content-Type': 'application/json'
       },
+      keepalive: options.keepalive === true,
       body: JSON.stringify(payload)
     });
     const result = await response.json();
@@ -114,7 +115,7 @@
     const body = notification.body || data.body || 'You have a new message or call.';
     const url = data.url || notification.url || '/team-meet.html';
     const answerUrl = data.answerUrl || '';
-    const eventId = data.messageId || data.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const eventId = data.messageId || data.appNotificationId || data.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const senderPhoto = !isCall && typeof data.senderPhoto === 'string'
       && data.senderPhoto.startsWith('https://')
       ? data.senderPhoto
@@ -138,7 +139,7 @@
       vibrate: isCall ? [0, 500, 250, 500] : [0, 150],
       actions: isCall
         ? [{ action: 'answer', title: 'Answer' }, { action: 'dismiss', title: 'Dismiss' }]
-        : [{ action: 'open', title: 'Open chat' }],
+        : [{ action: 'open', title: data.type === 'app' ? 'Open notifications' : 'Open chat' }],
       data: { url, answerUrl, chatUrl: data.chatUrl || url }
     });
   }
@@ -150,8 +151,9 @@
     if (Notification.permission === 'denied') {
       throw new Error('Notifications are blocked for this site. Open the browser site settings, allow Notifications, reload, then enable again.');
     }
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') throw new Error('Notification permission was not granted.');
+    if (Notification.permission !== 'granted') {
+      throw new Error('Allow notification permission, then enable alerts again.');
+    }
     await loadMessagingSdk();
     if (!await firebase.messaging.isSupported()) {
       throw new Error('This browser does not support Firebase web push.');
@@ -178,6 +180,14 @@
       serviceWorkerRegistration: worker
     });
     if (!token) throw new Error('Firebase did not return a browser push token.');
+    const previousToken = localStorage.getItem('webPushToken');
+    if (previousToken && previousToken !== token) {
+      await apiRequest('/api/register-push-token', {
+        token: previousToken,
+        platform: 'web',
+        action: 'remove'
+      });
+    }
     await apiRequest('/api/register-push-token', { token, platform: 'web' });
     localStorage.setItem('webPushToken', token);
   }
@@ -188,6 +198,14 @@
     nativePush = module.PushNotifications;
     await nativePush.addListener('registration', async token => {
       try {
+        const previousToken = localStorage.getItem('nativePushToken');
+        if (previousToken && previousToken !== token.value) {
+          await apiRequest('/api/register-push-token', {
+            token: previousToken,
+            platform: 'android',
+            action: 'remove'
+          });
+        }
         await apiRequest('/api/register-push-token', {
           token: token.value,
           platform: 'android'
@@ -238,10 +256,25 @@
     return window.__sbrymsNotificationPermissionPromise;
   }
 
-  async function requestNotificationPermission() {
-    await nativeReady;
-    if (!nativePlatform) return { receive: 'granted' };
-    return requestNativeNotificationPermission();
+  function requestNotificationPermission() {
+    const capacitor = window.Capacitor;
+    const isNative = nativePlatform || Boolean(
+      capacitor && typeof capacitor.isNativePlatform === 'function' && capacitor.isNativePlatform()
+    );
+    if (isNative) {
+      return nativeReady.then(requestNativeNotificationPermission);
+    }
+    if (!('Notification' in window)) {
+      return Promise.reject(new Error('This browser does not support notification permissions.'));
+    }
+    if (Notification.permission === 'denied') {
+      return Promise.reject(new Error('Notifications are blocked for this site. Open browser site settings and allow Notifications.'));
+    }
+    if (Notification.permission === 'granted') return Promise.resolve('granted');
+    return Notification.requestPermission().then(permission => {
+      if (permission !== 'granted') throw new Error('Notification permission was not granted.');
+      return permission;
+    });
   }
 
   async function registerNativeToken() {
@@ -273,9 +306,15 @@
   }
 
   async function enable() {
+    const capacitor = window.Capacitor;
+    const isNative = nativePlatform || Boolean(
+      capacitor && typeof capacitor.isNativePlatform === 'function' && capacitor.isNativePlatform()
+    );
+    const permissionRequest = isNative ? null : requestNotificationPermission();
     await nativeReady;
     await getCurrentUser();
     if (!nativePlatform) {
+      await permissionRequest;
       await registerWebToken();
       localStorage.setItem('browserNotificationsEnabled', 'true');
       window.dispatchEvent(new Event('sbrymsPushStatusChange'));
@@ -352,16 +391,82 @@
       || !notificationPayload.senderPhoto.startsWith('https://')) {
       delete notificationPayload.senderPhoto;
     }
-    return apiRequest('/api/send-push', notificationPayload);
+    return apiRequest('/api/send-push', notificationPayload, { keepalive: true });
+  }
+
+  function showNotificationOptIn(user) {
+    if (!user || localStorage.getItem('browserNotificationsEnabled') !== null
+      || document.getElementById('sbryms-push-opt-in')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'sbryms-push-opt-in';
+    overlay.setAttribute('role', 'presentation');
+    overlay.innerHTML = `
+      <section role="dialog" aria-modal="true" aria-labelledby="sbryms-push-title">
+        <h2 id="sbryms-push-title">Turn on notifications?</h2>
+        <p>Get message, call, and important SBRYMS app alerts on this device.</p>
+        <p id="sbryms-push-error" role="status" hidden></p>
+        <div>
+          <button type="button" data-push-enable>Enable notifications</button>
+          <button type="button" data-push-later>Not now</button>
+        </div>
+      </section>
+    `;
+    const style = document.createElement('style');
+    style.textContent = `
+      #sbryms-push-opt-in { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; padding: 18px; background: rgba(3, 10, 24, .72); }
+      #sbryms-push-opt-in section { width: min(100%, 420px); padding: 24px; border: 1px solid rgba(255,255,255,.18); border-radius: 18px; color: #eef3ff; background: #101b30; box-shadow: 0 18px 60px rgba(0,0,0,.4); font: 15px/1.5 "Segoe UI", Arial, sans-serif; }
+      #sbryms-push-opt-in h2 { margin: 0 0 8px; font-size: 21px; }
+      #sbryms-push-opt-in p { margin: 0 0 18px; color: #c1ccdf; }
+      #sbryms-push-opt-in #sbryms-push-error:not([hidden]) { margin: -6px 0 14px; color: #ffc2c2; }
+      #sbryms-push-opt-in section > div { display: flex; flex-wrap: wrap; gap: 10px; }
+      #sbryms-push-opt-in button { min-height: 42px; padding: 9px 14px; border: 1px solid rgba(255,255,255,.25); border-radius: 10px; color: #eef3ff; background: #263650; font: inherit; cursor: pointer; }
+      #sbryms-push-opt-in [data-push-enable] { border-color: #df146e; background: #df146e; }
+      #sbryms-push-opt-in button:disabled { opacity: .65; cursor: wait; }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(overlay);
+    const enableButton = overlay.querySelector('[data-push-enable]');
+    const laterButton = overlay.querySelector('[data-push-later]');
+    const errorMessage = overlay.querySelector('#sbryms-push-error');
+    const dismiss = () => {
+      localStorage.setItem('browserNotificationsEnabled', 'false');
+      overlay.remove();
+      style.remove();
+      window.dispatchEvent(new Event('sbrymsPushStatusChange'));
+    };
+    laterButton.addEventListener('click', dismiss);
+    enableButton.addEventListener('click', async () => {
+      enableButton.disabled = true;
+      laterButton.disabled = true;
+      errorMessage.hidden = true;
+      try {
+        await enable();
+        overlay.remove();
+        style.remove();
+      } catch (error) {
+        errorMessage.textContent = error.message || 'Notifications could not be enabled. Please try again.';
+        errorMessage.hidden = false;
+        laterButton.disabled = false;
+      } finally {
+        enableButton.disabled = false;
+      }
+    });
   }
 
   async function restoreIfEnabled() {
     const preference = localStorage.getItem('browserNotificationsEnabled');
-    if (preference === 'false') return;
+    if (preference !== 'true') {
+      if (preference === null) showNotificationOptIn(firebase.auth().currentUser);
+      return;
+    }
     if (nativePlatform) {
       await nativeReady;
       try {
-        await requestNativeNotificationPermission();
+        const permission = await nativePush.checkPermissions();
+        if (permission.receive !== 'granted') {
+          window.dispatchEvent(new Event('sbrymsPushStatusChange'));
+          return;
+        }
         await registerNativeToken();
         localStorage.setItem('browserNotificationsEnabled', 'true');
         window.dispatchEvent(new Event('sbrymsPushStatusChange'));

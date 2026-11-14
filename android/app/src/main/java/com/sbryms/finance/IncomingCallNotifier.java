@@ -46,7 +46,7 @@ final class IncomingCallNotifier {
 
     static void show(Context context, Map<String, String> data) {
         String type = data.get("type");
-        if (!"team_call".equals(type) && !"message".equals(type)) return;
+        if (!"team_call".equals(type) && !"message".equals(type) && !"app".equals(type)) return;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
             && context.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
                 != android.content.pm.PackageManager.PERMISSION_GRANTED) return;
@@ -58,7 +58,10 @@ final class IncomingCallNotifier {
         String body = value(data.get("body"), call ? "Incoming call" : "You have a new message");
         String notificationKey = call
             ? value(data.get("callId"), callerName)
-            : value(data.get("messageId"), body + System.currentTimeMillis());
+            : value(
+                "app".equals(type) ? data.get("appNotificationId") : data.get("messageId"),
+                body + System.currentTimeMillis()
+            );
         int notificationId = notificationKey.hashCode() & 0x7fffffff;
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         boolean bypassDnd = call && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M

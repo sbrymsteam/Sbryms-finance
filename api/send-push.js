@@ -5,7 +5,7 @@ const {
   getBearerToken
 } = require('./_push-common');
 
-const allowedTypes = new Set(['message', 'team_call']);
+const allowedTypes = new Set(['app', 'message', 'team_call']);
 const sendsByUid = new Map();
 
 function canSend(uid) {
@@ -20,20 +20,19 @@ function canSend(uid) {
   return true;
 }
 
-async function getRecipientTokens(db, recipient, senderUid) {
-  const userSnapshot = await db.collection('users').get();
-  const recipients = userSnapshot.docs.filter(document => {
-    if (document.id === senderUid) return false;
-    if (recipient === 'all') return true;
-    return String(document.data().email || '').trim().toLowerCase() === recipient;
+async function getRecipientTokens(db, recipient, senderUid, includeSender = false) {
+  const tokenCollection = db.collectionGroup('pushTokens');
+  const tokenSnapshot = recipient === 'all'
+    ? await tokenCollection.get()
+    : await tokenCollection.where('email', '==', recipient).get();
+  return tokenSnapshot.docs.flatMap(document => {
+    const owner = document.ref.parent.parent;
+    const token = document.data().token;
+    if ((!includeSender && owner?.id === senderUid)
+      || typeof token !== 'string'
+      || token.length === 0) return [];
+    return [{ ref: document.ref, token }];
   });
-  const tokenGroups = await Promise.all(recipients.map(document =>
-    document.ref.collection('pushTokens').get()
-  ));
-  return tokenGroups.flatMap(snapshot => snapshot.docs.map(document => ({
-    ref: document.ref,
-    token: document.data().token
-  }))).filter(item => typeof item.token === 'string' && item.token.length > 0);
 }
 
 module.exports = async function sendPush(req, res) {
@@ -82,22 +81,30 @@ module.exports = async function sendPush(req, res) {
       && req.body.senderPhoto.startsWith('https://')
       ? req.body.senderPhoto.slice(0, 1500)
       : '';
+    const appNotificationId = typeof req.body?.notificationId === 'string'
+      ? req.body.notificationId.trim().slice(0, 120)
+      : '';
+    const appUrl = typeof req.body?.url === 'string'
+      && req.body.url.startsWith('/')
+      && !req.body.url.startsWith('//')
+      ? req.body.url.slice(0, 240)
+      : '/notifications.html';
     if ((!recipient || (recipient !== 'all' && !recipient.includes('@')))
       || !allowedTypes.has(type) || !title || !body) {
       res.status(400).json({ error: 'A valid recipient, type, title, and message are required.' });
       return;
     }
     if (type === 'team_call' && ((!groupCall && (!callId || !chat.includes('@')))
-      || (groupCall && !roomId))) {
+      || (groupCall && (!callId || !roomId)))) {
       res.status(400).json({ error: 'Call notifications require valid call details.' });
       return;
     }
-    if (recipient === String(user.email || '').trim().toLowerCase()) {
+    if (type !== 'app' && recipient === String(user.email || '').trim().toLowerCase()) {
       res.status(200).json({ sent: 0 });
       return;
     }
 
-    const targets = await getRecipientTokens(services.db, recipient, user.uid);
+    const targets = await getRecipientTokens(services.db, recipient, user.uid, type === 'app');
     let sent = 0;
     let failed = 0;
     const errorCodes = new Set();
@@ -130,7 +137,7 @@ module.exports = async function sendPush(req, res) {
           chatUrl: `/team-meet-chat.html?chat=${encodeURIComponent(callChat)}`,
           answerUrl
         });
-      } else {
+      } else if (type === 'message') {
         const messageId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
         const messageChat = recipient === 'all' ? 'team-group' : senderEmail;
         Object.assign(notificationData, {
@@ -139,6 +146,11 @@ module.exports = async function sendPush(req, res) {
           messageId,
           chat: messageChat,
           url: `/team-meet-chat.html?chat=${encodeURIComponent(messageChat)}`
+        });
+      } else {
+        Object.assign(notificationData, {
+          appNotificationId: appNotificationId || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          url: appUrl
         });
       }
       const result = await services.messaging.sendEachForMulticast({

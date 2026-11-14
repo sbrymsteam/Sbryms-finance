@@ -3061,11 +3061,12 @@
           title: 'Team group call',
           body: `${type === 'video' ? 'Video' : 'Audio'} group call started`,
           callId: groupCallId,
+          roomId,
           groupCall: true,
           callType: type,
           callerName: getCurrentSenderProfile().name,
           senderPhoto: getCurrentSenderProfile().photo
-        });
+        }).catch(error => console.error('Could not send group call push notification:', error));
         const url = `team-meet-call.html?chat=team-group&group=true&call=${encodeURIComponent(groupCallId)}&role=caller&type=${type}`;
         window.location.href = url;
         return;
