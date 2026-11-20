@@ -233,7 +233,7 @@
       function typeFor(item) {
         const type = String(item.type || '').toLowerCase().replace(/[\s-]+/g, '_');
         const words = `${item.title || ''} ${item.subject || ''} ${item.message || ''} ${item.status || ''}`.toLowerCase();
-        if (/fine|জরিমানা/.test(type) || /fine reminder|fine due|জরিমানা/.test(words)) return 'fine_reminder';
+        if (/deposit_reminder|deposit_fine|fine|জরিমানা/.test(type) || /fine reminder|fine due|জরিমানা/.test(words)) return 'fine_reminder';
         if (/rank|level|star/.test(type) || /rank|level|র‍্যাংক|র‍্যাঙ্ক|স্তর/.test(words)) return 'rank_level';
         if (/fail|declin|unsuccess|ব্যর্থ/.test(type) || /payment failed|payment unsuccessful|পেমেন্ট ব্যর্থ/.test(words)) return 'payment_failed';
         if (/pending|confirm/.test(type) || /pending confirmation|awaiting confirmation/.test(words) || String(item.status || '').toLowerCase().includes('pending')) return 'payment_pending';
@@ -601,5 +601,6 @@
     })();
   </script>
   <script src="assets/mobile-bottom-nav.js"></script>
+  <script src="assets/device-sessions.js"></script>
 </body>
 </html>

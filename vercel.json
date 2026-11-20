@@ -24,5 +24,11 @@
   ],
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/deposit-reminders",
+      "schedule": "5 18 * * *"
+    }
+  ]
 }

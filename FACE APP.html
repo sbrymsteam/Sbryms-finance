@@ -1515,6 +1515,9 @@ body.custom-image-background::before {
                         console.error('Could not unregister push notifications during logout:', error);
                     }
                 }
+                if (window.sbrymsDeviceSessionsCloseCurrent) {
+                    await window.sbrymsDeviceSessionsCloseCurrent();
+                }
                 localStorage.removeItem('currentUserEmail');
                 localStorage.removeItem('currentUserUid');
                 const redirectHome = () => {
@@ -1560,6 +1563,7 @@ body.custom-image-background::before {
     </style>
 <script src="assets/background-settings.js"></script>
 <script src="assets/push-notifications.js"></script>
+<script src="assets/device-sessions.js"></script>
 <script src="assets/mobile-bottom-nav.js"></script>
 </body>
 </html>

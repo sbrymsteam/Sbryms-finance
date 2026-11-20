@@ -1,4 +1,7 @@
-rules_version = '2';
+       allow read, create, update: if signedIn();
+      }
+    }
+  }rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -9,15 +12,103 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if signedIn();
       allow create, update: if signedIn() && request.auth.uid == userId;
+
+      match /deviceSessions/{sessionId} {
+        allow read: if signedIn() && request.auth.uid == userId;
+        allow create: if signedIn()
+          && request.auth.uid == userId
+          && request.resource.data.uid == userId
+          && request.resource.data.revoked == false;
+        allow update: if signedIn()
+          && request.auth.uid == userId
+          && resource.data.uid == userId
+          && request.resource.data.uid == userId
+          && (resource.data.revoked != true || request.resource.data.revoked == true);
+        allow delete: if false;
+      }
     }
 
     match /payments/{paymentId} {
-      allow create: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.paymentRecordId == paymentId
+        && request.resource.data.profileUid == request.auth.uid
+        && request.resource.data.profileEmail == request.auth.token.email
+        && request.resource.data.status in ['Paid', 'Pending Confirmation'];
       allow update: if signedIn()
         && request.auth.token.email == 'sbrymsteam@gmail.com';
       allow read: if signedIn()
         && (resource.data.profileEmail == request.auth.token.email
           || request.auth.token.email == 'sbrymsteam@gmail.com');
+    }
+
+    match /deposit_periods/{periodId} {
+      function linkedPaymentMatches() {
+        let paymentPath = /databases/$(database)/documents/payments/$(request.resource.data.paymentId);
+        return request.resource.data.paymentId is string
+          && existsAfter(paymentPath)
+          && getAfter(paymentPath).data.profileUid == request.auth.uid
+          && getAfter(paymentPath).data.profileEmail == request.auth.token.email
+          && getAfter(paymentPath).data.status == request.resource.data.status;
+      }
+
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.profileEmail == request.auth.token.email
+        && request.resource.data.status in ['Paid', 'Pending Confirmation']
+        && request.resource.data.keys().hasOnly([
+          'profileEmail', 'profileName', 'year', 'month', 'dateRange', 'status',
+          'paymentId', 'fee', 'fine', 'total', 'paidAt', 'daysLate', 'star',
+          'transactionId', 'dueDate'
+        ])
+        && linkedPaymentMatches();
+      allow update: if signedIn()
+        && resource.data.profileEmail == request.auth.token.email
+        && request.resource.data.profileEmail == request.auth.token.email
+        && request.resource.data.status in ['Paid', 'Pending Confirmation']
+        && (resource.data.status != 'Paid' || request.resource.data.status == 'Paid')
+        && request.resource.data.keys().hasOnly([
+          'profileEmail', 'profileName', 'year', 'month', 'dateRange', 'status',
+          'paymentId', 'fee', 'fine', 'total', 'paidAt', 'daysLate', 'star',
+          'transactionId', 'dueDate'
+        ])
+        && linkedPaymentMatches();
+      allow delete: if false;
+    }
+
+    match /deposit_period_details/{periodId} {
+      function linkedPaymentMatches() {
+        let paymentPath = /databases/$(database)/documents/payments/$(request.resource.data.paymentId);
+        return request.resource.data.paymentId is string
+          && existsAfter(paymentPath)
+          && getAfter(paymentPath).data.profileUid == request.auth.uid
+          && getAfter(paymentPath).data.profileEmail == request.auth.token.email
+          && getAfter(paymentPath).data.status == request.resource.data.status;
+      }
+
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.profileEmail == request.auth.token.email
+        && request.resource.data.status in ['Paid', 'Pending Confirmation']
+        && request.resource.data.keys().hasOnly([
+          'userId', 'profileEmail', 'profileName', 'year', 'month', 'dateRange',
+          'status', 'fee', 'fine', 'total', 'paidAt', 'daysLate', 'star',
+          'paymentId', 'updatedAt', 'dueDate'
+        ])
+        && linkedPaymentMatches();
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.profileEmail == request.auth.token.email
+        && request.resource.data.status in ['Paid', 'Pending Confirmation']
+        && (resource.data.status != 'Paid' || request.resource.data.status == 'Paid')
+        && request.resource.data.keys().hasOnly([
+          'userId', 'profileEmail', 'profileName', 'year', 'month', 'dateRange',
+          'status', 'fee', 'fine', 'total', 'paidAt', 'daysLate', 'star',
+          'paymentId', 'updatedAt', 'dueDate'
+        ])
+        && linkedPaymentMatches();
+      allow delete: if false;
     }
 
     match /notifications/{notificationId} {
@@ -55,8 +146,5 @@ service cloud.firestore {
     match /team_meet_conversations/{conversationId} {
       allow read, create, update: if signedIn();
       match /messages/{messageId} {
-        allow read, create, update: if signedIn();
-      }
-    }
-  }
+ 
 }

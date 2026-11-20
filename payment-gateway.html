@@ -516,6 +516,17 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             firebase.initializeApp(firebaseConfig);
         }
         const db = (typeof firebase !== 'undefined' && firebase.firestore) ? firebase.firestore() : null;
+        let signedInUser = null;
+        const authReady = new Promise(resolve => {
+            if (!firebase || !firebase.auth) {
+                resolve(null);
+                return;
+            }
+            firebase.auth().onAuthStateChanged(user => {
+                signedInUser = user;
+                resolve(user);
+            });
+        });
 
         // Centralized UI helpers: toast, confirm, and modal-management
         // showToast(message): non-blocking toast
@@ -629,7 +640,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             { id: 'cash', name: 'Cash', icon: '💵' }
         ];
 
-        const profiles = [
+        let profiles = [
             { email: 'shakil@gmail.com', name: 'Shakil' },
             { email: 'bushra@gmail.com', name: 'Bushra' },
             { email: 'rifat@gmail.com', name: 'Rifat' },
@@ -698,14 +709,20 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             }).catch(error => console.error('Could not send app notification push:', error));
         }
 
-        function initializeForm() {
-            // Check URL parameters for pre-selected profile
+        async function initializeForm(user) {
             const urlParams = new URLSearchParams(window.location.search);
-            const profileParam = urlParams.get('profile');
-            if (profileParam) {
-                selectedProfile = decodeURIComponent(profileParam);
-                localStorage.setItem(SELECTED_PROFILE_KEY, selectedProfile);
+            const userEmail = String(user.email || '').trim().toLowerCase();
+            if (!userEmail) {
+                showError('আপনার account email পাওয়া যায়নি। Payment করা যাচ্ছে না।');
+                return;
             }
+            const knownProfile = profiles.find(profile => profile.email.toLowerCase() === userEmail);
+            profiles = [{
+                email: userEmail,
+                name: knownProfile ? knownProfile.name : String(user.displayName || userEmail.split('@')[0])
+            }];
+            selectedProfile = userEmail;
+            localStorage.setItem(SELECTED_PROFILE_KEY, userEmail);
 
             // Prefill fee/fine if provided in URL (from deposit quick-pay)
             const feeParam = urlParams.get('fee');
@@ -733,31 +750,11 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             // Initialize profile selector
             const profileSelectorContainer = document.getElementById('profileSelector');
             profileSelectorContainer.innerHTML = profiles.map(profile => `
-                <div class="profile-option ${selectedProfile === profile.email ? 'selected' : ''}" data-email="${profile.email}" onclick="selectProfile('${profile.email}')">
+                <div class="profile-option selected" data-email="${profile.email}">
                     <div class="profile-avatar" style="background: #df146e;">${profile.name.charAt(0).toUpperCase()}</div>
-                    <div class="profile-name">${profile.name}</div>
+                    <div class="profile-name">${profile.name} · আপনার account</div>
                 </div>
             `).join('');
-            // If a profile was preselected via URL or storage, mark it as selected in the UI
-            if (selectedProfile) selectProfile(selectedProfile);
-            const fineAmount = Number(document.getElementById('fine').value) || 0;
-            if (fineAmount > 0 && selectedProfile) {
-                const dateRange = document.getElementById('dateRange').value || 'current payment period';
-                const year = document.getElementById('year').value || new Date().getFullYear();
-                const fineId = `fine-reminder-${selectedProfile.replace(/[^a-z0-9]/gi, '-')}-${dateRange.replace(/[^a-z0-9]/gi, '-')}-${year}`;
-                const profileName = (profiles.find(profile => profile.email === selectedProfile) || {}).name || 'Your account';
-                saveActivityNotification({
-                    id: fineId,
-                    to: selectedProfile.toLowerCase(),
-                    type: 'fine_reminder',
-                    title: 'Fine reminder',
-                    message: `${profileName}, an outstanding fine of ৳${fineAmount.toLocaleString('en-BD')} is due for ${dateRange} ${year}.`,
-                    amount: fineAmount,
-                    status: 'Due',
-                    read: false,
-                    createdAt: new Date().toISOString()
-                });
-            }
 
             // Initialize year dropdown
             const yearSelect = document.getElementById('year');
@@ -777,6 +774,10 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
         }
 
         function selectProfile(email) {
+            if (!signedInUser || String(email).trim().toLowerCase() !== String(signedInUser.email || '').trim().toLowerCase()) {
+                showError('শুধু নিজের account-এর payment করা যাবে।');
+                return;
+            }
             selectedProfile = email;
             localStorage.setItem(SELECTED_PROFILE_KEY, email);
             document.querySelectorAll('.profile-option').forEach(el => el.classList.remove('selected'));
@@ -838,245 +839,260 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             updateSummary();
         }
 
-        function submitPayment(event) {
-            event.preventDefault();
+        function getPaymentPeriodDetails(payment, pending, status, paidAt) {
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const carried = Array.isArray(pending.carriedDueDetails) ? pending.carriedDueDetails : [];
+            const covered = carried.map(detail => ({ ...detail }));
+            const pendingDate = String(pending.date || '');
+            const monthFromDate = monthNames.indexOf(pendingDate.split(' ')[0]);
+            const month = monthFromDate >= 0 ? monthFromDate + 1 : Number(payment.month);
+            const year = Number(pending.year) || Number(payment.year);
+            const date = pendingDate || `${monthNames[month - 1] || monthNames[new Date().getMonth()]} ${payment.dateRange === '16-end' ? '16-end' : '1-15'}`;
+            if (!covered.some(detail => Number(detail.year) === year && detail.date === date)) {
+                const carriedFee = carried.reduce((sum, detail) => sum + (Number(detail.fee) || 0), 0);
+                const carriedFine = carried.reduce((sum, detail) => sum + (Number(detail.fine) || 0), 0);
+                covered.push({
+                    id: pending.id || payment.id,
+                    date,
+                    year,
+                    fee: Math.max(0, Number(payment.fee) - carriedFee),
+                    fine: Math.max(0, Number(payment.fine) - carriedFine),
+                    profileEmail: payment.profile,
+                    name: payment.profileName
+                });
+            }
+            return covered.map(detail => {
+                const periodMonth = monthNames.indexOf(String(detail.date || '').split(' ')[0]);
+                const periodYear = Number(detail.year);
+                const isSecondPeriod = String(detail.date || '').includes('16-');
+                const startDay = isSecondPeriod ? 16 : 1;
+                const dueDay = isSecondPeriod && periodMonth >= 0
+                    ? new Date(periodYear, periodMonth + 1, 0).getDate()
+                    : 15;
+                const dueDate = periodMonth >= 0 ? new Date(periodYear, periodMonth, dueDay) : null;
+                const paidDay = new Date(paidAt.getFullYear(), paidAt.getMonth(), paidAt.getDate());
+                const lateDays = status === 'Paid' && dueDate && paidDay > dueDate
+                    ? Math.floor((paidDay - dueDate) / 86400000)
+                    : 0;
+                const periodStart = periodMonth >= 0 ? new Date(periodYear, periodMonth, startDay) : null;
+                return {
+                    ...detail,
+                    month: periodMonth >= 0 ? periodMonth + 1 : Number(payment.month),
+                    dateRange: isSecondPeriod ? '16-end' : '1-15',
+                    fee: Number(detail.fee) || 0,
+                    fine: status === 'Paid' && lateDays ? lateDays * 5 : Number(detail.fine) || 0,
+                    daysLate: lateDays,
+                    status,
+                    paidAt: status === 'Paid' ? paidAt.toISOString() : '',
+                    star: status !== 'Paid' ? '' : lateDays ? 'cross' : (periodStart && paidDay < periodStart ? 2 : 1)
+                };
+            });
+        }
 
-            if (!selectedProfile) {
-                showError('অনুগ্রহ করে একজন মেম্বার নির্বাচন করুন');
+        async function persistPayment(payment, status, pending, paidAt) {
+            if (!db || !signedInUser) throw new Error('আপনার account-এ login করে আবার চেষ্টা করুন।');
+            const profileEmail = String(signedInUser.email || '').trim().toLowerCase();
+            if (String(payment.profile || '').trim().toLowerCase() !== profileEmail) {
+                throw new Error('শুধু নিজের account-এর payment করা যাবে।');
+            }
+            const coveredDetails = getPaymentPeriodDetails(payment, pending, status, paidAt);
+            const batch = db.batch();
+            const paymentRef = db.collection('payments').doc(payment.id);
+            batch.set(paymentRef, {
+                ...payment,
+                profile: profileEmail,
+                profileEmail,
+                profileUid: signedInUser.uid,
+                paymentRecordId: payment.id,
+                status,
+                paidAt: status === 'Paid' ? firebase.firestore.Timestamp.fromDate(paidAt) : null,
+                coveredDueDetails: coveredDetails,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            coveredDetails.forEach(detail => {
+                const periodId = `${signedInUser.uid}_${detail.year}_${detail.month}_${detail.dateRange}`;
+                const periodRef = db.collection('deposit_periods').doc(periodId);
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                const dueMonth = monthNames.indexOf(String(detail.date || '').split(' ')[0]);
+                const dueDay = detail.dateRange === '16-end' && dueMonth >= 0
+                    ? new Date(Number(detail.year), dueMonth + 1, 0).getDate()
+                    : 15;
+                batch.set(periodRef, {
+                    profileEmail,
+                    profileName: payment.profileName,
+                    year: detail.year,
+                    month: detail.month,
+                    dateRange: detail.dateRange,
+                    status,
+                    paymentId: payment.id,
+                    fee: detail.fee,
+                    fine: detail.fine,
+                    total: detail.fee + detail.fine,
+                    paidAt: status === 'Paid' ? firebase.firestore.Timestamp.fromDate(paidAt) : null,
+                    daysLate: detail.daysLate,
+                    star: detail.star,
+                    dueDate: dueMonth >= 0
+                        ? `${Number(detail.year)}-${String(dueMonth + 1).padStart(2, '0')}-${String(dueDay).padStart(2, '0')}`
+                        : ''
+                }, { merge: true });
+                const detailRef = db.collection('deposit_period_details')
+                    .doc(`${signedInUser.uid}_${detail.year}_${detail.month}_${detail.dateRange}`);
+                batch.set(detailRef, {
+                    userId: signedInUser.uid,
+                    profileEmail,
+                    profileName: payment.profileName,
+                    year: detail.year,
+                    month: detail.month,
+                    dateRange: detail.dateRange,
+                    status,
+                    fee: detail.fee,
+                    fine: detail.fine,
+                    total: detail.fee + detail.fine,
+                    paidAt: status === 'Paid' ? firebase.firestore.Timestamp.fromDate(paidAt) : null,
+                    daysLate: detail.daysLate,
+                    star: detail.star,
+                    paymentId: payment.id,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            });
+            await batch.commit();
+            return coveredDetails;
+        }
+
+        async function submitPayment(event) {
+            event.preventDefault();
+            const user = signedInUser || await authReady;
+            const ownEmail = String(user && user.email || '').trim().toLowerCase();
+            if (!ownEmail || String(selectedProfile || '').trim().toLowerCase() !== ownEmail) {
+                showError('শুধু নিজের account-এর payment করা যাবে।');
                 return;
             }
-
             if (!selectedPaymentMethod) {
                 showError('অনুগ্রহ করে একটি পেমেন্ট পদ্ধতি নির্বাচন করুন');
                 return;
             }
-
             const fee = Number(document.getElementById('fee').value) || 0;
             if (fee <= 0) {
                 showError('Fee পরিমাণ অবশ্যই ০ এর চেয়ে বেশি হতে হবে');
                 return;
             }
 
-            function getPaymentStar(pendingPayment, paidAt) {
-                const dateLabel = String(pendingPayment.date || '');
-                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                const monthIndex = monthNames.indexOf(dateLabel.split(' ')[0]);
-                const year = Number(pendingPayment.year);
-                if (monthIndex < 0 || !Number.isInteger(year)) return 1;
-                const dueDay = dateLabel.includes('16-')
-                    ? new Date(year, monthIndex + 1, 0).getDate()
-                    : 15;
-                const startDay = dateLabel.includes('16-') ? 16 : 1;
-                const paidDate = new Date(paidAt.getFullYear(), paidAt.getMonth(), paidAt.getDate());
-                const periodStart = new Date(year, monthIndex, startDay);
-                const dueDate = new Date(year, monthIndex, dueDay);
-                if (paidDate > dueDate) return 'cross';
-                if (paidDate < periodStart) return 2;
-                return 1;
+            const pendingRaw = localStorage.getItem('pending_payment');
+            let pending = {};
+            try {
+                pending = pendingRaw ? JSON.parse(pendingRaw) : {};
+            } catch (error) {
+                console.error('Could not read the selected deposit period:', error);
             }
-
+            const profile = profiles.find(item => item.email === ownEmail);
+            const now = new Date();
             const payment = {
                 id: `PAY-${Date.now()}`,
-                timestamp: new Date().toLocaleString('bn-BD'),
-                profile: selectedProfile,
-                profileName: (profiles.find(p => p.email === selectedProfile) || {}).name || 'Unknown',
+                timestamp: now.toLocaleString('bn-BD'),
+                profile: ownEmail,
+                profileName: profile ? profile.name : ownEmail.split('@')[0],
                 paymentMethod: selectedPaymentMethod,
-                dateRange: document.getElementById('dateRange').value,
-                year: Number(document.getElementById('year').value),
-                month: Number(document.getElementById('month').value),
-                fee: fee,
+                dateRange: String(pending.date || '').includes('16-') ? '16-end' : document.getElementById('dateRange').value,
+                year: Number(pending.year) || Number(document.getElementById('year').value),
+                month: (['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].indexOf(String(pending.date || '').split(' ')[0]) + 1)
+                    || Number(document.getElementById('month').value),
+                fee,
                 fine: Number(document.getElementById('fine').value) || 0,
                 total: fee + (Number(document.getElementById('fine').value) || 0),
                 transactionId: document.getElementById('transactionId').value || 'N/A',
                 notes: document.getElementById('notes').value,
                 star: document.getElementById('applyStar').checked
             };
+            const isCash = selectedPaymentMethod === 'cash';
+            const status = isCash ? 'Pending Confirmation' : 'Paid';
+            if (isCash && payment.transactionId === 'N/A') payment.transactionId = `CASH-${Date.now()}`;
+            const coveredDetails = getPaymentPeriodDetails(payment, pending, status, now);
 
-            if (selectedPaymentMethod === 'cash') {
-                const pendingCashPayment = {
-                    ...payment,
-                    status: 'Pending Confirmation',
-                    transactionId: payment.transactionId === 'N/A'
-                        ? `CASH-${Date.now()}`
-                        : payment.transactionId
-                };
-                savePaymentToHistory(pendingCashPayment);
-                saveActivityNotification({
-                    id: `payment-pending-${payment.id}`,
-                    to: payment.profile.toLowerCase(),
-                    type: 'payment_pending',
-                    title: 'Payment awaiting confirmation',
-                    message: `Your cash payment of ৳${payment.total.toLocaleString('en-BD')} is awaiting confirmation.`,
-                    amount: payment.total,
-                    status: 'Pending Confirmation',
-                    transactionId: pendingCashPayment.transactionId,
-                    paymentId: payment.id,
-                    read: false,
-                    createdAt: new Date().toISOString()
-                });
-
-                const pendingRaw = localStorage.getItem('pending_payment');
-                let pending = {};
-                try {
-                    pending = pendingRaw ? JSON.parse(pendingRaw) : {};
-                } catch (error) {
-                    console.error('pending cash payment parse error', error);
-                }
-
-                if (db) {
-                    db.collection('payments').add({
-                        ...pendingCashPayment,
-                        profileEmail: pending.profileEmail || pending.profile || payment.profile,
-                        profileName: payment.profileName,
-                        status: 'Pending Confirmation',
-                        confirmationRequired: true,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    }).then(() => {
-                        return db.collection('notifications').add({
-                            to: 'sbrymsteam@gmail.com',
-                            subject: `Cash payment confirmation required: ৳${payment.total}`,
-                            message: `Cash payment from ${payment.profileName} requires admin confirmation. Transaction: ${pendingCashPayment.transactionId}`,
-                            paymentId: pendingCashPayment.id,
-                            type: 'cash_payment_confirmation',
-                            read: false,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                    }).then(() => {
-                        sendAppPush(
-                            'sbrymsteam@gmail.com',
-                            `Cash payment confirmation required: ৳${payment.total}`,
-                            `Cash payment from ${payment.profileName} requires admin confirmation. Transaction: ${pendingCashPayment.transactionId}`,
-                            `cash-payment-confirmation-${pendingCashPayment.id}`
-                        );
-                        const payerEmail = pending.profileEmail || pending.profile || payment.profile;
-                        if (!payerEmail) return;
-                        return db.collection('notifications').doc(`payment-pending-${payment.id}`).set({
-                            to: payerEmail.toLowerCase(),
-                            subject: 'Payment awaiting confirmation',
-                            title: 'Payment awaiting confirmation',
-                            message: `Your cash payment of ৳${payment.total} is awaiting confirmation.`,
-                            amount: payment.total,
-                            status: 'Pending Confirmation',
-                            transactionId: pendingCashPayment.transactionId,
-                            paymentId: payment.id,
-                            type: 'payment_pending',
-                            read: false,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    }).catch(error => {
-                        console.error('cash payment confirmation write error', error);
-                        showError('Cash payment request সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।');
-                    });
-                }
-
-                localStorage.removeItem('pending_payment');
-                showSuccess('Cash payment request জমা হয়েছে। Admin confirmation-এর পর Paid হবে।');
-                resetForm();
-                loadTransactionHistory();
-                setTimeout(() => { window.location.href = 'deposit.html'; }, 1800);
-                return;
-            }
-
-            savePaymentToHistory(payment);
-            saveActivityNotification({
-                id: `payment-success-${payment.id}`,
-                to: payment.profile.toLowerCase(),
-                type: 'payment_success',
-                title: 'Payment successful',
-                message: `Your payment of ৳${payment.total.toLocaleString('en-BD')} has been recorded. Transaction ID: ${payment.transactionId}`,
-                amount: payment.total,
-                status: 'Paid',
-                transactionId: payment.transactionId,
-                paymentId: payment.id,
-                read: false,
-                createdAt: new Date().toISOString()
-            });
-            // If there is a pending_payment from deposit page, mark it completed so deposit page can update
             try {
-                const pendingRaw = localStorage.getItem('pending_payment');
-                if (pendingRaw) {
-                    const pending = JSON.parse(pendingRaw);
-                    const completed = {
+                await persistPayment(payment, status, pending, now);
+                savePaymentToHistory({ ...payment, status, profileEmail: ownEmail, paidAt: isCash ? '' : now.toISOString(), coveredDueDetails: coveredDetails });
+                if (isCash) {
+                    saveActivityNotification({
+                        id: `payment-pending-${payment.id}`,
+                        to: ownEmail,
+                        type: 'payment_pending',
+                        title: 'Payment awaiting confirmation',
+                        message: `আপনার ৳${payment.total.toLocaleString('en-BD')} cash payment confirmation-এর অপেক্ষায় আছে।`,
+                        amount: payment.total,
+                        status,
+                        transactionId: payment.transactionId,
+                        paymentId: payment.id,
+                        read: false,
+                        createdAt: now.toISOString()
+                    });
+                    await db.collection('notifications').add({
+                        to: 'sbrymsteam@gmail.com',
+                        subject: `Cash payment confirmation required: ৳${payment.total}`,
+                        message: `Cash payment from ${payment.profileName} requires admin confirmation. Transaction: ${payment.transactionId}`,
+                        paymentId: payment.id,
+                        type: 'cash_payment_confirmation',
+                        read: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    sendAppPush(
+                        'sbrymsteam@gmail.com',
+                        `Cash payment confirmation required: ৳${payment.total}`,
+                        `Cash payment from ${payment.profileName} requires admin confirmation. Transaction: ${payment.transactionId}`,
+                        `cash-payment-confirmation-${payment.id}`
+                    );
+                    localStorage.removeItem('pending_payment');
+                    showSuccess('Cash payment request জমা হয়েছে। Admin confirmation-এর পর Paid হবে।');
+                } else {
+                    localStorage.setItem('last_completed_payment', JSON.stringify({
                         ...pending,
+                        profileEmail: ownEmail,
                         status: 'Paid',
-                        paidAt: new Date().toISOString(),
+                        paidAt: now.toISOString(),
                         fee: payment.fee,
                         fine: payment.fine,
                         transactionId: payment.transactionId,
                         paymentRecordId: payment.id,
-                        star: getPaymentStar(pending, new Date())
-                    };
-                    localStorage.setItem('last_completed_payment', JSON.stringify(completed));
-                    // remove pending to avoid double-applying
+                        carriedRowIds: Array.isArray(pending.carriedRowIds) ? pending.carriedRowIds : [],
+                        star: coveredDetails.length ? coveredDetails[coveredDetails.length - 1].star : 1
+                    }));
+                    saveActivityNotification({
+                        id: `payment-success-${payment.id}`,
+                        to: ownEmail,
+                        type: 'payment_success',
+                        title: 'Payment successful',
+                        message: `আপনার ৳${payment.total.toLocaleString('en-BD')} payment সফল হয়েছে। Transaction ID: ${payment.transactionId}`,
+                        amount: payment.total,
+                        status: 'Paid',
+                        transactionId: payment.transactionId,
+                        paymentId: payment.id,
+                        read: false,
+                        createdAt: now.toISOString()
+                    });
+                    await db.collection('notifications').add({
+                        to: 'sbrymsteam@gmail.com',
+                        subject: `Payment received: ${payment.profileName} ৳${payment.total}`,
+                        message: `Payment ${payment.id} received from ${payment.profileName} (${ownEmail}). Amount: ৳${payment.total}. Transaction: ${payment.transactionId}`,
+                        type: 'payment_received',
+                        paymentId: payment.id,
+                        read: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    sendAppPush(
+                        'sbrymsteam@gmail.com',
+                        `Payment received: ${payment.profileName} ৳${payment.total}`,
+                        `Payment ${payment.id} received from ${payment.profileName} (${ownEmail}). Amount: ৳${payment.total}. Transaction: ${payment.transactionId}`,
+                        `payment-received-${payment.id}`
+                    );
                     localStorage.removeItem('pending_payment');
-
-                    // Also write to Firestore payments and notifications (queue emails)
-                    try {
-                        if (db) {
-                            // Save payment record to 'payments' collection
-                            db.collection('payments').add({
-                                paymentRecordId: payment.id,
-                                profileEmail: pending.profileEmail || pending.profile || payment.profile,
-                                profileName: payment.profileName,
-                                type: 'payment_success',
-                                status: 'Paid',
-                                fee: payment.fee,
-                                fine: payment.fine,
-                                total: payment.total,
-                                transactionId: payment.transactionId,
-                                dateRange: payment.dateRange,
-                                month: payment.month,
-                                year: payment.year,
-                                notes: payment.notes,
-                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                            }).catch(e => console.error('firestore payments add error', e));
-
-                            // Create admin notification to sbrymsteam@gmail.com
-                            db.collection('notifications').add({
-                                to: 'sbrymsteam@gmail.com',
-                                subject: `Payment received: ${payment.profileName} ৳${payment.total}`,
-                                message: `Payment ${payment.id} received from ${payment.profileName} (${pending.profileEmail || payment.profile}). Amount: ৳${payment.total}. Transaction: ${payment.transactionId}`,
-                                type: 'payment_received',
-                                paymentId: payment.id,
-                                read: false,
-                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                            }).then(() => sendAppPush(
-                                'sbrymsteam@gmail.com',
-                                `Payment received: ${payment.profileName} ৳${payment.total}`,
-                                `Payment ${payment.id} received from ${payment.profileName} (${pending.profileEmail || payment.profile}). Amount: ৳${payment.total}. Transaction: ${payment.transactionId}`,
-                                `payment-received-${payment.id}`
-                            )).catch(e => console.error('firestore notifications add error', e));
-
-                            // Create user notification (queued) for the payer
-                            const payerEmail = pending.profileEmail || payment.profile;
-                            if (payerEmail) {
-                                db.collection('notifications').add({
-                                    to: payerEmail,
-                                    subject: 'Payment confirmation',
-                                    message: `Dear ${payment.profileName}, your payment of ৳${payment.total} has been received. Transaction ID: ${payment.transactionId}`,
-                                    type: 'payment_success',
-                                    status: 'Paid',
-                                    amount: payment.total,
-                                    transactionId: payment.transactionId,
-                                    paymentId: payment.id,
-                                    read: false,
-                                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                                }).catch(e => console.error('firestore user notification add error', e));
-                            }
-                        }
-                    } catch (e) {
-                        console.error('firestore write error', e);
-                    }
+                    showSuccess('পেমেন্ট সফলভাবে রেকর্ড করা হয়েছে!');
                 }
-            } catch (e) {
-                console.error('error saving completed payment', e);
+                resetForm();
+                loadTransactionHistory();
+                setTimeout(() => { window.location.href = 'deposit.html'; }, isCash ? 1800 : 1200);
+            } catch (error) {
+                console.error('Could not save payment:', error);
+                showError(error.message || 'Payment সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।');
             }
-
-            showSuccess('পেমেন্ট সফলভাবে রেকর্ড করা হয়েছে!');
-            resetForm();
-            loadTransactionHistory();
-            // redirect back to deposit page so UI updates there
-            setTimeout(() => { window.location.href = 'deposit.html'; }, 1200);
         }
 
         function savePaymentToHistory(payment) {
@@ -1088,6 +1104,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                 history = [];
             }
 
+            history = history.filter(item => item.id !== payment.id);
             history.unshift(payment);
             const maxHistory = 100;
             history = history.slice(0, maxHistory);
@@ -1109,6 +1126,8 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             } catch (e) {
                 history = [];
             }
+            const ownEmail = String(signedInUser && signedInUser.email || '').trim().toLowerCase();
+            history = history.filter(payment => String(payment.profileEmail || payment.profile || '').trim().toLowerCase() === ownEmail);
 
             const historyContainer = document.getElementById('transactionHistory');
             if (history.length === 0) {
@@ -1295,7 +1314,9 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                     document.getElementById('fee').value = fee;
                     document.getElementById('fine').value = fine;
                     document.getElementById('transactionId').value = transactionId;
-                    document.getElementById('month').value = pending.month || (new Date().getMonth()+1);
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    const monthFromDue = months.indexOf(String(pending.date || '').split(' ')[0]) + 1;
+                    document.getElementById('month').value = pending.month || monthFromDue || (new Date().getMonth()+1);
                     document.getElementById('year').value = pending.year || (new Date().getFullYear());
                     document.getElementById('dateRange').value = pending.date && pending.date.includes('1-15') ? '1-15' : '16-end';
                 }
@@ -1314,20 +1335,33 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
         }
 
         // Initialize on page load
-        window.addEventListener('DOMContentLoaded', function(){
-            initializeForm();
-            // if deposit -> payment flow provided a pending_payment, open EPS widget with amount
-            try{
+        window.addEventListener('DOMContentLoaded', async function(){
+            const user = await authReady;
+            if (!user) {
+                window.location.replace('login.html');
+                return;
+            }
+            await initializeForm(user);
+            try {
                 const pendingRaw = localStorage.getItem('pending_payment');
                 if (pendingRaw) {
                     const pending = JSON.parse(pendingRaw);
-                    const amount = Number(pending.fee) + (Number(pending.fine)||0) || Number(new URLSearchParams(window.location.search).get('fee')) || 0;
+                    if (String(pending.profileEmail || pending.profile || '').trim().toLowerCase() !== String(user.email || '').trim().toLowerCase()) {
+                        localStorage.removeItem('pending_payment');
+                        showError('এই payment request অন্য account-এর। নিজের due থেকে আবার Pay করুন।');
+                        return;
+                    }
+                    const amount = Number(pending.fee) + (Number(pending.fine) || 0)
+                        || Number(new URLSearchParams(window.location.search).get('fee')) || 0;
                     showEPSWidget(amount);
                 }
-            }catch(e){console.error(e)}
+            } catch (error) {
+                console.error('Could not restore the pending payment:', error);
+            }
         });
     </script>
 <script src="assets/background-settings.js"></script>
 <script src="assets/push-notifications.js"></script>
+<script src="assets/device-sessions.js"></script>
 </body>
 </html>

@@ -198,6 +198,9 @@
                     console.error('Could not stop background presence service:', error);
                 }
             }
+            if (window.sbrymsDeviceSessionsCloseCurrent) {
+                await window.sbrymsDeviceSessionsCloseCurrent();
+            }
             await firebase.auth().signOut();
             localStorage.removeItem('currentUserEmail');
             localStorage.removeItem('currentUserUid');
@@ -206,6 +209,7 @@
         document.getElementById('sideLogout').addEventListener('click', logout);
     </script>
     <script src="assets/push-notifications.js"></script>
+    <script src="assets/device-sessions.js"></script>
     <script src="assets/mobile-bottom-nav.js"></script>
 </body>
 </html>

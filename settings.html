@@ -301,6 +301,9 @@
             console.error('Could not stop background presence service:', error);
           }
         }
+        if (window.sbrymsDeviceSessionsCloseCurrent) {
+          await window.sbrymsDeviceSessionsCloseCurrent();
+        }
         await firebase.auth().signOut();
       } catch (error) {
         console.error('Firebase sign-out failed:', error);
@@ -313,5 +316,6 @@
     });
   </script>
   <script src="assets/push-notifications.js"></script>
+  <script src="assets/device-sessions.js"></script>
 </body>
 </html>

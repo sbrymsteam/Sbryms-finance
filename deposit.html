@@ -162,6 +162,12 @@ ue {
             color: #15803d;
             box-shadow: none;
         }
+        .pay-pill.is-pending {
+            background: rgba(245, 158, 11, 0.16);
+            color: #a16207;
+            box-shadow: none;
+            cursor: default;
+        }
         .pay-pill:disabled {
             opacity: 0.7;
             cursor: default;
@@ -716,6 +722,64 @@ ue {
         box-shadow: none !important;
     }
     .deposit-info-close:hover { color: #dc2626 !important; }
+    .deposit-history-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 100002;
+        display: grid;
+        place-items: center;
+        padding: 16px;
+        background: rgba(3, 7, 18, .56) !important;
+        -webkit-backdrop-filter: blur(9px) saturate(125%);
+        backdrop-filter: blur(9px) saturate(125%);
+    }
+    .deposit-history-panel {
+        width: min(440px, 100%);
+        max-height: 82vh;
+        overflow: auto;
+        padding: 20px;
+        border: 1px solid rgba(255, 255, 255, .2) !important;
+        border-radius: 16px;
+        background: linear-gradient(145deg, rgba(38, 45, 61, .82), rgba(13, 18, 30, .76)) !important;
+        background-color: rgba(20, 27, 41, .8) !important;
+        color: #f8fafc !important;
+        box-shadow: 0 22px 65px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .12) !important;
+        -webkit-backdrop-filter: blur(24px) saturate(145%);
+        backdrop-filter: blur(24px) saturate(145%);
+    }
+    .deposit-history-panel h2 { margin: 0; color: #fff !important; font-size: 18px; }
+    .deposit-history-panel p { margin: 10px 0; color: #d3d9e6 !important; font-size: 13px; line-height: 1.6; }
+    .deposit-history-item { padding: 12px 0; border-top: 1px solid rgba(255, 255, 255, .13); }
+    .deposit-history-item strong { display: block; color: #a7f3c7 !important; font-size: 13px; }
+    .deposit-history-item span { display: block; margin-top: 5px; color: #d3d9e6 !important; font-size: 12px; line-height: 1.6; }
+    .deposit-history-close {
+        float: right;
+        padding: 5px 10px;
+        border: 1px solid rgba(255, 255, 255, .22) !important;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, .12) !important;
+        color: #fff !important;
+        cursor: pointer;
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+    }
+    html:root:root body .deposit-history-modal:is(#sbryms-theme-specificity-anchor, .deposit-history-modal) {
+        background: rgba(3, 7, 18, .56) !important;
+        background-color: rgba(3, 7, 18, .56) !important;
+        background-image: none !important;
+        -webkit-backdrop-filter: blur(9px) saturate(125%);
+        backdrop-filter: blur(9px) saturate(125%);
+    }
+    html:root:root body .deposit-history-modal :is(#sbryms-theme-specificity-anchor, .deposit-history-panel) {
+        border: 1px solid rgba(255, 255, 255, .2) !important;
+        background: linear-gradient(145deg, rgba(38, 45, 61, .88), rgba(13, 18, 30, .84)) !important;
+        background-color: rgba(20, 27, 41, .86) !important;
+        background-image: linear-gradient(145deg, rgba(38, 45, 61, .88), rgba(13, 18, 30, .84)) !important;
+        box-shadow: 0 22px 65px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .12) !important;
+        color: #f8fafc !important;
+    }
+    html:root:root body .deposit-history-panel :is(#sbryms-theme-specificity-anchor, p, span) { color: #e2e8f0 !important; }
+    html:root:root body .deposit-history-panel :is(#sbryms-theme-specificity-anchor, h2, strong) { color: #fff !important; }
 </style>
 <link rel="stylesheet" href="assets/bg.css?v=35">
 </head>
@@ -856,6 +920,9 @@ ue {
         );
         let id = 1;
         let depositData = [];
+        let depositPeriodStatuses = new Map();
+        let personalPeriodDetails = new Map();
+        let personalPaymentHistory = [];
         
         function getLastDayOfMonth(monthIndex, year) {
             return new Date(year, monthIndex + 1, 0).getDate();
@@ -1215,9 +1282,214 @@ ue {
             return new Date(Number(row.year), monthIndex, dueDay);
         }
 
+        function getDepositPeriodKey(email, year, date) {
+            const month = months.indexOf(String(date || '').split(' ')[0]) + 1;
+            const range = String(date || '').includes('16-') ? '16-end' : '1-15';
+            return `${String(email || '').trim().toLowerCase()}|${Number(year)}|${month}|${range}`;
+        }
+
+        function getPeriodStatus(row) {
+            return depositPeriodStatuses.get(getDepositPeriodKey(row.profileEmail, row.year, row.date)) || null;
+        }
+
+        function isPeriodPaid(row) {
+            const status = getPeriodStatus(row);
+            return row.status === 'Paid' || Boolean(status && status.status === 'Paid');
+        }
+
+        function isPeriodPaymentSubmitted(row) {
+            const status = getPeriodStatus(row);
+            return Boolean(status && ['Paid', 'Pending Confirmation'].includes(status.status));
+        }
+
+        function getPrivatePeriodDetail(row) {
+            return personalPeriodDetails.get(getDepositPeriodKey(row.profileEmail, row.year, row.date)) || null;
+        }
+
+        function getCurrentAuthEmail() {
+            const user = firebase.auth().currentUser;
+            return String(user && user.email || '').trim().toLowerCase();
+        }
+
+        async function loadDepositPaymentStatus(user) {
+            membersDb.collection('deposit_periods').onSnapshot(snapshot => {
+                depositPeriodStatuses = new Map();
+                snapshot.forEach(document => {
+                    const status = document.data() || {};
+                    if (!status.profileEmail || !status.year || !status.month || !status.dateRange) return;
+                    depositPeriodStatuses.set(
+                        `${String(status.profileEmail).trim().toLowerCase()}|${Number(status.year)}|${Number(status.month)}|${status.dateRange}`,
+                        status
+                    );
+                });
+                renderTable();
+            }, error => {
+                console.error('Could not subscribe to deposit payment status:', error);
+                showToast('Payment status load করা যায়নি। Firestore rules প্রকাশ হয়েছে কি না দেখুন।');
+            });
+            const paymentSnapshot = await membersDb.collection('payments')
+                .where('profileEmail', '==', String(user.email || '').trim().toLowerCase())
+                .limit(200)
+                .get();
+            const detailSnapshot = await membersDb.collection('deposit_period_details')
+                .where('userId', '==', user.uid)
+                .get();
+            personalPeriodDetails = new Map();
+            detailSnapshot.forEach(document => {
+                const detail = document.data() || {};
+                personalPeriodDetails.set(
+                    `${String(detail.profileEmail || '').trim().toLowerCase()}|${Number(detail.year)}|${Number(detail.month)}|${detail.dateRange}`,
+                    detail
+                );
+            });
+            personalPaymentHistory = paymentSnapshot.docs.map(document => ({
+                id: document.id,
+                ...document.data()
+            }));
+            renderTable();
+        }
+
+        function showDepositPaymentHistory(index) {
+            const row = depositData[index];
+            if (!row) return;
+            const ownerEmail = String(row.profileEmail || '').trim().toLowerCase();
+            const currentEmail = getCurrentAuthEmail();
+            const modal = document.createElement('div');
+            modal.className = 'deposit-history-modal';
+            const panel = document.createElement('section');
+            panel.className = 'deposit-history-panel';
+            panel.setAttribute('role', 'dialog');
+            panel.setAttribute('aria-modal', 'true');
+            const closeButton = document.createElement('button');
+            closeButton.className = 'deposit-history-close';
+            closeButton.type = 'button';
+            closeButton.textContent = 'বন্ধ';
+            closeButton.addEventListener('click', () => modal.remove());
+            const title = document.createElement('h2');
+            title.textContent = `Payment history · ${row.date} ${row.year}`;
+            panel.append(closeButton, title);
+
+            if (ownerEmail !== currentEmail) {
+                const summary = getPeriodStatus(row);
+                const message = document.createElement('p');
+                const dueDate = getRowDueDate(row);
+                const now = new Date();
+                const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                const lateDays = summary && Number.isFinite(Number(summary.daysLate))
+                    ? Number(summary.daysLate)
+                    : dueDate && today > dueDate ? Math.floor((today - dueDate) / 86400000) : 0;
+                const fine = summary && Number.isFinite(Number(summary.fine))
+                    ? Number(summary.fine)
+                    : lateDays * 5;
+                const paymentDateValue = summary && summary.paidAt;
+                const paidAt = paymentDateValue && typeof paymentDateValue.toDate === 'function'
+                    ? paymentDateValue.toDate()
+                    : paymentDateValue ? new Date(paymentDateValue) : null;
+                const status = summary && summary.status === 'Paid'
+                    ? 'Paid'
+                    : summary && summary.status === 'Pending Confirmation'
+                        ? 'Payment confirmation pending'
+                        : summary && summary.status === 'Pending'
+                            ? 'Payment pending'
+                            : 'Unpaid';
+                const historyStar = summary && summary.star !== undefined
+                    ? summary.star
+                    : status === 'Paid'
+                        ? row.star || ''
+                        : dueDate && today > dueDate ? 'cross' : '';
+                const stars = historyStar === 'cross'
+                    ? 'কোনো star নেই'
+                    : `${Number(historyStar) || 0}টি`;
+                const paymentTotal = summary && Number.isFinite(Number(summary.total))
+                    ? Number(summary.total)
+                    : (Number(summary && summary.fee) || Number(row.fee) || 100) + fine;
+                message.textContent = [
+                    `Account: ${row.name || 'Member'}`,
+                    `Status: ${status}`,
+                    `Paid date: ${paidAt && !Number.isNaN(paidAt.getTime()) ? paidAt.toLocaleString('bn-BD') : '—'}`,
+                    `Late: ${lateDays} দিন`,
+                    `Fine: ৳${fine}`,
+                    `Star: ${stars}`,
+                    `Total: ৳${paymentTotal}`
+                ].join(' · ');
+                panel.appendChild(message);
+            } else {
+                const month = months.indexOf(String(row.date).split(' ')[0]) + 1;
+                const range = String(row.date).includes('16-') ? '16-end' : '1-15';
+                const matches = personalPaymentHistory
+                    .filter(payment => {
+                        if (Number(payment.year) === Number(row.year)
+                            && Number(payment.month) === month
+                            && payment.dateRange === range) return true;
+                        return Array.isArray(payment.coveredDueDetails)
+                            && payment.coveredDueDetails.some(detail =>
+                                Number(detail.year) === Number(row.year)
+                                && months.indexOf(String(detail.date || '').split(' ')[0]) + 1 === month
+                                && (String(detail.date || '').includes('16-') ? '16-end' : '1-15') === range
+                            );
+                    })
+                    .sort((left, right) => {
+                        const toDate = value => value && typeof value.toDate === 'function' ? value.toDate() : new Date(value || 0);
+                        return toDate(right.paidAt || right.createdAt).getTime() - toDate(left.paidAt || left.createdAt).getTime();
+                    });
+                if (!matches.length) {
+                    const empty = document.createElement('p');
+                    const detail = getPrivatePeriodDetail(row);
+                    empty.textContent = detail
+                        ? `${detail.status === 'Pending' ? 'Payment pending' : detail.status === 'Pending Confirmation' ? 'Admin confirmation বাকি' : 'Payment status'} · জরিমানা ৳${Number(detail.fine) || 0} · দেরি ${Number(detail.daysLate) || 0} দিন`
+                        : 'এই period-এর কোনো payment history পাওয়া যায়নি।';
+                    panel.appendChild(empty);
+                } else {
+                    matches.forEach(payment => {
+                        const item = document.createElement('div');
+                        item.className = 'deposit-history-item';
+                        const heading = document.createElement('strong');
+                        heading.textContent = payment.status === 'Pending Confirmation' ? 'Payment pending' : 'Payment successful';
+                        const details = document.createElement('span');
+                        const coveredDetail = Array.isArray(payment.coveredDueDetails)
+                            ? payment.coveredDueDetails.find(detail =>
+                                Number(detail.year) === Number(row.year)
+                                && months.indexOf(String(detail.date || '').split(' ')[0]) + 1 === month
+                                && (String(detail.date || '').includes('16-') ? '16-end' : '1-15') === range
+                            )
+                            : null;
+                        const dueDate = getRowDueDate(row);
+                        const paymentDateValue = payment.paidAt || payment.createdAt;
+                        const paidAt = paymentDateValue && typeof paymentDateValue.toDate === 'function'
+                            ? paymentDateValue.toDate()
+                            : new Date(paymentDateValue || 0);
+                        const paidDay = Number.isNaN(paidAt.getTime())
+                            ? null
+                            : new Date(paidAt.getFullYear(), paidAt.getMonth(), paidAt.getDate());
+                        const lateDays = coveredDetail && Number.isFinite(Number(coveredDetail.daysLate))
+                            ? Number(coveredDetail.daysLate)
+                            : dueDate && paidDay && paidDay > dueDate
+                                ? Math.floor((paidDay - dueDate) / 86400000)
+                                : 0;
+                        const fine = coveredDetail && Number.isFinite(Number(coveredDetail.fine))
+                            ? Number(coveredDetail.fine)
+                            : Number(payment.fine) || 0;
+                        const star = coveredDetail ? coveredDetail.star : payment.star;
+                        details.textContent = payment.status === 'Pending Confirmation'
+                            ? `৳${Number(payment.total) || 0} · Admin confirmation বাকি`
+                            : `পরিশোধের তারিখ: ${Number.isNaN(paidAt.getTime()) ? 'তথ্য নেই' : paidAt.toLocaleString('bn-BD')} · দেরি: ${lateDays} দিন · জরিমানা: ৳${fine} · Star: ${star === 'cross' ? 'নেই' : `${Number(star) || 0}টি`} · এই payment: ৳${Number(coveredDetail && coveredDetail.fee) + Number(coveredDetail && coveredDetail.fine) || Number(payment.total) || 0}`;
+                        item.append(heading, details);
+                        panel.appendChild(item);
+                    });
+                }
+            }
+            modal.appendChild(panel);
+            modal.addEventListener('click', event => {
+                if (event.target === modal) modal.remove();
+            });
+            document.body.appendChild(modal);
+        }
+
         function getCurrentFine(row) {
             const dueDate = getRowDueDate(row);
-            if (!dueDate || row.status === 'Paid') return Number(row.fine) || 0;
+            const privateDetail = getPrivatePeriodDetail(row);
+            if (privateDetail) return Number(privateDetail.fine) || 0;
+            if (!dueDate || isPeriodPaid(row)) return Number(row.fine) || 0;
             const today = new Date();
             const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
             if (todayDate <= dueDate) return 0;
@@ -1231,12 +1503,12 @@ ue {
             return depositData.reduce((carry, previous, previousIndex) => {
                 if (previousIndex === index
                     || previous.profileEmail !== row.profileEmail
-                    || previous.status === 'Paid') return carry;
+                    || isPeriodPaymentSubmitted(previous)) return carry;
                 const previousDueDate = getRowDueDate(previous);
                 if (!previousDueDate || previousDueDate >= currentDueDate) return carry;
-                const previousFine = getCurrentFine(previous);
-                carry.fee += Number(previous.fee) || 100;
-                carry.fine += previousFine;
+                const detail = getPrivatePeriodDetail(previous);
+                carry.fee += detail ? Number(detail.fee) || 0 : Number(previous.fee) || 100;
+                carry.fine += detail ? Number(detail.fine) || 0 : getCurrentFine(previous);
                 carry.ids.push(previous.id);
                 return carry;
             }, { fee: 0, fine: 0, ids: [] });
@@ -1251,7 +1523,7 @@ ue {
                     const previousDueDate = getRowDueDate(previous);
                     return previousIndex !== index
                         && previous.profileEmail === row.profileEmail
-                        && previous.status !== 'Paid'
+                        && !isPeriodPaymentSubmitted(previous)
                         && previousDueDate
                         && previousDueDate < currentDueDate;
                 })
@@ -1349,29 +1621,44 @@ ue {
                     }
                 })();
 
-                const rowFine = Number(depositData[index].fine) || 0;
-                const isPaid = row.status === 'Paid';
+                const periodStatus = getPeriodStatus(row);
+                const privateDetail = getPrivatePeriodDetail(row);
+                const isPaid = isPeriodPaid(row);
+                const isPending = !isPaid && periodStatus && periodStatus.status === 'Pending Confirmation';
+                const currentEmail = getCurrentAuthEmail();
+                const isOwnAccount = String(row.profileEmail || '').trim().toLowerCase() === currentEmail;
+                const displayFee = isOwnAccount ? Number(feeValue) || 0 : '—';
+                const rowFine = isOwnAccount && privateDetail
+                    ? Number(privateDetail.fine) || 0
+                    : periodStatus && Number.isFinite(Number(periodStatus.fine))
+                        ? Number(periodStatus.fine)
+                        : Number(depositData[index].fine) || 0;
                 const dueDate = getRowDueDate(row);
                 const today = new Date();
                 const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                const isOverdue = !isPaid && dueDate && todayDate > dueDate;
+                const isOverdue = !isPaid && !isPending && dueDate && todayDate > dueDate;
                 const rowDueDate = getRowDueDate(row);
                 const rowMonthIndex = months.indexOf(String(row.date).split(' ')[0]);
                 const rowStartDay = String(row.date).includes('16-') ? 16 : 1;
                 const rowPeriodStart = rowMonthIndex >= 0
                     ? new Date(Number(row.year), rowMonthIndex, rowStartDay)
                     : null;
-                let displayStar = depositData[index].star || '';
-                if (row.status !== 'Paid' && rowPeriodStart && todayDate < rowPeriodStart) {
+                let displayStar = isPaid
+                    ? (periodStatus && periodStatus.star !== undefined
+                        ? periodStatus.star
+                        : privateDetail && privateDetail.star !== undefined ? privateDetail.star : depositData[index].star || '')
+                    : depositData[index].star || '';
+                if (!isPaid && rowPeriodStart && todayDate < rowPeriodStart) {
                     displayStar = '';
-                } else if (row.status !== 'Paid' && rowDueDate && todayDate > rowDueDate) {
+                } else if (!isPaid && rowDueDate && todayDate > rowDueDate) {
                     displayStar = 'cross';
-                } else if (row.status !== 'Paid') {
+                } else if (!isPaid) {
                     displayStar = '';
                 }
-                const starHtml = displayStar === 'cross'
+                const normalizedStar = String(displayStar);
+                const starHtml = normalizedStar === 'cross'
                     ? '<span class="star-badge" style="color:#ef4444;">✕</span>'
-                    : (displayStar === '3' ? '<span class="star-badge">★★★</span>' : (displayStar === '2' ? '<span class="star-badge">★★</span>' : (displayStar === '1' ? '<span class="star-badge">★</span>' : '')));
+                    : (normalizedStar === '3' ? '<span class="star-badge">★★★</span>' : (normalizedStar === '2' ? '<span class="star-badge">★★</span>' : (normalizedStar === '1' ? '<span class="star-badge">★</span>' : '')));
 
                 const card = document.createElement('div');
                 card.className = isAllAccountsView
@@ -1382,15 +1669,17 @@ ue {
                         <p class="deposit-date">${getFixedDateLabel(row.date)}</p>
                         <button class="card-menu" type="button" aria-label="More options" style="border:0!important;border-width:0!important;border-style:none!important;border-color:transparent!important;outline:0!important;background:transparent!important;box-shadow:none!important;">⋯</button>
                     </div>
-                    <div class="deposit-meta deposit-fee-row"><span class="deposit-meta-label">Fee:</span> <span>${Number(feeValue) || 0}</span></div>
+                    <div class="deposit-meta deposit-fee-row"><span class="deposit-meta-label">Fee:</span> <span>${displayFee}</span></div>
                     <div class="deposit-star-row"><span class="star-badge">star: ${starHtml}</span></div>
                     <div class="deposit-meta fine-row">
-                        <span><span class="deposit-meta-label">Fine:</span> <span class="fine-value">${rowFine}</span></span>
+                        <span><span class="deposit-meta-label">Fine:</span> <span class="fine-value">${rowFine === null ? '—' : rowFine}</span></span>
                         ${isPaid
                             ? '<span class="pay-pill is-paid">paid</span>'
-                            : (isOverdue
+                            : (isPending || !isOwnAccount
+                                ? '<span class="pay-pill is-pending">pending</span>'
+                                : (isOverdue
                                 ? '<span class="pay-pill is-unpaid">Unpaid</span>'
-                                : '<button class="pay-pill" type="button" data-index="'+index+'">Pay</button>')}
+                                : '<button class="pay-pill" type="button" data-index="'+index+'">Pay</button>'))}
                     </div>
                 `;
 
@@ -1422,6 +1711,7 @@ ue {
                 if (payButton) {
                     payButton.addEventListener('click', () => handleDuePayment(Number(payButton.dataset.index)));
                 }
+                card.querySelector('.card-menu').addEventListener('click', () => showDepositPaymentHistory(index));
 
                 grid.appendChild(card);
             });
@@ -1430,9 +1720,21 @@ ue {
         }
 
         function updateSummary(filteredRows) {
-            const totalAmount = filteredRows.reduce((sum, item) => sum + (Number(item.row.fee) || 0), 0);
-            const totalFine = filteredRows.reduce((sum, item) => sum + (Number(item.row.fine) || 0), 0);
-            const totalStars = filteredRows.reduce((sum, item) => sum + (item.row.star ? 1 : 0), 0);
+            const currentEmail = getCurrentAuthEmail();
+            const totalAmount = filteredRows.reduce((sum, item) => {
+                if (String(item.row.profileEmail || '').trim().toLowerCase() !== currentEmail) return sum;
+                return sum + (Number(item.row.fee) || 0);
+            }, 0);
+            const totalFine = filteredRows.reduce((sum, item) => {
+                if (String(item.row.profileEmail || '').trim().toLowerCase() !== currentEmail) return sum;
+                const detail = getPrivatePeriodDetail(item.row);
+                return sum + (detail ? Number(detail.fine) || 0 : Number(item.row.fine) || 0);
+            }, 0);
+            const totalStars = filteredRows.reduce((sum, item) => {
+                if (String(item.row.profileEmail || '').trim().toLowerCase() !== currentEmail) return sum;
+                const detail = getPrivatePeriodDetail(item.row);
+                return sum + ((detail && detail.status === 'Paid' ? detail.star : item.row.star) ? 1 : 0);
+            }, 0);
 
             const totalAmountEl = document.getElementById('totalAmount');
             const totalFineEl = document.getElementById('totalFine');
@@ -1527,11 +1829,14 @@ ue {
             const selectedRows = depositData
                 .map((item, itemIndex) => ({ item, itemIndex, dueDate: getRowDueDate(item) }))
                 .filter(entry => entry.item.profileEmail === row.profileEmail
-                    && entry.item.status !== 'Paid'
+                    && !isPeriodPaymentSubmitted(entry.item)
                     && entry.dueDate
                     && entry.dueDate <= selectedDueDate)
                 .sort((a, b) => a.dueDate - b.dueDate);
-            const totalFee = selectedRows.reduce((sum, entry) => sum + (Number(entry.item.fee) || 100), 0);
+            const totalFee = selectedRows.reduce((sum, entry) => {
+                const detail = getPrivatePeriodDetail(entry.item);
+                return sum + (detail ? Number(detail.fee) || 0 : Number(entry.item.fee) || 100);
+            }, 0);
             const totalFine = selectedRows.reduce((sum, entry) => sum + getCurrentFine(entry.item), 0);
             const modal = document.createElement('div');
             modal.className = 'due-review-modal';
@@ -1540,7 +1845,12 @@ ue {
                     <h3>Payment details</h3>
                     <p>Select করা due-গুলোর fee ও fine একসাথে পরিশোধ হবে।</p>
                     <div class="due-review-list">
-                        ${selectedRows.map(entry => `<div><span>${entry.item.date} ${entry.item.year}</span><b>৳ ${Number(entry.item.fee) || 100} + ৳ ${getCurrentFine(entry.item)}</b></div>`).join('')}
+                        ${selectedRows.map(entry => {
+                            const detail = getPrivatePeriodDetail(entry.item);
+                            const fee = detail ? Number(detail.fee) || 0 : Number(entry.item.fee) || 100;
+                            const fine = detail ? Number(detail.fine) || 0 : getCurrentFine(entry.item);
+                            return `<div><span>${entry.item.date} ${entry.item.year}</span><b>৳ ${fee} + ৳ ${fine}</b></div>`;
+                        }).join('')}
                     </div>
                     <strong class="due-review-total">Total: ৳ ${totalFee + totalFine}</strong>
                     <div class="due-review-actions">
@@ -1718,10 +2028,19 @@ ue {
         // Navigate to payment gateway with full row details saved to localStorage
         function goToPaymentGatewayForIndex(index) {
             const row = depositData[index] || {};
+            if (String(row.profileEmail || '').trim().toLowerCase() !== getCurrentAuthEmail()) {
+                showToast('শুধু নিজের account-এর payment করা যাবে।');
+                return;
+            }
+            if (isPeriodPaymentSubmitted(row)) {
+                showToast('এই period-এর payment ইতিমধ্যে submit হয়েছে।');
+                return;
+            }
             try {
                 const carryOver = getCarryOver(index);
-                const currentFee = Number(row.fee) || 100;
-                const currentFine = Number(row.fine) || getCurrentFine(row);
+                const detail = getPrivatePeriodDetail(row);
+                const currentFee = detail ? Number(detail.fee) || 0 : Number(row.fee) || 100;
+                const currentFine = detail ? Number(detail.fine) || 0 : Number(row.fine) || getCurrentFine(row);
                 const payableFee = currentFee + carryOver.fee;
                 const payableFine = currentFine + carryOver.fine;
                 const carriedDueDetails = carryOver.ids
@@ -1731,8 +2050,8 @@ ue {
                         id: item.id,
                         date: item.date,
                         year: item.year,
-                        fee: Number(item.fee) || 100,
-                        fine: getCurrentFine(item),
+                        fee: getPrivatePeriodDetail(item) ? Number(getPrivatePeriodDetail(item).fee) || 0 : Number(item.fee) || 100,
+                        fine: getPrivatePeriodDetail(item) ? Number(getPrivatePeriodDetail(item).fine) || 0 : getCurrentFine(item),
                         profileEmail: item.profileEmail,
                         name: item.name
                     }));
@@ -1878,6 +2197,10 @@ ue {
                 localStorage.setItem('currentUserEmail', user.email || '');
                 localStorage.setItem('currentUserUid', user.uid || '');
                 loadRegisteredMembers();
+                loadDepositPaymentStatus(user).catch(error => {
+                    console.error('Could not load deposit payment status:', error);
+                    showToast('Payment status load করা যায়নি। আবার refresh করুন।');
+                });
             } else {
                 renderProfileStrip();
                 renderTable();
@@ -1925,5 +2248,6 @@ ue {
         })();
     </script>
 <script src="assets/background-settings.js"></script>
+<script src="assets/device-sessions.js"></script>
 </body>
 </html>

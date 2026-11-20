@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sbryms-finance-v62';
+const CACHE_NAME = 'sbryms-finance-v66';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -10,13 +10,15 @@ const urlsToCache = [
   '/team-meet-call.html',
   '/settings.html',
   '/members.html',
-  '/deposit.html',
   '/income.html',
   '/expense.html',
   '/loans.html',
   '/donation.html',
   '/project.html',
   '/profile.html',
+  '/deposit.html',
+  '/payment-gateway.html',
+  '/security.html',
   '/profile-rank.html',
   '/assets/app-icon.svg',
   '/assets/page-loader.js',
@@ -24,7 +26,8 @@ const urlsToCache = [
   '/notifications.html',
   '/manifest.json',
   '/assets/app-icon-192.png',
-  '/assets/bg.css'
+  '/assets/bg.css',
+  '/assets/device-sessions.js'
 ];
 
 self.addEventListener('install', event => {
