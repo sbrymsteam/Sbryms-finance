@@ -270,7 +270,7 @@ async function main() {
       continue;
     }
     const paymentId = existingPayment ? existingPayment.ref.id : makePaymentId(user.uid, period);
-    const docs = makeWrites(user, period, paymentId, paidAt, existingPayment && existingPayment.data);
+    const docs = makeWrites(user, period, paymentId, paidAt, existingPayment ? existingPayment.data : undefined);
     writes.push({
       user,
       period,

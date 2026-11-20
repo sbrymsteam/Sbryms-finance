@@ -782,6 +782,89 @@ ue {
     html:root:root body .deposit-history-panel :is(#sbryms-theme-specificity-anchor, h2, strong) { color: #fff !important; }
 </style>
 <link rel="stylesheet" href="assets/bg.css?v=35">
+<style>
+    html:root:root body .deposit-card:is(#sbryms-theme-specificity-anchor, .deposit-card) {
+        border: 1px solid rgba(255, 255, 255, .16) !important;
+        background: linear-gradient(145deg, rgba(255, 255, 255, .105), rgba(255, 255, 255, .035)) !important;
+        background-color: rgba(18, 24, 38, .68) !important;
+        background-image: linear-gradient(145deg, rgba(255, 255, 255, .105), rgba(255, 255, 255, .035)) !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14), 0 12px 28px rgba(0, 0, 0, .2) !important;
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        backdrop-filter: blur(16px) saturate(140%);
+        color: #f8fafc !important;
+        transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease !important;
+    }
+    html:root:root body .deposit-card:is(#sbryms-theme-specificity-anchor, .deposit-card):hover {
+        border-color: rgba(255, 255, 255, .26) !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 16px 34px rgba(0, 0, 0, .28) !important;
+    }
+    html:root:root body .deposit-card :is(#sbryms-theme-specificity-anchor, .deposit-date, .deposit-meta, .deposit-meta-label, .star-badge, .fine-value) {
+        color: #f1f5f9 !important;
+    }
+    html:root:root body .deposit-card .deposit-star-row .star-badge span[style*="color"] {
+        color: #f87171 !important;
+    }
+    html:root:root body .deposit-card :is(#sbryms-theme-specificity-anchor, .card-menu) {
+        color: #e2e8f0 !important;
+    }
+    html:root:root body .deposit-card :is(#sbryms-theme-specificity-anchor, .pay-pill.is-paid) {
+        color: #4ade80 !important;
+    }
+    html:root:root body .deposit-card :is(#sbryms-theme-specificity-anchor, .pay-pill.is-unpaid) {
+        color: #f87171 !important;
+    }
+    html:root:root body .deposit-info-button:is(#sbryms-theme-specificity-anchor, .deposit-info-button) {
+        width: 38px !important;
+        height: 38px !important;
+        border: 1px solid rgba(255, 255, 255, .22) !important;
+        border-radius: 50% !important;
+        background: linear-gradient(145deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, .045)) !important;
+        background-color: rgba(255, 255, 255, .09) !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), 0 8px 20px rgba(0, 0, 0, .22) !important;
+        -webkit-backdrop-filter: blur(14px) saturate(140%);
+        backdrop-filter: blur(14px) saturate(140%);
+        color: #fff !important;
+    }
+    html:root:root body .deposit-info-modal:is(#sbryms-theme-specificity-anchor, .deposit-info-modal) {
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 100001 !important;
+        display: grid !important;
+        place-items: center !important;
+        padding: 16px !important;
+        background: rgba(3, 7, 18, .62) !important;
+        background-color: rgba(3, 7, 18, .62) !important;
+        background-image: none !important;
+        -webkit-backdrop-filter: blur(8px) saturate(125%);
+        backdrop-filter: blur(8px) saturate(125%);
+    }
+    html:root:root body .deposit-info-modal .deposit-info-panel:is(#sbryms-theme-specificity-anchor, .deposit-info-panel) {
+        width: min(430px, 100%) !important;
+        max-height: 82vh !important;
+        overflow: auto !important;
+        border: 1px solid rgba(255, 255, 255, .22) !important;
+        border-radius: 20px !important;
+        background: linear-gradient(145deg, rgba(34, 42, 59, .9), rgba(13, 18, 30, .88)) !important;
+        background-color: rgba(20, 27, 41, .9) !important;
+        background-image: linear-gradient(145deg, rgba(34, 42, 59, .9), rgba(13, 18, 30, .88)) !important;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, .48), inset 0 1px 0 rgba(255, 255, 255, .14) !important;
+        -webkit-backdrop-filter: blur(24px) saturate(145%);
+        backdrop-filter: blur(24px) saturate(145%);
+        color: #f8fafc !important;
+    }
+    html:root:root body .deposit-info-panel :is(#sbryms-theme-specificity-anchor, h2, h3, p) {
+        color: #f1f5f9 !important;
+        text-shadow: none !important;
+    }
+    html:root:root body .deposit-info-panel :is(#sbryms-theme-specificity-anchor, h2) { color: #fff !important; }
+    html:root:root body .deposit-info-panel :is(#sbryms-theme-specificity-anchor, h3) { color: #a5b4fc !important; }
+    html:root:root body .deposit-info-close:is(#sbryms-theme-specificity-anchor, .deposit-info-close) {
+        border: 1px solid rgba(255, 255, 255, .2) !important;
+        border-radius: 50% !important;
+        background: rgba(255, 255, 255, .1) !important;
+        color: #fff !important;
+    }
+</style>
 </head>
 <body>
     <div class="page-header">
@@ -792,7 +875,7 @@ ue {
                 <p class="subtitle">Manage and review monthly deposit data</p>
             </div>
         </div>
-        <button class="deposit-info-button" type="button" aria-label="Deposit rules" onclick="showDepositInfo()" style="border:0!important;border-width:0!important;border-style:none!important;border-color:transparent!important;outline:0!important;background:transparent!important;box-shadow:none!important;">
+        <button class="deposit-info-button" type="button" aria-label="Deposit rules" onclick="showDepositInfo()">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"></circle>
                 <path d="M12 10.5V16" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
@@ -1282,6 +1365,14 @@ ue {
             return new Date(Number(row.year), monthIndex, dueDay);
         }
 
+        function isBeforeDepositTrackingStart(row) {
+            if (!row) return true;
+            if (Number(row.year) < 2022) return true;
+            if (Number(row.year) > 2022) return false;
+            const monthIndex = months.indexOf(String(row.date || '').split(' ')[0]);
+            return monthIndex < 5 || (monthIndex === 5 && !String(row.date).includes('16-'));
+        }
+
         function getDepositPeriodKey(email, year, date) {
             const month = months.indexOf(String(date || '').split(' ')[0]) + 1;
             const range = String(date || '').includes('16-') ? '16-end' : '1-15';
@@ -1304,6 +1395,25 @@ ue {
 
         function getPrivatePeriodDetail(row) {
             return personalPeriodDetails.get(getDepositPeriodKey(row.profileEmail, row.year, row.date)) || null;
+        }
+
+        function getPeriodFee(row) {
+            const detail = getPrivatePeriodDetail(row);
+            if (detail && Number.isFinite(Number(detail.fee))) return Number(detail.fee);
+            const summary = getPeriodStatus(row);
+            if (summary && Number.isFinite(Number(summary.fee))) return Number(summary.fee);
+            return Number(row && row.fee) || 100;
+        }
+
+        function getReceivedStarCount(star) {
+            if (star === true) return 1;
+            if (star === false || star === null || star === undefined) return 0;
+            const value = String(star).trim().toLowerCase();
+            if (!value || value === 'cross' || value === 'x' || value === '✕' || value === '✖') return 0;
+            const starGlyphs = value.match(/[★⭐]/g);
+            if (starGlyphs) return starGlyphs.length;
+            const count = Number(value);
+            return Number.isFinite(count) && count > 0 ? count : 0;
         }
 
         function getCurrentAuthEmail() {
@@ -1503,11 +1613,12 @@ ue {
             return depositData.reduce((carry, previous, previousIndex) => {
                 if (previousIndex === index
                     || previous.profileEmail !== row.profileEmail
+                    || isBeforeDepositTrackingStart(previous)
                     || isPeriodPaymentSubmitted(previous)) return carry;
                 const previousDueDate = getRowDueDate(previous);
                 if (!previousDueDate || previousDueDate >= currentDueDate) return carry;
+                carry.fee += getPeriodFee(previous);
                 const detail = getPrivatePeriodDetail(previous);
-                carry.fee += detail ? Number(detail.fee) || 0 : Number(previous.fee) || 100;
                 carry.fine += detail ? Number(detail.fine) || 0 : getCurrentFine(previous);
                 carry.ids.push(previous.id);
                 return carry;
@@ -1523,6 +1634,7 @@ ue {
                     const previousDueDate = getRowDueDate(previous);
                     return previousIndex !== index
                         && previous.profileEmail === row.profileEmail
+                        && !isBeforeDepositTrackingStart(previous)
                         && !isPeriodPaymentSubmitted(previous)
                         && previousDueDate
                         && previousDueDate < currentDueDate;
@@ -1540,6 +1652,7 @@ ue {
                 .map((row, index) => ({ row, index }))
                 .filter(item => {
                     if (item.row.year !== currentYear) return false;
+                    if (isBeforeDepositTrackingStart(item.row)) return false;
                     if (selectedProfileEmail !== 'all' && item.row.profileEmail !== selectedProfileEmail) return false;
                     if (period) {
                         if (period === 1 && !item.row.date.includes('1-15')) return false;
@@ -1627,7 +1740,9 @@ ue {
                 const isPending = !isPaid && periodStatus && periodStatus.status === 'Pending Confirmation';
                 const currentEmail = getCurrentAuthEmail();
                 const isOwnAccount = String(row.profileEmail || '').trim().toLowerCase() === currentEmail;
-                const displayFee = isOwnAccount ? Number(feeValue) || 0 : '—';
+                const displayFee = isOwnAccount
+                    ? (periodStatus || privateDetail ? getPeriodFee(row) : Number(feeValue) || 0)
+                    : '—';
                 const rowFine = isOwnAccount && privateDetail
                     ? Number(privateDetail.fine) || 0
                     : periodStatus && Number.isFinite(Number(periodStatus.fine))
@@ -1723,17 +1838,32 @@ ue {
             const currentEmail = getCurrentAuthEmail();
             const totalAmount = filteredRows.reduce((sum, item) => {
                 if (String(item.row.profileEmail || '').trim().toLowerCase() !== currentEmail) return sum;
-                return sum + (Number(item.row.fee) || 0);
+                if (!isPeriodPaid(item.row)) return sum;
+                return sum + getPeriodFee(item.row);
             }, 0);
             const totalFine = filteredRows.reduce((sum, item) => {
                 if (String(item.row.profileEmail || '').trim().toLowerCase() !== currentEmail) return sum;
+                if (!isPeriodPaid(item.row)) return sum;
                 const detail = getPrivatePeriodDetail(item.row);
-                return sum + (detail ? Number(detail.fine) || 0 : Number(item.row.fine) || 0);
+                const summary = getPeriodStatus(item.row);
+                const fine = detail && detail.status === 'Paid'
+                    ? detail.fine
+                    : summary && summary.status === 'Paid'
+                        ? summary.fine
+                        : item.row.fine;
+                return sum + (Number(fine) || 0);
             }, 0);
             const totalStars = filteredRows.reduce((sum, item) => {
                 if (String(item.row.profileEmail || '').trim().toLowerCase() !== currentEmail) return sum;
                 const detail = getPrivatePeriodDetail(item.row);
-                return sum + ((detail && detail.status === 'Paid' ? detail.star : item.row.star) ? 1 : 0);
+                const summary = getPeriodStatus(item.row);
+                if (!isPeriodPaid(item.row)) return sum;
+                const star = detail && detail.status === 'Paid'
+                    ? detail.star
+                    : summary && summary.status === 'Paid'
+                        ? summary.star
+                        : item.row.star;
+                return sum + getReceivedStarCount(star);
             }, 0);
 
             const totalAmountEl = document.getElementById('totalAmount');
