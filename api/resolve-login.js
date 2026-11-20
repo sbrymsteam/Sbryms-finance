@@ -3,7 +3,7 @@ const { getFirestore } = require('firebase-admin/firestore');
 
 const allowedEmails = new Set([
   'ahmedmshakil4@gmail.com',
-  'arafathusainkamil@gmail.com',
+  'samsunnaharbusra6@gmail.com',
   'rifathusain498@gmail.com',
   'yeahyaahmed86@gmail.com',
   'mdmahdihasanoj@gmail.com',
