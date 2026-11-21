@@ -8,6 +8,7 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.ToneGenerator;
 import android.util.Log;
+import android.content.SharedPreferences;
 import java.io.IOException;
 import android.os.Handler;
 import android.os.Looper;
@@ -16,6 +17,7 @@ final class IncomingCallRingtone {
     private static final String TAG = "IncomingCallRingtone";
     private static final String PREFS = "call_ringtone";
     private static final String PREF_KEY = "selected";
+    private static final String PREF_VERSION_KEY = "default_version";
     private static MediaPlayer player;
     private static ToneGenerator toneGenerator;
     private static String activeCallId = "";
@@ -32,13 +34,14 @@ final class IncomingCallRingtone {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putString(PREF_KEY, ringtone)
+            .putInt(PREF_VERSION_KEY, 1)
             .apply();
     }
 
     static synchronized void start(Context context, String callId) {
         stop(context, "");
-        String ringtone = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(PREF_KEY, "uploaded-1");
+        ensureDefaultRingtone(context);
+        String ringtone = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(PREF_KEY, "whatsapp-audio");
         if ("dj-jazz-2".equals(ringtone)) {
             startJazzTone(context, callId, true);
             return;
@@ -49,8 +52,10 @@ final class IncomingCallRingtone {
     static synchronized void preview(Context context, String ringtone) {
         stop(context, "");
         if (ringtone != null) setSelected(context, ringtone);
-        else ringtone = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(PREF_KEY, "uploaded-1");
+        else {
+            ensureDefaultRingtone(context);
+            ringtone = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(PREF_KEY, "whatsapp-audio");
+        }
         if ("dj-jazz-2".equals(ringtone)) {
             startJazzTone(context, "", false);
         } else {
@@ -121,7 +126,9 @@ final class IncomingCallRingtone {
     private static void startPlayer(Context context, String callId, String ringtone, boolean looping) {
         String asset = "uploaded-2".equals(ringtone)
             ? "public/assets/ringtone-upload-2.mp3"
-            : "public/assets/ringtone-upload-1.mp3";
+            : ("whatsapp-audio".equals(ringtone)
+                ? "public/assets/ringtone-whatsapp.m4a"
+                : "public/assets/ringtone-upload-1.mp3");
         MediaPlayer nextPlayer = new MediaPlayer();
         try (AssetFileDescriptor descriptor = context.getAssets().openFd(asset)) {
             AudioAttributes attributes = new AudioAttributes.Builder()
@@ -163,7 +170,17 @@ final class IncomingCallRingtone {
     private static boolean isSupported(String ringtone) {
         return "dj-jazz-2".equals(ringtone)
             || "uploaded-1".equals(ringtone)
-            || "uploaded-2".equals(ringtone);
+            || "uploaded-2".equals(ringtone)
+            || "whatsapp-audio".equals(ringtone);
+    }
+
+    private static void ensureDefaultRingtone(Context context) {
+        SharedPreferences preferences = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        if (preferences.getInt(PREF_VERSION_KEY, 0) >= 1) return;
+        preferences.edit()
+            .putString(PREF_KEY, "whatsapp-audio")
+            .putInt(PREF_VERSION_KEY, 1)
+            .apply();
     }
 
     private static void requestAudioFocus(Context context) {

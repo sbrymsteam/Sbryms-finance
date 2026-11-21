@@ -62,7 +62,7 @@
       text-decoration: none; font-size: 12px;
     }
     .choice.active { color: #fff; background: #df146e; border-color: #df146e; }
-    .preset-grid, .ringtone-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; padding: 10px 0 14px; }
+    .preset-grid, .ringtone-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(105px, 1fr)); gap: 7px; padding: 10px 0 14px; }
     .preset, .ringtone { min-height: 42px; border: 1px solid rgba(255,255,255,.16); border-radius: 9px; color: #fff; cursor: pointer; font-size: 11px; }
     .preset.active, .ringtone.active { outline: 2px solid #fff; outline-offset: 1px; }
     .ringtone { color: #dce7ff; background: rgba(255,255,255,.07); }
@@ -117,6 +117,7 @@
           <button class="ringtone" data-ringtone="dj-jazz-2">DJ Jazz 2<small>Built-in</small></button>
           <button class="ringtone" data-ringtone="uploaded-1">Audio 1<small>Uploaded</small></button>
           <button class="ringtone" data-ringtone="uploaded-2">Audio 2<small>Uploaded</small></button>
+          <button class="ringtone" data-ringtone="whatsapp-audio">WhatsApp Audio<small>New ringtone</small></button>
         </div>
       </div>
     </div>
@@ -138,6 +139,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="assets/native-presence.js"></script>
+  <script src="assets/call-ringtone-preference.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
@@ -151,7 +153,8 @@
 
     const ringtoneFiles = {
       'uploaded-1': 'assets/ringtone-upload-1.mp3',
-      'uploaded-2': 'assets/ringtone-upload-2.mp3'
+      'uploaded-2': 'assets/ringtone-upload-2.mp3',
+      'whatsapp-audio': 'assets/ringtone-whatsapp.m4a'
     };
     const previewRingtone = key => {
       localStorage.setItem('callRingtone', key);
@@ -296,7 +299,7 @@
     };
     bindToggle('notificationToggle', 'browserNotificationsEnabled', false);
     bindToggle('badgeToggle', 'teamMeetBadgeEnabled', true);
-    const savedRingtone = localStorage.getItem('callRingtone') || 'dj-jazz-2';
+    const savedRingtone = localStorage.getItem('callRingtone') || 'whatsapp-audio';
     const ringtonePlugin = window.Capacitor
       && window.Capacitor.Plugins
       && window.Capacitor.Plugins.CallRingtone;

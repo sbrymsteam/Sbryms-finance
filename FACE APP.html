@@ -12,6 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="assets/native-presence.js"></script>
+    <script src="assets/call-ringtone-preference.js"></script>
     <script type="importmap">
         {"imports":{"@capacitor/core":"/assets/vendor/capacitor-core/index.js"}}
     </script>
@@ -857,6 +858,7 @@ body.custom-image-background::before {
                         <button class="call-ringtone-option" type="button" data-ringtone="dj-jazz-2" onclick="saveCallRingtoneSetting(this.dataset.ringtone)"><span>DJ Jazz 2</span> Velvet Groove <small class="preview-label">Tap to select &amp; preview</small></button>
                         <button class="call-ringtone-option" type="button" data-ringtone="uploaded-1" onclick="saveCallRingtoneSetting(this.dataset.ringtone)"><span>Your Audio 1</span> Uploaded Ringtone <small class="preview-label">Tap to select &amp; preview</small></button>
                         <button class="call-ringtone-option" type="button" data-ringtone="uploaded-2" onclick="saveCallRingtoneSetting(this.dataset.ringtone)"><span>Your Audio 2</span> Uploaded Ringtone <small class="preview-label">Tap to select &amp; preview</small></button>
+                        <button class="call-ringtone-option" type="button" data-ringtone="whatsapp-audio" onclick="saveCallRingtoneSetting(this.dataset.ringtone)"><span>WhatsApp Audio</span> New ringtone <small class="preview-label">Tap to select &amp; preview</small></button>
                     </div>
                 </div>
 
@@ -1384,13 +1386,14 @@ body.custom-image-background::before {
                 teamBadgeToggle.classList.toggle('on', enabled);
             }
             const savedRingtone = localStorage.getItem('callRingtone');
-            const validRingtones = ['dj-jazz-2', 'uploaded-1', 'uploaded-2'];
-            const activeRingtone = validRingtones.includes(savedRingtone) ? savedRingtone : 'uploaded-1';
+            const validRingtones = ['dj-jazz-2', 'uploaded-1', 'uploaded-2', 'whatsapp-audio'];
+            const activeRingtone = validRingtones.includes(savedRingtone) ? savedRingtone : 'whatsapp-audio';
             if (savedRingtone !== activeRingtone) localStorage.setItem('callRingtone', activeRingtone);
             const ringtoneNames = {
                 'dj-jazz-2': 'DJ Jazz 2',
                 'uploaded-1': 'ringtone 1',
-                'uploaded-2': 'ringtone 2'
+                'uploaded-2': 'ringtone 2',
+                'whatsapp-audio': 'WhatsApp Audio'
             };
             const currentRingtone = document.getElementById('callRingtoneCurrent');
             if (currentRingtone) currentRingtone.textContent = ringtoneNames[activeRingtone] + ' selected';
@@ -1440,8 +1443,8 @@ body.custom-image-background::before {
         }
 
         function saveCallRingtoneSetting(value) {
-            const allowed = ['dj-jazz-2', 'uploaded-1', 'uploaded-2'];
-            const selected = allowed.includes(value) ? value : 'uploaded-1';
+            const allowed = ['dj-jazz-2', 'uploaded-1', 'uploaded-2', 'whatsapp-audio'];
+            const selected = allowed.includes(value) ? value : 'whatsapp-audio';
             localStorage.setItem('callRingtone', selected);
             updateSettingsControls();
             previewCallRingtone(selected);
@@ -1456,7 +1459,8 @@ body.custom-image-background::before {
             }
             const uploadedRingtones = {
                 'uploaded-1': 'assets/ringtone-upload-1.mp3',
-                'uploaded-2': 'assets/ringtone-upload-2.mp3'
+                'uploaded-2': 'assets/ringtone-upload-2.mp3',
+                'whatsapp-audio': 'assets/ringtone-whatsapp.m4a'
             };
             if (uploadedRingtones[ringtone]) {
                 ringtonePreviewAudio = new Audio(new URL(uploadedRingtones[ringtone], document.baseURI).href);
