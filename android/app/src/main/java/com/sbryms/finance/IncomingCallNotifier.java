@@ -40,7 +40,7 @@ final class IncomingCallNotifier {
     static final String CHANNEL_CALLS = "sbryms_incoming_calls_dnd_v4";
     static final String CHANNEL_CALLS_STANDARD = "sbryms_incoming_calls_v4";
     static final String CHANNEL_CALLS_FOREGROUND = "sbryms_incoming_calls_foreground_v4";
-    static final String CHANNEL_MESSAGES = "sbryms_messages_v3";
+    static final String CHANNEL_MESSAGES = "sbryms_app_alerts_v4";
     private static final String TAG = "IncomingCallNotifier";
     private static final int MAX_PROFILE_PHOTO_BYTES = 4 * 1024 * 1024;
     private static final String DISMISSED_CALLS_PREFS = "dismissed_incoming_calls";
@@ -79,7 +79,7 @@ final class IncomingCallNotifier {
                 ? CHANNEL_CALLS_FOREGROUND
                 : (bypassDnd ? CHANNEL_CALLS : CHANNEL_CALLS_STANDARD))
             : CHANNEL_MESSAGES;
-        createChannel(manager, channelId, call, bypassDnd, launchCallScreenDirectly);
+        createChannel(context, manager, channelId, call, bypassDnd, launchCallScreenDirectly);
 
         Intent openIntent;
         PendingIntent fullScreenIntent = null;
@@ -132,6 +132,9 @@ final class IncomingCallNotifier {
             .setOngoing(call)
             .setContentIntent(contentIntent)
             .setTimeoutAfter(call ? 60000 : 120000);
+        if (!call && Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            notification.setSound(notificationSoundUri(context), android.media.AudioManager.STREAM_NOTIFICATION);
+        }
 
         RemoteViews messageView = null;
         if (call) {
@@ -306,6 +309,7 @@ final class IncomingCallNotifier {
     }
 
     private static void createChannel(
+        Context context,
         NotificationManager manager,
         String channelId,
         boolean call,
@@ -316,7 +320,7 @@ final class IncomingCallNotifier {
         if (manager.getNotificationChannel(channelId) != null) return;
         NotificationChannel channel = new NotificationChannel(
             channelId,
-            call ? "Incoming calls" : "Messages",
+            call ? "Incoming calls" : "Messages and app alerts",
             foregroundCall ? NotificationManager.IMPORTANCE_DEFAULT : NotificationManager.IMPORTANCE_HIGH
         );
         channel.setLockscreenVisibility(call ? android.app.Notification.VISIBILITY_PUBLIC : android.app.Notification.VISIBILITY_PRIVATE);
@@ -327,11 +331,26 @@ final class IncomingCallNotifier {
             channel.setBypassDnd(bypassDnd);
             channel.setSound(null, null);
         } else {
-            channel.setDescription("SBRYMS chat message alerts");
+            channel.setDescription("SBRYMS message and account alerts");
             channel.enableVibration(true);
             channel.setVibrationPattern(new long[] { 0, 180 });
+            channel.setSound(
+                notificationSoundUri(context),
+                new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            );
         }
         manager.createNotificationChannel(channel);
+    }
+
+    private static android.net.Uri notificationSoundUri(Context context) {
+        return android.net.Uri.parse(
+            android.content.ContentResolver.SCHEME_ANDROID_RESOURCE
+                + "://" + context.getPackageName()
+                + "/" + R.raw.sbryms_notification
+        );
     }
 
     private static String value(String input, String fallback) {

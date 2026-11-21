@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sbryms-finance-v74';
+const CACHE_NAME = 'sbryms-finance-v75';
 const CALL_STATE_CACHE = 'sbryms-call-state-v1';
 const urlsToCache = [
   '/',
@@ -29,8 +29,8 @@ const urlsToCache = [
   '/assets/app-icon-192.png',
   '/assets/bg.css',
   '/assets/device-sessions.js',
-  '/assets/call-ringtone-preference.js',
-  '/assets/ringtone-whatsapp.m4a'
+  '/assets/call-ringtone-correction.js',
+  '/assets/app-notification.m4a'
 ];
 
 function callStateCacheKey(callId) {

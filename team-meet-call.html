@@ -575,7 +575,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="assets/call-ringtone-preference.js"></script>
+  <script src="assets/call-ringtone-correction.js"></script>
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
@@ -990,12 +990,11 @@
     function startIncomingTone() {
       if (incomingToneTimer || incomingToneAudio) return;
       const savedRingtone = localStorage.getItem('callRingtone');
-      const selectedRingtone = ['dj-jazz-2', 'uploaded-1', 'uploaded-2', 'whatsapp-audio'].includes(savedRingtone) ? savedRingtone : 'whatsapp-audio';
+      const selectedRingtone = ['dj-jazz-2', 'uploaded-1', 'uploaded-2'].includes(savedRingtone) ? savedRingtone : 'uploaded-1';
       localStorage.setItem('callRingtone', selectedRingtone);
       const uploadedRingtones = {
         'uploaded-1': 'assets/ringtone-upload-1.mp3',
-        'uploaded-2': 'assets/ringtone-upload-2.mp3',
-        'whatsapp-audio': 'assets/ringtone-whatsapp.m4a'
+        'uploaded-2': 'assets/ringtone-upload-2.mp3'
       };
       if (uploadedRingtones[selectedRingtone]) {
         incomingToneAudio = new Audio(uploadedRingtones[selectedRingtone]);
