@@ -1925,6 +1925,7 @@
     let incomingCallToneStartedAt = 0;
     let incomingCallExpiryTimer = null;
     let activeIncomingCallId = null;
+    let activeIncomingCallNotification = null;
 
     function stopIncomingCallTone() {
       if (incomingCallToneTimer) {
@@ -1940,6 +1941,10 @@
         incomingCallAudio.pause();
         incomingCallAudio.currentTime = 0;
         incomingCallAudio = null;
+      }
+      if (activeIncomingCallNotification) {
+        activeIncomingCallNotification.close();
+        activeIncomingCallNotification = null;
       }
     }
 
@@ -2696,7 +2701,7 @@
         && window.Capacitor.isNativePlatform()
       );
       const showIncomingCall = (call, isGroupCall) => {
-          if (call.data().callerId === currentUserEmail) return;
+          if (!call || call.data().callerId === currentUserEmail) return;
           const banner = document.getElementById('incomingCall');
           if (!banner) return;
           if (!call) {
@@ -2711,14 +2716,14 @@
             : (data.createdAt ? new Date(data.createdAt).getTime() : Date.now());
           if (Date.now() - createdAt >= 60000) {
             stopIncomingCallTone();
-            call.ref.update({ status: 'ended', endedReason: 'timeout' }).catch(error => {
-              console.error('Failed to expire incoming call:', error);
-            });
+            call.ref.update({ status: 'ended', endedReason: 'timeout' })
+              .then(() => notifyCallDevices(call.id, 'ended'))
+              .catch(error => console.error('Failed to expire incoming call:', error));
             banner.style.display = 'none';
             return;
           }
           banner.style.display = 'flex';
-          startIncomingCallTone();
+          if (!isNativeApp) startIncomingCallTone();
           if (activeIncomingCallId !== call.id) {
             activeIncomingCallId = call.id;
             if (!isNativeApp) requestBrowserNotifications().then(permission => {
@@ -2727,11 +2732,15 @@
               const notification = new Notification(data.callerName || 'Incoming call', {
                 body: `${data.callType === 'video' ? 'Video' : 'Audio'} call`,
                 icon: '/assets/app-icon-192.png',
-                tag: `incoming-call-${call.id}`
+                tag: `sbryms-call-${call.id}`
               });
+              activeIncomingCallNotification = notification;
               notification.onclick = () => {
                 window.focus();
                 notification.close();
+                if (activeIncomingCallNotification === notification) {
+                  activeIncomingCallNotification = null;
+                }
               };
               }
             });
@@ -2739,9 +2748,9 @@
           if (incomingCallExpiryTimer) clearTimeout(incomingCallExpiryTimer);
           const remainingMs = Math.max(0, 60000 - (Date.now() - createdAt));
           incomingCallExpiryTimer = setTimeout(() => {
-            call.ref.update({ status: 'ended', endedReason: 'timeout' }).catch(error => {
-              console.error('Failed to expire incoming call:', error);
-            });
+            call.ref.update({ status: 'ended', endedReason: 'timeout' })
+              .then(() => notifyCallDevices(call.id, 'ended'))
+              .catch(error => console.error('Failed to expire incoming call:', error));
             banner.style.display = 'none';
             stopIncomingCallTone();
           }, remainingMs);
@@ -2766,16 +2775,34 @@
               incomingCallExpiryTimer = null;
             }
             if (!isGroupCall) {
-              call.ref.update({ status: 'ended', endedReason: 'rejected' }).catch(error => {
-                console.error('Failed to reject incoming call:', error);
-              });
+              call.ref.update({ status: 'ended', endedReason: 'rejected' })
+                .then(() => notifyCallDevices(call.id, 'ended'))
+                .catch(error => console.error('Failed to reject incoming call:', error));
             }
           };
       };
+      function notifyCallDevices(callId, callStatus) {
+        if (!callId || !window.sbrymsPush) return;
+        const pushReady = window.sbrymsPushReady || Promise.resolve(window.sbrymsPush);
+        pushReady.then(push => push.send({
+          type: 'call_state',
+          callId,
+          callStatus
+        })).catch(error => console.error('Could not notify devices that the call ended:', error));
+      }
       if (!isGroupChat) {
         db.collection('calls')
           .where('receiverId', '==', currentUserEmail)
           .onSnapshot(snapshot => {
+            if (activeIncomingCallId) {
+              const activeCall = snapshot.docs.find(doc => doc.id === activeIncomingCallId);
+              if (!activeCall || activeCall.data().status !== 'ringing') {
+                stopIncomingCallTone();
+                const activeBanner = document.getElementById('incomingCall');
+                if (activeBanner) activeBanner.style.display = 'none';
+                activeIncomingCallId = null;
+              }
+            }
             const call = snapshot.docs.find(doc => doc.data().status === 'ringing');
             if (call) showIncomingCall(call, false);
           }, error => console.error('Incoming call listener failed:', error));

@@ -5,7 +5,7 @@ const {
   getBearerToken
 } = require('./_push-common');
 
-const allowedTypes = new Set(['app', 'message', 'team_call']);
+const allowedTypes = new Set(['app', 'message', 'team_call', 'call_state']);
 const sendsByUid = new Map();
 
 function canSend(uid) {
@@ -22,10 +22,14 @@ function canSend(uid) {
 
 async function getRecipientTokens(db, recipient, senderUid, includeSender = false) {
   const tokenCollection = db.collectionGroup('pushTokens');
-  const tokenSnapshot = recipient === 'all'
-    ? await tokenCollection.get()
-    : await tokenCollection.where('email', '==', recipient).get();
-  return tokenSnapshot.docs.flatMap(document => {
+  const snapshots = recipient === 'all'
+    ? [await tokenCollection.get()]
+    : await Promise.all((Array.isArray(recipient) ? recipient : [recipient])
+      .map(email => tokenCollection.where('email', '==', email).get()));
+  const found = snapshots.flatMap(snapshot => snapshot.docs).filter((document, index, documents) =>
+    documents.findIndex(candidate => candidate.ref.path === document.ref.path) === index
+  );
+  return found.flatMap(document => {
     const owner = document.ref.parent.parent;
     const token = document.data().token;
     if ((!includeSender && owner?.id === senderUid)
@@ -73,6 +77,9 @@ module.exports = async function sendPush(req, res) {
     const chat = typeof req.body?.chat === 'string' ? req.body.chat.trim().slice(0, 254).toLowerCase() : '';
     const callType = req.body?.callType === 'video' ? 'video' : 'audio';
     const groupCall = req.body?.groupCall === true;
+    const callStatus = req.body?.callStatus === 'connected' || req.body?.callStatus === 'ended'
+      ? req.body.callStatus
+      : '';
     const callerName = typeof req.body?.callerName === 'string' ? req.body.callerName.trim().slice(0, 80) : '';
     const senderName = typeof req.body?.senderName === 'string'
       ? req.body.senderName.trim().slice(0, 80)
@@ -89,8 +96,11 @@ module.exports = async function sendPush(req, res) {
       && !req.body.url.startsWith('//')
       ? req.body.url.slice(0, 240)
       : '/notifications.html';
-    if ((!recipient || (recipient !== 'all' && !recipient.includes('@')))
-      || !allowedTypes.has(type) || !title || !body) {
+    if (!allowedTypes.has(type)
+      || (type === 'call_state'
+        ? (!callId || !callStatus)
+        : ((!recipient || (recipient !== 'all' && !recipient.includes('@')))
+          || !title || !body))) {
       res.status(400).json({ error: 'A valid recipient, type, title, and message are required.' });
       return;
     }
@@ -99,12 +109,30 @@ module.exports = async function sendPush(req, res) {
       res.status(400).json({ error: 'Call notifications require valid call details.' });
       return;
     }
-    if (type !== 'app' && recipient === String(user.email || '').trim().toLowerCase()) {
+    let targets;
+    if (type === 'call_state') {
+      const callSnapshot = await services.db.collection('calls').doc(callId).get();
+      const call = callSnapshot.data();
+      const senderEmail = String(user.email || '').trim().toLowerCase();
+      const callerEmail = String(call?.callerId || '').trim().toLowerCase();
+      const receiverEmail = String(call?.receiverId || '').trim().toLowerCase();
+      if (!callSnapshot.exists || !callerEmail || !receiverEmail
+        || ![callerEmail, receiverEmail].includes(senderEmail)) {
+        res.status(403).json({ error: 'This account cannot update the call state.' });
+        return;
+      }
+      if (call.status !== callStatus) {
+        res.status(409).json({ error: 'The call state has not been saved yet.' });
+        return;
+      }
+      targets = await getRecipientTokens(services.db, [callerEmail, receiverEmail], user.uid, true);
+    } else if (type !== 'app' && recipient === String(user.email || '').trim().toLowerCase()) {
       res.status(200).json({ sent: 0 });
       return;
+    } else {
+      targets = await getRecipientTokens(services.db, recipient, user.uid, type === 'app');
     }
 
-    const targets = await getRecipientTokens(services.db, recipient, user.uid, type === 'app');
     let sent = 0;
     let failed = 0;
     const errorCodes = new Set();
@@ -120,7 +148,9 @@ module.exports = async function sendPush(req, res) {
         title: type === 'message' ? messageSenderName : title,
         body
       };
-      if (type === 'team_call') {
+      if (type === 'call_state') {
+        Object.assign(notificationData, { callId, callStatus });
+      } else if (type === 'team_call') {
         const callChat = groupCall ? 'team-group' : senderEmail;
         const answerUrl = groupCall
           ? `/team-meet-call.html?chat=team-group&group=true&room=${encodeURIComponent(roomId)}&call=${encodeURIComponent(callId)}&role=callee&type=${encodeURIComponent(callType)}`
@@ -159,7 +189,11 @@ module.exports = async function sendPush(req, res) {
         webpush: {
           headers: { Urgency: 'high' }
         },
-        android: { priority: 'high', ttl: 600_000 }
+        android: {
+          priority: 'high',
+          ttl: type === 'team_call' ? 60_000 : 600_000,
+          ...(callId ? { collapseKey: callId.slice(0, 64) } : {})
+        }
       });
       sent += result.successCount;
       failed += result.failureCount;

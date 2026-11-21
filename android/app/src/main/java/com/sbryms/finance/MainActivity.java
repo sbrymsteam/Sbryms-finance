@@ -80,6 +80,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(DeviceSettingsPlugin.class);
         registerPlugin(PresencePlugin.class);
         registerPlugin(CallControlsPlugin.class);
+        registerPlugin(CallRingtonePlugin.class);
         super.onCreate(savedInstanceState);
         if (savedInstanceState == null
             && Intent.ACTION_MAIN.equals(getIntent().getAction())

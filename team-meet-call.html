@@ -737,6 +737,16 @@
     let pendingRemoteCandidates = [];
     let lastRemoteNegotiationId = '';
 
+    function notifyCallDevices(callStatus) {
+      if (isGroupCall || !directCallId || !window.sbrymsPush) return Promise.resolve();
+      const pushReady = window.sbrymsPushReady || Promise.resolve(window.sbrymsPush);
+      return pushReady
+        .then(push => push.send({ type: 'call_state', callId: directCallId, callStatus }))
+        .catch(error => {
+          console.error('Could not notify devices about the call state:', error);
+        });
+    }
+
     function setCallStatus(message, state = '') {
       const status = document.getElementById('callStatus');
       const errorState = state === 'error'
@@ -1131,9 +1141,9 @@
         directCallUnsubscribe = null;
       }
       if (directCallRef) {
-        await directCallRef.update({ status: 'ended', endedReason: outcome === 'disconnected' ? 'offline' : 'timeout' }).catch(error => {
-          console.error('Failed to end unanswered call:', error);
-        });
+        await directCallRef.update({ status: 'ended', endedReason: outcome === 'disconnected' ? 'offline' : 'timeout' })
+          .then(() => notifyCallDevices('ended'))
+          .catch(error => console.error('Failed to end unanswered call:', error));
       }
       await saveCallHistory(outcome);
       if (directCallUnsubscribe) directCallUnsubscribe();
@@ -1584,6 +1594,7 @@
         answer: { type: answer.type, sdp: answer.sdp },
         status: 'connected'
       });
+      await notifyCallDevices('connected');
       listenToDirectCall(directCallRef);
       stopConnectingTone();
       stopIncomingTone();
@@ -1829,7 +1840,8 @@
           status: 'ended',
           endedReason,
           endedBy: currentUserEmail
-        }).catch(error => console.error('Failed to notify the other member that the call ended:', error));
+        }).then(() => notifyCallDevices('ended'))
+          .catch(error => console.error('Failed to notify the other member that the call ended:', error));
       }
       await saveCallHistory(callOutcome);
       window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
@@ -1893,6 +1905,7 @@
             status: 'ended',
             endedReason: 'declined'
           });
+          await notifyCallDevices('ended');
           setCallStatus('Call declined', 'error');
           setTimeout(() => window.location.replace('team-meet.html'), 700);
         } catch (error) {

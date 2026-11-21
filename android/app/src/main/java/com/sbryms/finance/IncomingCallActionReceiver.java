@@ -12,6 +12,7 @@ public class IncomingCallActionReceiver extends BroadcastReceiver {
         if (!"com.sbryms.finance.DECLINE_CALL".equals(intent.getAction())) return;
         int notificationId = intent.getIntExtra(IncomingCallNotifier.EXTRA_NOTIFICATION_ID, 0);
         ((NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE)).cancel(notificationId);
+        IncomingCallRingtone.stop(context, "");
         String callUrl = intent.getStringExtra(IncomingCallNotifier.EXTRA_CALL_URL);
         if (callUrl == null) return;
         Intent callIntent = new Intent(context, MainActivity.class)

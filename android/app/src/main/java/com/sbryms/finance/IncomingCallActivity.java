@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,13 +21,17 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 
 public class IncomingCallActivity extends Activity {
+    private static volatile WeakReference<IncomingCallActivity> activeActivity = new WeakReference<>(null);
     private float answerTouchStartY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setVolumeControlStream(AudioManager.STREAM_RING);
+        activeActivity = new WeakReference<>(this);
         showOverLockScreen();
         renderCallScreen();
     }
@@ -35,7 +40,21 @@ public class IncomingCallActivity extends Activity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
+        activeActivity = new WeakReference<>(this);
         renderCallScreen();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (activeActivity.get() == this) activeActivity = new WeakReference<>(null);
+        super.onDestroy();
+    }
+
+    static void dismissForCall(String callId) {
+        IncomingCallActivity activity = activeActivity.get();
+        if (activity == null || activity.isFinishing()
+            || !callId.equals(activity.getIntent().getStringExtra(IncomingCallNotifier.EXTRA_CALL_ID))) return;
+        activity.runOnUiThread(activity::finish);
     }
 
     private void showOverLockScreen() {
@@ -309,6 +328,7 @@ public class IncomingCallActivity extends Activity {
 
     private void answerCall() {
         dismissCallNotification();
+        IncomingCallRingtone.stop(this, "");
         String callUrl = getIntent().getStringExtra(IncomingCallNotifier.EXTRA_CALL_URL);
         Intent intent = new Intent(this, MainActivity.class)
             .putExtra(IncomingCallNotifier.EXTRA_CALL_URL, callUrl)
@@ -319,6 +339,7 @@ public class IncomingCallActivity extends Activity {
 
     private void finishCall() {
         dismissCallNotification();
+        IncomingCallRingtone.stop(this, "");
         String callUrl = getIntent().getStringExtra(IncomingCallNotifier.EXTRA_CALL_URL);
         if (callUrl != null) {
             Intent intent = new Intent(this, MainActivity.class)
@@ -330,6 +351,8 @@ public class IncomingCallActivity extends Activity {
     }
 
     private void openMessages() {
+        dismissCallNotification();
+        IncomingCallRingtone.stop(this, "");
         String chatUrl = getIntent().getStringExtra(IncomingCallNotifier.EXTRA_CHAT_URL);
         if (chatUrl == null || chatUrl.trim().isEmpty()) {
             String callUrl = getIntent().getStringExtra(IncomingCallNotifier.EXTRA_CALL_URL);

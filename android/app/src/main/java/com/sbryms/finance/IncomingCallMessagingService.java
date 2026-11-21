@@ -9,6 +9,10 @@ public class IncomingCallMessagingService extends MessagingService {
     @Override
     public void onMessageReceived(@NonNull RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
-        IncomingCallNotifier.show(this, remoteMessage.getData());
+        if ("call_state".equals(remoteMessage.getData().get("type"))) {
+            IncomingCallNotifier.dismiss(this, remoteMessage.getData().get("callId"));
+        } else {
+            IncomingCallNotifier.show(this, remoteMessage.getData());
+        }
     }
 }

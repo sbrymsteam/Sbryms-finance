@@ -1,4 +1,5 @@
-const CACHE_NAME = 'sbryms-finance-v71';
+const CACHE_NAME = 'sbryms-finance-v73';
+const CALL_STATE_CACHE = 'sbryms-call-state-v1';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -29,6 +30,22 @@ const urlsToCache = [
   '/assets/bg.css',
   '/assets/device-sessions.js'
 ];
+
+function callStateCacheKey(callId) {
+  return new URL(`/__sbryms_call_state__/${encodeURIComponent(callId)}`, self.location.origin);
+}
+
+async function rememberCallState(callId) {
+  const cache = await caches.open(CALL_STATE_CACHE);
+  const keys = await cache.keys();
+  if (keys.length >= 100) await cache.delete(keys[0]);
+  await cache.put(callStateCacheKey(callId), new Response('closed'));
+}
+
+async function wasCallClosed(callId) {
+  const cache = await caches.open(CALL_STATE_CACHE);
+  return Boolean(await cache.match(callStateCacheKey(callId)));
+}
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -61,6 +78,16 @@ self.addEventListener('push', event => {
   }
   const data = payload.data || payload;
   const notification = payload.notification || {};
+  if (data.type === 'call_state' && data.callId) {
+    event.waitUntil((async () => {
+      await rememberCallState(data.callId);
+      const notifications = await self.registration.getNotifications({
+        tag: `sbryms-call-${data.callId}`
+      });
+      notifications.forEach(item => item.close());
+    })());
+    return;
+  }
   const isCall = data.type === 'team_call';
   const callId = data.callId || '';
   const eventId = data.messageId || data.appNotificationId || data.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -94,6 +121,7 @@ self.addEventListener('push', event => {
     }
   };
   event.waitUntil((async () => {
+    if (isCall && callId && await wasCallClosed(callId)) return;
     await self.registration.showNotification(title, options);
   })());
 });
@@ -136,7 +164,7 @@ self.addEventListener('activate', event => {
       const cacheNames = await caches.keys();
       await Promise.all(
         cacheNames
-          .filter(name => name !== CACHE_NAME)
+          .filter(name => name !== CACHE_NAME && name !== CALL_STATE_CACHE)
           .map(name => caches.delete(name))
       );
       await self.clients.claim();

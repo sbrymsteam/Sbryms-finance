@@ -155,9 +155,16 @@
     };
     const previewRingtone = key => {
       localStorage.setItem('callRingtone', key);
+      const ringtonePlugin = window.Capacitor
+        && window.Capacitor.Plugins
+        && window.Capacitor.Plugins.CallRingtone;
       document.querySelectorAll('[data-ringtone]').forEach(button => button.classList.toggle('active', button.dataset.ringtone === key));
-      const file = ringtoneFiles[key];
-      if (file) {
+      if (ringtonePlugin && typeof ringtonePlugin.preview === 'function') {
+        ringtonePlugin.preview({ ringtone: key }).catch(error => {
+          console.error('Could not preview the Android call ringtone:', error);
+        });
+      } else if (ringtoneFiles[key]) {
+        const file = ringtoneFiles[key];
         const audio = new Audio(file);
         audio.volume = 0.7;
         audio.play().catch(error => console.warn('Ringtone preview could not play:', error));
@@ -290,6 +297,14 @@
     bindToggle('notificationToggle', 'browserNotificationsEnabled', false);
     bindToggle('badgeToggle', 'teamMeetBadgeEnabled', true);
     const savedRingtone = localStorage.getItem('callRingtone') || 'dj-jazz-2';
+    const ringtonePlugin = window.Capacitor
+      && window.Capacitor.Plugins
+      && window.Capacitor.Plugins.CallRingtone;
+    if (ringtonePlugin && typeof ringtonePlugin.setRingtone === 'function') {
+      ringtonePlugin.setRingtone({ ringtone: savedRingtone }).catch(error => {
+        console.error('Could not restore the Android call ringtone:', error);
+      });
+    }
     document.querySelectorAll('[data-ringtone]').forEach(button => button.classList.toggle('active', button.dataset.ringtone === savedRingtone));
     document.getElementById('logoutButton').addEventListener('click', async () => {
       document.getElementById('logoutButton').disabled = true;

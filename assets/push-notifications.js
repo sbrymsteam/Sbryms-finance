@@ -107,8 +107,30 @@
   async function showWebNotification(payload) {
     const data = payload.data || {};
     const notification = payload.notification || {};
+    if (data.type === 'call_state' && data.callId) {
+      const callStateCache = await caches.open('sbryms-call-state-v1');
+      const stateKey = new URL(
+        `/__sbryms_call_state__/${encodeURIComponent(data.callId)}`,
+        window.location.origin
+      );
+      await callStateCache.put(stateKey, new Response('closed'));
+      const registration = await navigator.serviceWorker.ready;
+      const notifications = await registration.getNotifications({
+        tag: `sbryms-call-${data.callId}`
+      });
+      notifications.forEach(item => item.close());
+      return;
+    }
     const isCall = data.type === 'team_call';
     const callId = data.callId || '';
+    if (isCall && callId) {
+      const callStateCache = await caches.open('sbryms-call-state-v1');
+      const stateKey = new URL(
+        `/__sbryms_call_state__/${encodeURIComponent(callId)}`,
+        window.location.origin
+      );
+      if (await callStateCache.match(stateKey)) return;
+    }
     const title = isCall
       ? (notification.title || data.callerName || data.title || 'Incoming call')
       : (data.senderName || data.title || notification.title || 'SBRYMS Finance');

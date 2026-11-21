@@ -13,7 +13,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.RectF;
 import android.media.AudioAttributes;
-import android.media.RingtoneManager;
 import android.os.Build;
 import android.os.PowerManager;
 import android.util.Log;
@@ -25,7 +24,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 final class IncomingCallNotifier {
     static final String EXTRA_CALL_URL = "com.sbryms.finance.CALL_URL";
@@ -34,13 +35,16 @@ final class IncomingCallNotifier {
     static final String EXTRA_TITLE = "com.sbryms.finance.CALL_TITLE";
     static final String EXTRA_CALL_TYPE = "com.sbryms.finance.CALL_TYPE";
     static final String EXTRA_CALLER_PHOTO = "com.sbryms.finance.CALLER_PHOTO";
+    static final String EXTRA_CALL_ID = "com.sbryms.finance.CALL_ID";
     static final String EXTRA_NOTIFICATION_ID = "com.sbryms.finance.NOTIFICATION_ID";
-    static final String CHANNEL_CALLS = "sbryms_incoming_calls_dnd_v3";
-    static final String CHANNEL_CALLS_STANDARD = "sbryms_incoming_calls_v3";
-    static final String CHANNEL_CALLS_FOREGROUND = "sbryms_incoming_calls_foreground_v3";
+    static final String CHANNEL_CALLS = "sbryms_incoming_calls_dnd_v4";
+    static final String CHANNEL_CALLS_STANDARD = "sbryms_incoming_calls_v4";
+    static final String CHANNEL_CALLS_FOREGROUND = "sbryms_incoming_calls_foreground_v4";
     static final String CHANNEL_MESSAGES = "sbryms_messages_v3";
     private static final String TAG = "IncomingCallNotifier";
     private static final int MAX_PROFILE_PHOTO_BYTES = 4 * 1024 * 1024;
+    private static final String DISMISSED_CALLS_PREFS = "dismissed_incoming_calls";
+    private static final String DISMISSED_CALLS_KEY = "call_ids";
 
     private IncomingCallNotifier() {}
 
@@ -52,6 +56,9 @@ final class IncomingCallNotifier {
                 != android.content.pm.PackageManager.PERMISSION_GRANTED) return;
 
         boolean call = "team_call".equals(type);
+        String callId = value(data.get("callId"), "");
+        if (call && wasCallDismissed(context, callId)) return;
+        if (call) IncomingCallRingtone.start(context, callId);
         String callerName = value(data.get("callerName"), "SBRYMS member");
         String senderName = value(data.get("senderName"), value(data.get("title"), "SBRYMS member"));
         String title = call ? callerName : senderName;
@@ -87,6 +94,7 @@ final class IncomingCallNotifier {
                 .putExtra(EXTRA_TITLE, title)
                 .putExtra(EXTRA_CALL_TYPE, value(data.get("callType"), "audio"))
                 .putExtra(EXTRA_CALLER_PHOTO, value(data.get("callerPhoto"), ""))
+                .putExtra(EXTRA_CALL_ID, value(data.get("callId"), ""))
                 .putExtra(EXTRA_NOTIFICATION_ID, notificationId);
             fullScreenIntent = PendingIntent.getActivity(
                 context,
@@ -155,6 +163,35 @@ final class IncomingCallNotifier {
                 Log.w(TAG, "Android blocked the direct call-screen launch; using the full-screen notification.", error);
             }
         }
+    }
+
+    static void dismiss(Context context, String callId) {
+        if (callId == null || callId.trim().isEmpty()) return;
+        markCallDismissed(context, callId);
+        IncomingCallRingtone.stop(context, callId);
+        int notificationId = callId.hashCode() & 0x7fffffff;
+        NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager != null) manager.cancel(notificationId);
+        IncomingCallActivity.dismissForCall(callId);
+    }
+
+    private static boolean wasCallDismissed(Context context, String callId) {
+        return context.getSharedPreferences(DISMISSED_CALLS_PREFS, Context.MODE_PRIVATE)
+            .getStringSet(DISMISSED_CALLS_KEY, java.util.Collections.emptySet())
+            .contains(callId);
+    }
+
+    private static void markCallDismissed(Context context, String callId) {
+        android.content.SharedPreferences preferences = context.getSharedPreferences(
+            DISMISSED_CALLS_PREFS,
+            Context.MODE_PRIVATE
+        );
+        Set<String> dismissed = new LinkedHashSet<>(
+            preferences.getStringSet(DISMISSED_CALLS_KEY, java.util.Collections.emptySet())
+        );
+        dismissed.add(callId);
+        while (dismissed.size() > 40) dismissed.remove(dismissed.iterator().next());
+        preferences.edit().putStringSet(DISMISSED_CALLS_KEY, dismissed).apply();
     }
 
     private static boolean shouldOpenCallScreen(Context context) {
@@ -288,13 +325,7 @@ final class IncomingCallNotifier {
             channel.enableVibration(true);
             channel.setVibrationPattern(new long[] { 0, 500, 250, 500 });
             channel.setBypassDnd(bypassDnd);
-            channel.setSound(
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
-                new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            );
+            channel.setSound(null, null);
         } else {
             channel.setDescription("SBRYMS chat message alerts");
             channel.enableVibration(true);
