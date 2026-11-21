@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sbryms-finance-v70';
+const CACHE_NAME = 'sbryms-finance-v71';
 const urlsToCache = [
   '/',
   '/index.html',

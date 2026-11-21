@@ -734,6 +734,7 @@
     let callEnding = false;
     let callHistorySaved = false;
     let pendingDirectNegotiation = null;
+    let pendingRemoteCandidates = [];
     let lastRemoteNegotiationId = '';
 
     function setCallStatus(message, state = '') {
@@ -1278,6 +1279,7 @@
           if (callRole === 'caller' && data.answer && !peerConnection.currentRemoteDescription) {
             setCallStatus('Connecting...');
             await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+            await flushRemoteCandidates();
             stopConnectingTone();
             stopIncomingTone();
             stopUnansweredCallTimer();
@@ -1288,6 +1290,17 @@
           document.getElementById('roomInfo').textContent = error.message || 'Could not update the call.';
         }
       }, error => console.error('Remote call status listener failed:', error));
+    }
+
+    async function flushRemoteCandidates() {
+      if (!peerConnection || !peerConnection.remoteDescription || !pendingRemoteCandidates.length) return;
+      const candidates = pendingRemoteCandidates;
+      pendingRemoteCandidates = [];
+      for (const candidate of candidates) {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(error => {
+          console.error('Failed to add queued remote ICE candidate:', error);
+        });
+      }
     }
 
     async function toggleVideo() {
@@ -1458,6 +1471,10 @@
         snapshot.docChanges().forEach(change => {
           if (change.type !== 'added' || !peerConnection) return;
           const candidate = change.doc.data();
+          if (!peerConnection.remoteDescription) {
+            pendingRemoteCandidates.push(candidate);
+            return;
+          }
           peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(error => {
             console.error('Failed to add remote ICE candidate:', error);
           });
@@ -1472,7 +1489,12 @@
       directCandidateUnsubscribe = ref.collection(collectionName).onSnapshot(snapshot => {
         snapshot.docChanges().forEach(change => {
           if (change.type !== 'added' || !peerConnection) return;
-          peerConnection.addIceCandidate(new RTCIceCandidate(change.doc.data())).catch(error => {
+          const candidate = change.doc.data();
+          if (!peerConnection.remoteDescription) {
+            pendingRemoteCandidates.push(candidate);
+            return;
+          }
+          peerConnection.addIceCandidate(new RTCIceCandidate(candidate)).catch(error => {
             console.error('Failed to add direct-call ICE candidate:', error);
           });
         });
@@ -1484,14 +1506,6 @@
       const authenticatedUser = firebase.auth().currentUser;
       if (!authenticatedUser || !authenticatedUser.email) {
         throw new Error('Please sign in again before starting a call.');
-      }
-      const targetOnline = await getTargetOnlineState();
-      if (targetOnline === false) {
-        setCallStatus('Call disconnected', 'error');
-        document.getElementById('roomInfo').textContent = 'The other person is offline.';
-        document.getElementById('callResultActions').hidden = false;
-        await saveCallHistory('disconnected');
-        return;
       }
       const callerProfile = await getCurrentCallProfile(authenticatedUser);
       directCallRef = db.collection('calls').doc(directCallId);
@@ -1563,6 +1577,7 @@
       };
       subscribeToDirectCandidates(directCallRef, 'callerCandidates');
       await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+      await flushRemoteCandidates();
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);
       await directCallRef.update({
@@ -1691,6 +1706,7 @@
         const data = snapshot.data();
         if (data && data.answer && !peerConnection.currentRemoteDescription) {
           await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+          await flushRemoteCandidates();
           setCallStatus('Connecting...');
         }
       });
@@ -1708,6 +1724,7 @@
       }
       await preparePeerConnection(roomRef);
       await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+      await flushRemoteCandidates();
       subscribeToCandidates(roomRef, 'callerCandidates');
       const answer = await peerConnection.createAnswer();
       await peerConnection.setLocalDescription(answer);

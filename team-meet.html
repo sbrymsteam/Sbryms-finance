@@ -1064,9 +1064,6 @@
             return;
           }
           const data = callDoc.data();
-          if (window.Capacitor
-            && typeof window.Capacitor.isNativePlatform === 'function'
-            && window.Capacitor.isNativePlatform()) return;
           if (!groupIncomingAudio) {
             const ringtone = localStorage.getItem('callRingtone') || 'uploaded-1';
             const path = ringtone === 'uploaded-2'

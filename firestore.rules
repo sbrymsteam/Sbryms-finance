@@ -1,7 +1,4 @@
-       allow read, create, update: if signedIn();
-      }
-    }
-  }rules_version = '2';
+rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -146,5 +143,8 @@ service cloud.firestore {
     match /team_meet_conversations/{conversationId} {
       allow read, create, update: if signedIn();
       match /messages/{messageId} {
- 
+        allow read, create, update: if signedIn();
+      }
+    }
+  }
 }

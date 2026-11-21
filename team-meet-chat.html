@@ -2717,8 +2717,8 @@
             banner.style.display = 'none';
             return;
           }
-          banner.style.display = isNativeApp ? 'none' : 'flex';
-          if (!isNativeApp) startIncomingCallTone();
+          banner.style.display = 'flex';
+          startIncomingCallTone();
           if (activeIncomingCallId !== call.id) {
             activeIncomingCallId = call.id;
             if (!isNativeApp) requestBrowserNotifications().then(permission => {
