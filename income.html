@@ -135,11 +135,40 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
     </div>
 
     <script>
-        const incomeData = [
-            { date: '2024-01-15', source: 'Salary', amount: 2000, category: 'Job', note: 'Monthly salary' },
-            { date: '2024-02-10', source: 'Freelance', amount: 1500, category: 'Business', note: 'Web design project' },
-            { date: '2024-03-05', source: 'Investment', amount: 1500, category: 'Investment', note: 'Stock dividends' }
-        ];
+        const incomeStorageKey = () => {
+            const uid = localStorage.getItem('currentUserUid');
+            const email = (localStorage.getItem('currentUserEmail') || '').trim().toLowerCase();
+            const identity = uid || email.replace(/[^a-z0-9_-]/g, '_') || 'device';
+            return `sbryms_income_v1_${identity}`;
+        };
+        const readIncome = () => {
+            const raw = localStorage.getItem(incomeStorageKey());
+            if (!raw) return [];
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) throw new Error('সংরক্ষিত আয়ের তথ্যের ফরম্যাট সঠিক নয়।');
+            return parsed.filter(item => item && typeof item === 'object'
+                && typeof item.date === 'string'
+                && typeof item.source === 'string'
+                && Number.isFinite(Number(item.amount))
+                && Number(item.amount) > 0);
+        };
+        const persistIncome = records => {
+            localStorage.setItem(incomeStorageKey(), JSON.stringify(records));
+        };
+        const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#39;'
+        })[character]);
+        let incomeData = [];
+        try {
+            incomeData = readIncome();
+        } catch (error) {
+            console.error('Could not load personal income:', error);
+            alert('সংরক্ষিত আয়ের তথ্য পড়া যায়নি। তথ্য মুছবেন না; আবার চেষ্টা করুন।');
+        }
         let editIndex = null;
 
         function renderTable() {
@@ -158,9 +187,9 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
 
                 if (editIndex === index) {
                     tr.innerHTML = `
-                        <td><input type="date" value="${row.date}" id="date-${index}"></td>
-                        <td><input type="text" value="${row.source}" id="source-${index}"></td>
-                        <td><input type="number" min="0" value="${row.amount}" id="amount-${index}"></td>
+                        <td><input type="date" value="${escapeHtml(row.date)}" id="date-${index}"></td>
+                        <td><input type="text" value="${escapeHtml(row.source)}" id="source-${index}"></td>
+                        <td><input type="number" min="0" value="${escapeHtml(row.amount)}" id="amount-${index}"></td>
                         <td>
                             <select id="category-${index}">
                                 <option value="Job" ${row.category === 'Job' ? 'selected' : ''}>Job</option>
@@ -169,7 +198,7 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                                 <option value="Other" ${row.category === 'Other' ? 'selected' : ''}>Other</option>
                             </select>
                         </td>
-                        <td><input type="text" value="${row.note}" id="note-${index}"></td>
+                        <td><input type="text" value="${escapeHtml(row.note)}" id="note-${index}"></td>
                         <td class="row-action">
                             <button class="btn-save" onclick="saveRow(${index})">Save</button>
                             <button class="btn-cancel" onclick="cancelEdit()">Cancel</button>
@@ -177,11 +206,11 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
                     `;
                 } else {
                     tr.innerHTML = `
-                        <td>${row.date}</td>
-                        <td>${row.source}</td>
-                        <td>৳ ${row.amount}</td>
-                        <td><span class="tag tag-income">${row.category}</span></td>
-                        <td>${row.note}</td>
+                        <td>${escapeHtml(row.date)}</td>
+                        <td>${escapeHtml(row.source)}</td>
+                        <td>৳ ${escapeHtml(row.amount)}</td>
+                        <td><span class="tag tag-income">${escapeHtml(row.category)}</span></td>
+                        <td>${escapeHtml(row.note)}</td>
                         <td class="row-action">
                             <button class="btn-edit" onclick="editRow(${index})">Edit</button>
                             <button class="btn-delete" onclick="deleteRow(${index})">Delete</button>
@@ -197,7 +226,9 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
 
         function updateSummary() {
             const totalIncome = incomeData.reduce((sum, row) => sum + row.amount, 0);
-            const monthlyIncome = incomeData.filter(row => row.date.startsWith('2024-03')).reduce((sum, row) => sum + row.amount, 0);
+            const today = new Date();
+            const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+            const monthlyIncome = incomeData.filter(row => row.date.startsWith(currentMonth)).reduce((sum, row) => sum + row.amount, 0);
             const sourcesCount = new Set(incomeData.map(row => row.source)).size;
             const avgIncome = incomeData.length > 0 ? Math.round(totalIncome / incomeData.length) : 0;
 
@@ -224,19 +255,37 @@ body:not(.dark-mode) .icon-box { border-color: rgba(0,0,0,0.08) !important; }
             const category = document.getElementById(`category-${index}`).value;
             const note = document.getElementById(`note-${index}`).value.trim();
 
-            if (!date || !source || amount <= 0) {
+            if (!date || !source || !Number.isSafeInteger(amount) || amount <= 0) {
                 alert('সব ফিল্ড পূরণ করুন এবং পরিমাণ ০-এর বেশি হতে হবে।');
                 return;
             }
 
-            incomeData[index] = { date, source, amount, category, note };
+            const nextIncome = incomeData.map((row, rowIndex) => rowIndex === index
+                ? { date, source, amount, category, note }
+                : row);
+            try {
+                persistIncome(nextIncome);
+            } catch (error) {
+                console.error('Could not save income:', error);
+                alert('আয়ের তথ্য সংরক্ষণ করা যায়নি। ডিভাইসের স্টোরেজ পরীক্ষা করুন।');
+                return;
+            }
+            incomeData = nextIncome;
             editIndex = null;
             renderTable();
         }
 
         function deleteRow(index) {
             if (!confirm('এই আয়ের তথ্য মুছে ফেলতে চান?')) return;
-            incomeData.splice(index, 1);
+            const nextIncome = incomeData.filter((row, rowIndex) => rowIndex !== index);
+            try {
+                persistIncome(nextIncome);
+            } catch (error) {
+                console.error('Could not delete income:', error);
+                alert('আয়ের তথ্য মুছে ফেলা যায়নি। আবার চেষ্টা করুন।');
+                return;
+            }
+            incomeData = nextIncome;
             if (editIndex === index) editIndex = null;
             renderTable();
         }

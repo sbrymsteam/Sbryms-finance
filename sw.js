@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sbryms-finance-v75';
+const CACHE_NAME = 'sbryms-finance-v76';
 const CALL_STATE_CACHE = 'sbryms-call-state-v1';
 const urlsToCache = [
   '/',
@@ -6,6 +6,7 @@ const urlsToCache = [
   '/login.html',
   '/FACE%20APP.html',
   '/dashboard.html',
+  '/personal-dashboard.html',
   '/team-meet.html',
   '/team-meet-chat.html',
   '/team-meet-call.html',

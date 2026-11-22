@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="bn" class="auth-pending">
+<head>
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/app-icon-192.png?v=22">
+  <link rel="apple-touch-icon" href="/assets/app-icon-192.png?v=22">
+  <link rel="manifest" href="/manifest.json">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#081426">
+  <title>SBRYMS Finance - Personal Dashboard</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDKxpKDeoor1IQpFziQsZC5IjenkYjEtK8",
+      authDomain: "sbryms-finance.firebaseapp.com",
+      projectId: "sbryms-finance",
+      storageBucket: "sbryms-finance.appspot.com",
+      messagingSenderId: "1087018056369",
+      appId: "1:1087018056369:web:81bc39017385a649500090"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    document.documentElement.classList.add('auth-pending');
+    let personalAuthTimer = setTimeout(() => {
+      const status = document.getElementById('authStatus');
+      if (status) status.textContent = 'লগইন যাচাই হতে সময় লাগছে। ইন্টারনেট দেখে আবার চেষ্টা করুন।';
+    }, 12000);
+    firebase.auth().onAuthStateChanged(user => {
+      clearTimeout(personalAuthTimer);
+      if (!user) {
+        window.location.replace('index.html');
+        return;
+      }
+      localStorage.setItem('currentUserEmail', user.email || '');
+      localStorage.setItem('currentUserUid', user.uid);
+      document.documentElement.classList.remove('auth-pending');
+      window.personalDashboardUser = user;
+      window.dispatchEvent(new CustomEvent('personal-dashboard-auth-ready', { detail: user }));
+    }, error => {
+      console.error('Could not verify personal dashboard login:', error);
+      clearTimeout(personalAuthTimer);
+      const status = document.getElementById('authStatus');
+      if (status) status.textContent = 'লগইন যাচাই করা যায়নি। ইন্টারনেট দেখে পুনরায় চেষ্টা করুন।';
+      document.documentElement.classList.add('auth-error');
+    });
+  </script>
+  <style>
+    :root { color-scheme: dark; --bg:#081426; --panel:#101f35; --text:#edf6ff; --muted:#93a6bd; --line:rgba(255,255,255,.1); --mint:#55dfbd; --blue:#55a8ff; --orange:#ffbd65; --red:#ff829b; }
+    * { box-sizing:border-box; }
+    html, body { margin:0; min-height:100%; }
+    body { color:var(--text); background:radial-gradient(850px 460px at 0 -12%,rgba(85,168,255,.18),transparent 65%),radial-gradient(700px 400px at 100% 100%,rgba(38,201,166,.1),transparent 60%),var(--bg); font-family:Inter,"Segoe UI",sans-serif; }
+    button, a { font:inherit; }
+    #authLoading { display:none; }
+    html.auth-pending body > :not(#authLoading) { visibility:hidden; }
+    html.auth-pending #authLoading, html.auth-error #authLoading { position:fixed; inset:0; z-index:20; display:grid; place-items:center; padding:24px; color:var(--text); background:var(--bg); text-align:center; }
+    .shell { display:grid; grid-template-columns:230px minmax(0,1fr); min-height:100vh; }
+    .sidebar { display:flex; flex-direction:column; padding:24px 16px; border-right:1px solid var(--line); background:rgba(7,18,34,.78); }
+    .brand { display:flex; align-items:center; gap:10px; margin:0 8px 36px; font-size:15px; font-weight:800; }
+    .brand-mark { display:grid; place-items:center; width:36px; height:36px; border-radius:12px; color:#062033; background:linear-gradient(135deg,var(--mint),var(--blue)); }
+    .nav-label { margin:0 10px 9px; color:#71869d; font-size:10px; letter-spacing:.15em; text-transform:uppercase; }
+    .nav { display:grid; gap:5px; }
+    .nav a { display:flex; align-items:center; gap:10px; padding:11px 10px; border-radius:11px; color:var(--muted); text-decoration:none; font-size:13px; }
+    .nav a:hover, .nav a.active { color:var(--text); background:rgba(85,223,189,.12); }
+    .nav-icon { width:20px; text-align:center; }
+    .main { width:min(1200px,100%); margin:0 auto; padding:28px clamp(16px,4vw,44px); }
+    .topbar { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:24px; }
+    .topbar h1 { margin:0; font-size:clamp(22px,3vw,30px); }
+    .topbar p { margin:6px 0 0; color:var(--muted); font-size:13px; }
+    .account-chip { display:flex; align-items:center; gap:9px; max-width:280px; padding:6px 12px 6px 6px; border:1px solid var(--line); border-radius:999px; background:rgba(16,31,53,.86); }
+    .avatar { display:grid; flex:none; place-items:center; width:34px; height:34px; border-radius:50%; color:#062033; background:linear-gradient(135deg,var(--mint),var(--blue)); font-weight:800; }
+    .account-chip span:last-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+    .notice { margin:0 0 16px; padding:11px 14px; border:1px solid rgba(255,189,101,.26); border-radius:12px; color:#f8d7a4; background:rgba(255,189,101,.08); font-size:12px; }
+    .notice:empty { display:none; }
+    .metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
+    .metric, .card { border:1px solid var(--line); border-radius:17px; background:linear-gradient(145deg,rgba(20,40,66,.94),rgba(12,28,49,.92)); box-shadow:0 12px 30px rgba(0,0,0,.13); }
+    .metric { padding:17px; }
+    .metric-label { color:var(--muted); font-size:12px; }
+    .metric strong { display:block; margin-top:11px; font-size:clamp(18px,2.4vw,24px); overflow-wrap:anywhere; }
+    .metric small { display:block; margin-top:7px; color:var(--muted); font-size:10px; }
+    .metric.income strong, .metric.balance strong { color:var(--mint); }
+    .metric.expense strong, .metric.fine strong { color:var(--orange); }
+    .metric.stars strong { color:#f5d477; }
+    .grid { display:grid; grid-template-columns:minmax(0,1.3fr) minmax(260px,.7fr); gap:16px; }
+    .card { min-width:0; padding:19px; }
+    .card h2 { margin:0; font-size:16px; }
+    .card-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+    .card-head a, .quick-link { color:#9dc9ff; text-decoration:none; font-size:11px; }
+    .activity-list { display:grid; gap:4px; }
+    .activity-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
+    .activity-row:last-child { border-bottom:0; }
+    .activity-main { min-width:0; }
+    .activity-main strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; }
+    .activity-main small { display:block; margin-top:4px; color:var(--muted); font-size:10px; }
+    .activity-amount { white-space:nowrap; font-size:12px; font-weight:700; }
+    .activity-amount.positive { color:var(--mint); }
+    .activity-amount.negative { color:var(--red); }
+    .empty { padding:24px 8px; color:var(--muted); text-align:center; font-size:12px; }
+    .quick-links { display:grid; gap:9px; }
+    .quick-link { display:flex; align-items:center; justify-content:space-between; padding:12px; border:1px solid var(--line); border-radius:11px; color:var(--text); background:rgba(255,255,255,.025); }
+    .quick-link:hover { border-color:rgba(85,223,189,.45); }
+    @media(max-width:850px) { .shell{grid-template-columns:1fr}.sidebar{position:sticky;top:0;z-index:5;flex-direction:row;align-items:center;padding:9px 12px;border-right:0;border-bottom:1px solid var(--line)}.brand{margin:0 auto 0 0}.nav-label{display:none}.nav{display:flex}.nav a{padding:9px}.nav a span:last-child{display:none}.nav-icon{width:20px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.grid{grid-template-columns:1fr}.main{padding-top:20px} }
+    @media(max-width:420px) { .brand{font-size:12px}.brand-mark{width:31px;height:31px}.nav{gap:0}.nav a{padding:8px}.metrics{gap:8px}.metric{padding:13px}.metric-label{font-size:10px}.topbar{align-items:flex-start}.account-chip{max-width:48px;padding-right:6px}.account-chip span:last-child{display:none} }
+  </style>
+</head>
+<body>
+  <div id="authLoading" role="status" aria-live="polite"><span id="authStatus">আপনার account যাচাই করা হচ্ছে…</span></div>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">S</span><span>SBRYMS Finance</span></div>
+      <div class="nav-label">Dashboard</div>
+      <nav class="nav" aria-label="Dashboard navigation">
+        <a class="active" href="personal-dashboard.html"><span class="nav-icon">◉</span><span>Personal</span></a>
+        <a href="dashboard.html"><span class="nav-icon">▦</span><span>Company</span></a>
+        <a href="deposit.html"><span class="nav-icon">◈</span><span>Deposit</span></a>
+        <a href="income.html"><span class="nav-icon">↗</span><span>Income</span></a>
+        <a href="expense.html"><span class="nav-icon">↘</span><span>Expense</span></a>
+        <a href="FACE APP.html"><span class="nav-icon">⌂</span><span>Home</span></a>
+      </nav>
+    </aside>
+    <main class="main">
+      <header class="topbar">
+        <div><h1>আমার ব্যক্তিগত ড্যাশবোর্ড</h1><p>শুধু আপনার account-এর আয়, ব্যয় ও deposit-এর সারাংশ।</p></div>
+        <div class="account-chip"><span class="avatar" id="userInitial">M</span><span id="userEmail">Account</span></div>
+      </header>
+      <div class="notice" id="loadNotice" role="status" aria-live="polite"></div>
+      <section class="metrics" aria-label="ব্যক্তিগত আর্থিক সারাংশ">
+        <article class="metric income"><span class="metric-label">মোট আয়</span><strong id="totalIncome">৳ ০</strong><small id="monthIncome">এই মাস: ৳ ০</small></article>
+        <article class="metric expense"><span class="metric-label">মোট খরচ</span><strong id="totalExpense">৳ ০</strong><small id="monthExpense">এই মাস: ৳ ০</small></article>
+        <article class="metric balance"><span class="metric-label">ব্যক্তিগত আয়-ব্যয়</span><strong id="personalBalance">৳ ০</strong><small>মোট আয় থেকে মোট খরচ বাদ</small></article>
+        <article class="metric"><span class="metric-label">পরিশোধিত deposit</span><strong id="paidDeposits">৳ ০</strong><small>শুধু Paid deposit হিসাব</small></article>
+        <article class="metric fine"><span class="metric-label">পরিশোধিত fine</span><strong id="paidFines">৳ ০</strong><small>শুধু Paid fine হিসাব</small></article>
+        <article class="metric stars"><span class="metric-label">পাওয়া star</span><strong id="earnedStars">০</strong><small id="paidPeriods">পরিশোধিত period: ০</small></article>
+      </section>
+      <section class="grid">
+        <article class="card">
+          <div class="card-head"><h2>সাম্প্রতিক account activity</h2><a href="notifications.html?tab=transactions">সব activity →</a></div>
+          <div class="activity-list" id="activityList" aria-live="polite"><div class="empty">আপনার হিসাব লোড হচ্ছে…</div></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><h2>দ্রুত লিংক</h2></div>
+          <div class="quick-links">
+            <a class="quick-link" href="deposit.html"><span>Deposit ও payment history</span><span>→</span></a>
+            <a class="quick-link" href="income.html"><span>আমার আয়</span><span>→</span></a>
+            <a class="quick-link" href="expense.html"><span>আমার খরচ</span><span>→</span></a>
+            <a class="quick-link" href="dashboard.html"><span>Company dashboard</span><span>→</span></a>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+  <script>
+    (() => {
+      const money = value => `৳ ${new Intl.NumberFormat('bn-BD').format(Math.round(Number(value) || 0))}`;
+      const uidKey = (base, user) => `${base}_${user.uid || String(user.email || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_') || 'device'}`;
+      const readLocalRows = key => {
+        const raw = localStorage.getItem(key);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) throw new Error('ব্যক্তিগত হিসাবের তথ্যের ফরম্যাট সঠিক নয়।');
+        return parsed;
+      };
+      const asDate = value => {
+        if (value && typeof value.toDate === 'function') return value.toDate();
+        if (value instanceof Date) return value;
+        if (typeof value === 'string' || typeof value === 'number') {
+          const parsed = new Date(value);
+          return Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        return null;
+      };
+      const amount = value => Number.isFinite(Number(value)) ? Number(value) : 0;
+      const starCount = value => {
+        if (value === true) return 1;
+        const normalized = String(value ?? '').trim().toLowerCase();
+        if (!normalized || ['false', 'cross', 'x', '✕', '✖'].includes(normalized)) return 0;
+        const glyphs = normalized.match(/[★⭐]/g);
+        if (glyphs) return glyphs.length;
+        const count = Number(normalized);
+        return Number.isFinite(count) && count > 0 ? count : 0;
+      };
+      const setText = (id, value) => { document.getElementById(id).textContent = value; };
+      const currentMonthKey = () => {
+        const today = new Date();
+        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+      };
+      const dateFromPeriod = detail => {
+        if (detail.paidAt) return asDate(detail.paidAt);
+        const month = Number(detail.month);
+        const year = Number(detail.year);
+        return month >= 1 && month <= 12 && year > 0 ? new Date(year, month - 1, 1) : null;
+      };
+      const renderActivity = activities => {
+        const list = document.getElementById('activityList');
+        list.replaceChildren();
+        if (!activities.length) {
+          const empty = document.createElement('div');
+          empty.className = 'empty';
+          empty.textContent = 'এখনও কোনো ব্যক্তিগত activity পাওয়া যায়নি।';
+          list.appendChild(empty);
+          return;
+        }
+        activities.slice(0, 8).forEach(item => {
+          const row = document.createElement('div');
+          row.className = 'activity-row';
+          const details = document.createElement('div');
+          details.className = 'activity-main';
+          const title = document.createElement('strong');
+          title.textContent = item.title;
+          const date = document.createElement('small');
+          date.textContent = item.date ? new Intl.DateTimeFormat('bn-BD', { dateStyle: 'medium' }).format(item.date) : 'তারিখ নেই';
+          details.append(title, date);
+          const value = document.createElement('span');
+          value.className = `activity-amount ${item.amount >= 0 ? 'positive' : 'negative'}`;
+          value.textContent = `${item.amount >= 0 ? '+' : '−'} ${money(Math.abs(item.amount))}`;
+          row.append(details, value);
+          list.appendChild(row);
+        });
+      };
+      const loadDashboard = async user => {
+        const email = String(user.email || '').trim().toLowerCase();
+        setText('userEmail', email || user.displayName || 'আমার account');
+        setText('userInitial', (user.displayName || email || 'M').trim().charAt(0).toUpperCase());
+        const notice = document.getElementById('loadNotice');
+        const warnings = [];
+        let incomes = [];
+        let expenses = [];
+        try {
+          incomes = readLocalRows(uidKey('sbryms_income_v1', user));
+        } catch (error) {
+          console.error('Could not read personal income:', error);
+          warnings.push('আয়ের হিসাব পড়া যায়নি।');
+        }
+        try {
+          expenses = readLocalRows(uidKey('sbryms_expenses_v1', user));
+        } catch (error) {
+          console.error('Could not read personal expenses:', error);
+          warnings.push('খরচের হিসাব পড়া যায়নি।');
+        }
+        const monthKey = currentMonthKey();
+        const incomeTotal = incomes.reduce((sum, item) => sum + amount(item.amount), 0);
+        const expenseTotal = expenses.reduce((sum, item) => sum + amount(item.amount), 0);
+        const currentIncome = incomes.filter(item => String(item.date || '').startsWith(monthKey)).reduce((sum, item) => sum + amount(item.amount), 0);
+        const currentExpense = expenses.filter(item => String(item.date || '').startsWith(monthKey)).reduce((sum, item) => sum + amount(item.amount), 0);
+        setText('totalIncome', money(incomeTotal));
+        setText('totalExpense', money(expenseTotal));
+        setText('personalBalance', money(incomeTotal - expenseTotal));
+        setText('monthIncome', `এই মাস: ${money(currentIncome)}`);
+        setText('monthExpense', `এই মাস: ${money(currentExpense)}`);
+
+        const db = firebase.firestore();
+        const requests = [
+          db.collection('payments').where('profileEmail', '==', email).limit(200).get(),
+          db.collection('deposit_period_details').where('userId', '==', user.uid).limit(500).get(),
+          db.collection('users').doc(user.uid).get()
+        ];
+        const [paymentsResult, detailsResult, profileResult] = await Promise.allSettled(requests);
+        const payments = [];
+        let periodDetails = [];
+        if (paymentsResult.status === 'fulfilled') {
+          paymentsResult.value.forEach(doc => payments.push({ id: doc.id, ...doc.data() }));
+        } else {
+          console.error('Could not load personal payments:', paymentsResult.reason);
+          warnings.push('payment history লোড করা যায়নি।');
+        }
+        if (detailsResult.status === 'fulfilled') {
+          periodDetails = detailsResult.value.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } else {
+          console.error('Could not load personal deposit periods:', detailsResult.reason);
+          warnings.push('deposit/fine/star-এর হিসাব লোড করা যায়নি।');
+        }
+        if (profileResult.status === 'fulfilled' && profileResult.value.exists) {
+          const profile = profileResult.value.data() || {};
+          const name = String(profile.name || profile.displayName || user.displayName || '').trim();
+          if (name) {
+            setText('userEmail', name);
+            setText('userInitial', name.charAt(0).toUpperCase());
+          }
+        } else if (profileResult.status === 'rejected') {
+          console.warn('Could not load personal profile name:', profileResult.reason);
+        }
+
+        const paidPeriods = periodDetails.filter(item => String(item.status || '').toLowerCase() === 'paid');
+        const paidDepositTotal = paidPeriods.reduce((sum, item) => sum + amount(item.fee), 0);
+        const paidFineTotal = paidPeriods.reduce((sum, item) => sum + amount(item.fine), 0);
+        const earnedStars = paidPeriods.reduce((sum, item) => sum + starCount(item.star), 0);
+        setText('paidDeposits', money(paidDepositTotal));
+        setText('paidFines', money(paidFineTotal));
+        setText('earnedStars', new Intl.NumberFormat('bn-BD').format(earnedStars));
+        setText('paidPeriods', `পরিশোধিত period: ${new Intl.NumberFormat('bn-BD').format(paidPeriods.length)}`);
+
+        const activities = [];
+        incomes.forEach(item => activities.push({
+          title: `আয় · ${String(item.source || 'আয়')}`,
+          amount: amount(item.amount),
+          date: asDate(item.date)
+        }));
+        expenses.forEach(item => activities.push({
+          title: `খরচ · ${String(item.description || 'খরচ')}`,
+          amount: -amount(item.amount),
+          date: asDate(item.date)
+        }));
+        payments.forEach(item => {
+          const status = String(item.status || '').toLowerCase();
+          const isPaid = status === 'paid';
+          const total = amount(item.total) || amount(item.fee) + amount(item.fine);
+          const date = asDate(item.paidAt) || asDate(item.createdAt);
+          activities.push({
+            title: isPaid ? 'Deposit payment সফল' : (status.includes('pending') ? 'Deposit payment অপেক্ষমাণ' : 'Deposit payment update'),
+            amount: isPaid ? -total : 0,
+            date
+          });
+        });
+        activities.sort((a, b) => (b.date ? b.date.getTime() : 0) - (a.date ? a.date.getTime() : 0));
+        renderActivity(activities);
+        notice.textContent = warnings.join(' ');
+      };
+      const startForUser = user => {
+        loadDashboard(user).catch(error => {
+          console.error('Could not load personal dashboard:', error);
+          document.getElementById('loadNotice').textContent = 'ব্যক্তিগত dashboard লোড করা যায়নি। আবার refresh করুন।';
+          renderActivity([]);
+        });
+      };
+      window.addEventListener('personal-dashboard-auth-ready', event => {
+        startForUser(event.detail);
+      }, { once: true });
+      if (window.personalDashboardUser) startForUser(window.personalDashboardUser);
+    })();
+  </script>
+  <script src="assets/mobile-bottom-nav.js"></script>
+</body>
+</html>
