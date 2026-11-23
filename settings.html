@@ -73,6 +73,7 @@
     .toggle.on { background: #df146e; }
     .toggle.on::after { transform: translateX(16px); }
     .danger { width: 100%; margin-top: 16px; border: 1px solid rgba(255,90,120,.35); border-radius: 12px; padding: 11px; color: #ffb4c3; background: rgba(160,20,55,.15); cursor: pointer; }
+    .push-test-status { min-height: 16px; margin: 0 0 8px; color: #aeb9ce; font-size: 12px; }
     body.light { color: #172033; background: #eef3fb; }
     body.light::before { background: rgba(255,255,255,.44); }
     body.light .section { background: rgba(255,255,255,.78); border-color: rgba(20,35,60,.12); }
@@ -99,6 +100,11 @@
         <div><strong>Device notification permission</strong><small id="deviceNotificationHelp">Open device settings to allow SBRYMS notifications</small></div>
         <button class="open-link" id="openNotificationSettings" type="button">Open settings</button>
       </div>
+      <div class="row">
+        <div><strong>Test push delivery</strong><small>Send a test alert to this account's registered devices</small></div>
+        <button class="open-link" id="testPushButton" type="button">Send test</button>
+      </div>
+      <p class="push-test-status" id="pushTestStatus" role="status" aria-live="polite"></p>
       <div class="row" id="dndAccessRow" hidden>
         <div><strong>Allow calls during Do Not Disturb</strong><small id="dndAccessStatus">Check Android call alert access</small></div>
         <button class="open-link" id="openDndAccessSettings" type="button">Manage access</button>
@@ -178,6 +184,8 @@
     const notificationStatus = document.getElementById('notificationStatus');
     const notificationSettingsButton = document.getElementById('openNotificationSettings');
     const deviceNotificationHelp = document.getElementById('deviceNotificationHelp');
+    const testPushButton = document.getElementById('testPushButton');
+    const pushTestStatus = document.getElementById('pushTestStatus');
     const dndAccessRow = document.getElementById('dndAccessRow');
     const dndAccessStatus = document.getElementById('dndAccessStatus');
     const dndAccessButton = document.getElementById('openDndAccessSettings');
@@ -218,6 +226,35 @@
         notificationStatus.textContent = error.message || 'Could not check notification status.';
       }
     };
+    testPushButton.addEventListener('click', async () => {
+      testPushButton.disabled = true;
+      pushTestStatus.textContent = 'Registering this device and sending a test alert...';
+      try {
+        const push = await (window.sbrymsPushReady || Promise.resolve(window.sbrymsPush));
+        if (!push) throw new Error('Push service is not ready. Reload and try again.');
+        await push.enable();
+        const user = firebase.auth().currentUser;
+        if (!user || !user.email) throw new Error('Sign in before testing push notifications.');
+        const result = await push.send({
+          recipient: user.email.trim().toLowerCase(),
+          type: 'app',
+          title: 'SBRYMS notification test',
+          body: 'Push notifications are reaching your account.',
+          url: '/settings.html'
+        });
+        if (result.targets === 0) {
+          pushTestStatus.textContent = 'No push token is registered for this account yet. Check the push registration API.';
+        } else if (result.sent === 0) {
+          pushTestStatus.textContent = `FCM could not deliver to ${result.targets} device(s): ${(result.errorCodes || []).join(', ') || 'unknown error'}.`;
+        } else {
+          pushTestStatus.textContent = `FCM accepted the test for ${result.sent} device(s). Check this device's notification tray.`;
+        }
+      } catch (error) {
+        pushTestStatus.textContent = error.message || 'Push test failed. Check permission and connection.';
+      } finally {
+        testPushButton.disabled = false;
+      }
+    });
     notificationSettingsButton.addEventListener('click', async () => {
       notificationSettingsButton.disabled = true;
       try {

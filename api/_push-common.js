@@ -78,6 +78,24 @@ function tokenDocumentId(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+async function getPushTokensForEmail(services, email) {
+  let user;
+  try {
+    user = await services.auth.getUserByEmail(String(email || '').trim().toLowerCase());
+  } catch (error) {
+    if (error.code === 'auth/user-not-found') return [];
+    throw error;
+  }
+  const snapshot = await services.db.collection('users').doc(user.uid)
+    .collection('pushTokens').get();
+  return snapshot.docs.flatMap(document => {
+    const token = document.data().token;
+    return typeof token === 'string' && token
+      ? [{ ref: document.ref, token }]
+      : [];
+  });
+}
+
 function getBearerToken(req) {
   const authorization = req.headers.authorization || '';
   const match = authorization.match(/^Bearer\s+(.+)$/i);
@@ -90,5 +108,6 @@ module.exports = {
   authenticateRequest,
   getAdminServices,
   getBearerToken,
+  getPushTokensForEmail,
   tokenDocumentId
 };

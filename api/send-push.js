@@ -2,7 +2,8 @@ const {
   applyPushCors,
   authenticateRequest,
   getAdminServices,
-  getBearerToken
+  getBearerToken,
+  getPushTokensForEmail
 } = require('./_push-common');
 
 const allowedTypes = new Set(['app', 'message', 'team_call', 'call_state']);
@@ -20,23 +21,24 @@ function canSend(uid) {
   return true;
 }
 
-async function getRecipientTokens(db, recipient, senderUid, includeSender = false) {
-  const tokenCollection = db.collectionGroup('pushTokens');
-  const snapshots = recipient === 'all'
-    ? [await tokenCollection.get()]
-    : await Promise.all((Array.isArray(recipient) ? recipient : [recipient])
-      .map(email => tokenCollection.where('email', '==', email).get()));
-  const found = snapshots.flatMap(snapshot => snapshot.docs).filter((document, index, documents) =>
-    documents.findIndex(candidate => candidate.ref.path === document.ref.path) === index
+async function getRecipientTokens(services, recipient, senderUid, includeSender = false) {
+  const found = recipient === 'all'
+    ? (await services.db.collectionGroup('pushTokens').get()).docs.flatMap(document => {
+      const token = document.data().token;
+      return typeof token === 'string' && token
+        ? [{ ref: document.ref, token, ownerUid: document.ref.parent.parent?.id }]
+        : [];
+    })
+    : (await Promise.all((Array.isArray(recipient) ? recipient : [recipient])
+      .map(email => getPushTokensForEmail(services, email))))
+      .flat()
+      .map(target => ({ ...target, ownerUid: target.ref.parent.parent?.id }));
+  const deduplicated = found.filter((target, index, targets) =>
+    targets.findIndex(candidate => candidate.ref.path === target.ref.path) === index
   );
-  return found.flatMap(document => {
-    const owner = document.ref.parent.parent;
-    const token = document.data().token;
-    if ((!includeSender && owner?.id === senderUid)
-      || typeof token !== 'string'
-      || token.length === 0) return [];
-    return [{ ref: document.ref, token }];
-  });
+  return deduplicated.filter(target =>
+    (includeSender || target.ownerUid !== senderUid) && target.token
+  );
 }
 
 module.exports = async function sendPush(req, res) {
@@ -125,12 +127,12 @@ module.exports = async function sendPush(req, res) {
         res.status(409).json({ error: 'The call state has not been saved yet.' });
         return;
       }
-      targets = await getRecipientTokens(services.db, [callerEmail, receiverEmail], user.uid, true);
+      targets = await getRecipientTokens(services, [callerEmail, receiverEmail], user.uid, true);
     } else if (type !== 'app' && recipient === String(user.email || '').trim().toLowerCase()) {
       res.status(200).json({ sent: 0 });
       return;
     } else {
-      targets = await getRecipientTokens(services.db, recipient, user.uid, type === 'app');
+      targets = await getRecipientTokens(services, recipient, user.uid, type === 'app');
     }
 
     let sent = 0;

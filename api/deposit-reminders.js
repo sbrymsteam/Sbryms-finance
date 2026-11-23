@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { FieldValue, getAdminServices } = require('./_push-common');
+const { FieldValue, getAdminServices, getPushTokensForEmail } = require('./_push-common');
 
 const timeZone = 'Asia/Dhaka';
 const defaultFee = 100;
@@ -74,19 +74,16 @@ async function createNotificationIfNeeded(db, notification) {
 }
 
 async function pushNotification(services, notification) {
-  const tokenSnapshot = await services.db.collectionGroup('pushTokens')
-    .where('email', '==', notification.to)
-    .get();
-  const tokenDocs = tokenSnapshot.docs.filter(document => typeof document.data().token === 'string' && document.data().token);
-  if (!tokenDocs.length) {
+  const targets = await getPushTokensForEmail(services, notification.to);
+  if (!targets.length) {
     await services.db.collection('notifications').doc(notification.id).update({ pushAttempted: true });
     return;
   }
 
-  for (let offset = 0; offset < tokenDocs.length; offset += 500) {
-    const batch = tokenDocs.slice(offset, offset + 500);
+  for (let offset = 0; offset < targets.length; offset += 500) {
+    const batch = targets.slice(offset, offset + 500);
     const result = await services.messaging.sendEachForMulticast({
-      tokens: batch.map(document => document.data().token),
+      tokens: batch.map(target => target.token),
       data: {
         type: 'app',
         title: notification.title,
