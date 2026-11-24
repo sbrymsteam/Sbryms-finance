@@ -781,6 +781,158 @@ ue {
     html:root:root body .deposit-history-panel :is(#sbryms-theme-specificity-anchor, p, span) { color: #e2e8f0 !important; }
     html:root:root body .deposit-history-panel :is(#sbryms-theme-specificity-anchor, h2, strong) { color: #fff !important; }
 </style>
+<style>
+    .all-deposit-table-wrap {
+        width: 100%;
+        max-height: min(72vh, 760px);
+        overflow: auto;
+        border: 1px solid rgba(148, 163, 184, .2);
+        border-radius: 14px;
+        background: rgba(15, 23, 42, .62);
+        -webkit-overflow-scrolling: touch;
+    }
+    .all-deposit-table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        color: #e2e8f0;
+        font-size: 12px;
+    }
+    .all-deposit-table th,
+    .all-deposit-table td {
+        min-width: 120px;
+        max-width: 180px;
+        padding: 9px 10px;
+        border-right: 1px solid rgba(148, 163, 184, .13);
+        border-bottom: 1px solid rgba(148, 163, 184, .13);
+        text-align: center;
+        vertical-align: middle;
+    }
+    .all-deposit-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: #172338;
+        color: #f8fafc;
+        font-weight: 700;
+    }
+    .all-deposit-table .due-date-heading,
+    .all-deposit-table .due-date-cell {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        min-width: 82px;
+        max-width: 82px;
+        background: #101b2c;
+        color: #cbd5e1;
+        font-weight: 700;
+        text-align: left;
+    }
+    .all-deposit-table thead .due-date-heading {
+        z-index: 4;
+        background: #1e2d44;
+    }
+    .all-deposit-table tr:last-child td { border-bottom: 0; }
+    .all-deposit-table th:last-child,
+    .all-deposit-table td:last-child { border-right: 0; }
+    .all-deposit-name {
+        display: block;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .all-deposit-cell {
+        min-height: 82px;
+        cursor: pointer;
+    }
+    .all-deposit-cell:hover { background: rgba(255, 255, 255, .045); }
+    .all-deposit-amount { display: block; color: #f8fafc; font-weight: 700; white-space: nowrap; }
+    .all-deposit-status { display: block; margin-top: 4px; font-size: 10px; white-space: nowrap; }
+    .all-deposit-cell.is-paid .all-deposit-status { color: #4ade80; }
+    .all-deposit-cell.is-pending .all-deposit-status { color: #fbbf24; }
+    .all-deposit-cell.is-unpaid .all-deposit-status { color: #fb7185; }
+    .all-deposit-cell.is-coming .all-deposit-status { color: #6ee7b7; }
+    .all-deposit-stars { display: block; margin-top: 3px; color: #facc15; letter-spacing: 1px; }
+    .all-deposit-pay {
+        margin-top: 5px;
+        padding: 3px 7px;
+        border: 1px solid rgba(96, 165, 250, .4);
+        border-radius: 7px;
+        color: #bfdbfe;
+        background: rgba(37, 99, 235, .18);
+        font-size: 10px;
+        cursor: pointer;
+    }
+    .deposit-grid.all-accounts-table {
+        display: block !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+    }
+    html:root:root body .all-deposit-table {
+        width: max-content !important;
+        min-width: 100% !important;
+        table-layout: auto !important;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        font-size: 12px !important;
+    }
+    html:root:root body .all-deposit-table :is(th, td) {
+        min-width: 120px !important;
+        max-width: 180px !important;
+        padding: 9px 10px !important;
+        border: 0 !important;
+        border-right: 1px solid rgba(148, 163, 184, .13) !important;
+        border-bottom: 1px solid rgba(148, 163, 184, .13) !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        white-space: normal !important;
+        text-align: center !important;
+        vertical-align: middle !important;
+        text-transform: none !important;
+    }
+    html:root:root body .all-deposit-table thead th {
+        background: #172338 !important;
+        color: #f8fafc !important;
+    }
+    html:root:root body .all-deposit-table .due-date-heading,
+    html:root:root body .all-deposit-table .due-date-cell {
+        min-width: 82px !important;
+        max-width: 82px !important;
+        background: #101b2c !important;
+        color: #cbd5e1 !important;
+        text-align: left !important;
+    }
+    html:root:root body .all-deposit-table thead .due-date-heading {
+        background: #1e2d44 !important;
+    }
+    html:root:root body .all-deposit-table tbody td {
+        background: rgba(15, 23, 42, .3) !important;
+        color: #e2e8f0 !important;
+    }
+    html:root:root body .all-deposit-table tr:last-child td { border-bottom: 0 !important; }
+    html:root:root body .all-deposit-table th:last-child,
+    html:root:root body .all-deposit-table td:last-child { border-right: 0 !important; }
+    @media (max-width: 600px) {
+        .all-deposit-table th,
+        .all-deposit-table td { min-width: 112px; padding: 8px; }
+        .all-deposit-table .due-date-heading,
+        .all-deposit-table .due-date-cell { min-width: 72px; max-width: 72px; }
+        .all-deposit-name { max-width: 112px; }
+        html:root:root body .all-deposit-table :is(th, td) {
+            min-width: 112px !important;
+            padding: 8px !important;
+        }
+        html:root:root body .all-deposit-table .due-date-heading,
+        html:root:root body .all-deposit-table .due-date-cell {
+            min-width: 72px !important;
+            max-width: 72px !important;
+        }
+    }
+</style>
 <link rel="stylesheet" href="assets/bg.css?v=35">
 <style>
     html:root:root body .deposit-card:is(#sbryms-theme-specificity-anchor, .deposit-card) {
@@ -863,6 +1015,50 @@ ue {
         border-radius: 50% !important;
         background: rgba(255, 255, 255, .1) !important;
         color: #fff !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .all-deposit-table-wrap) {
+        border: 1px solid rgba(148, 163, 184, .2) !important;
+        border-radius: 14px !important;
+        background: rgba(15, 23, 42, .62) !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .all-deposit-table) :is(#sbryms-theme-specificity-anchor, th, td) {
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        text-transform: none !important;
+        white-space: normal !important;
+        overflow: visible !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .all-deposit-table) thead :is(#sbryms-theme-specificity-anchor, th) {
+        background: #172338 !important;
+        color: #f8fafc !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .all-deposit-table) tbody :is(#sbryms-theme-specificity-anchor, td) {
+        border-right: 1px solid rgba(148, 163, 184, .13) !important;
+        border-bottom: 1px solid rgba(148, 163, 184, .13) !important;
+        background: rgba(15, 23, 42, .3) !important;
+        color: #e2e8f0 !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .all-deposit-table) :is(#sbryms-theme-specificity-anchor, .due-date-heading, .due-date-cell) {
+        background: #101b2c !important;
+        color: #cbd5e1 !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .all-deposit-table) thead :is(#sbryms-theme-specificity-anchor, .due-date-heading) {
+        background: #1e2d44 !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .all-deposit-table) :is(#sbryms-theme-specificity-anchor, .all-deposit-cell.is-paid) .all-deposit-status {
+        color: #4ade80 !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .all-deposit-table) :is(#sbryms-theme-specificity-anchor, .all-deposit-cell.is-pending) .all-deposit-status {
+        color: #fbbf24 !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .all-deposit-table) :is(#sbryms-theme-specificity-anchor, .all-deposit-cell.is-unpaid) .all-deposit-status {
+        color: #fb7185 !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .all-deposit-table) :is(#sbryms-theme-specificity-anchor, .all-deposit-cell.is-coming) .all-deposit-status {
+        color: #6ee7b7 !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .all-deposit-table) :is(#sbryms-theme-specificity-anchor, .all-deposit-stars) {
+        color: #facc15 !important;
     }
 </style>
 </head>
@@ -1669,12 +1865,184 @@ ue {
             return rows;
         }
 
+        function renderAllAccountsTable(filteredRows) {
+            const grid = document.getElementById('depositGrid');
+            const emptyState = document.getElementById('emptyState');
+            const accounts = getProfileAccounts();
+            const periods = new Map();
+            grid.classList.add('all-accounts-table');
+            emptyState.style.display = filteredRows.length ? 'none' : 'block';
+            if (!filteredRows.length || !accounts.length) return;
+
+            filteredRows.forEach(entry => {
+                const dueDate = getRowDueDate(entry.row);
+                if (!dueDate) return;
+                const periodKey = dueDate.toDateString();
+                if (!periods.has(periodKey)) {
+                    periods.set(periodKey, { dueDate, rowsByEmail: new Map() });
+                }
+                periods.get(periodKey).rowsByEmail.set(entry.row.profileEmail, entry);
+            });
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'all-deposit-table-wrap';
+            const table = document.createElement('table');
+            table.className = 'all-deposit-table';
+            const head = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            const dateHeading = document.createElement('th');
+            dateHeading.className = 'due-date-heading';
+            dateHeading.scope = 'col';
+            dateHeading.textContent = 'Due date';
+            headerRow.appendChild(dateHeading);
+            accounts.forEach(account => {
+                const heading = document.createElement('th');
+                heading.scope = 'col';
+                heading.title = account.email;
+                const name = document.createElement('span');
+                name.className = 'all-deposit-name';
+                name.textContent = account.name || 'Member';
+                heading.appendChild(name);
+                headerRow.appendChild(heading);
+            });
+            head.appendChild(headerRow);
+            table.appendChild(head);
+
+            const body = document.createElement('tbody');
+            const today = new Date();
+            const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            [...periods.values()]
+                .sort((left, right) => left.dueDate - right.dueDate)
+                .forEach(period => {
+                    const rowElement = document.createElement('tr');
+                    const dueDateCell = document.createElement('th');
+                    dueDateCell.className = 'due-date-cell';
+                    dueDateCell.scope = 'row';
+                    dueDateCell.textContent = period.dueDate.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                    dueDateCell.title = period.dueDate.toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric'
+                    });
+                    rowElement.appendChild(dueDateCell);
+
+                    accounts.forEach(account => {
+                        const entry = period.rowsByEmail.get(account.email);
+                        const cell = document.createElement('td');
+                        if (!entry) {
+                            cell.textContent = '—';
+                            rowElement.appendChild(cell);
+                            return;
+                        }
+
+                        const { row, index } = entry;
+                        const summary = getPeriodStatus(row);
+                        const detail = getPrivatePeriodDetail(row);
+                        const paid = isPeriodPaid(row);
+                        const pending = !paid && Boolean(
+                            summary && ['Pending', 'Pending Confirmation'].includes(summary.status)
+                            || detail && ['Pending', 'Pending Confirmation'].includes(detail.status)
+                        );
+                        const ownAccount = String(row.profileEmail || '').trim().toLowerCase()
+                            === getCurrentAuthEmail();
+                        const dueDate = getRowDueDate(row);
+                        const daysUntil = dueDate
+                            ? Math.ceil((dueDate.getTime() - todayDate.getTime()) / 86400000)
+                            : 0;
+                        const coming = !paid && !pending && Boolean(dueDate && daysUntil >= 0);
+                        const daysLate = dueDate && todayDate > dueDate
+                            ? Math.floor((todayDate.getTime() - dueDate.getTime()) / 86400000)
+                            : 0;
+                        const fee = getPeriodFee(row);
+                        let fine = 0;
+                        if (detail && detail.fine !== undefined && Number.isFinite(Number(detail.fine))) {
+                            fine = Number(detail.fine);
+                        } else if (summary && summary.fine !== undefined && Number.isFinite(Number(summary.fine))) {
+                            fine = Number(summary.fine);
+                        } else if (!coming) {
+                            fine = getCurrentFine(row);
+                        }
+
+                        cell.className = `all-deposit-cell ${paid ? 'is-paid' : pending ? 'is-pending' : coming ? 'is-coming' : 'is-unpaid'}`;
+                        cell.tabIndex = 0;
+                        cell.setAttribute('aria-label', `${account.name}, ${row.date} ${row.year}: payment details`);
+                        cell.title = 'Open payment details';
+                        const amount = document.createElement('span');
+                        amount.className = 'all-deposit-amount';
+                        if (coming) {
+                            amount.textContent = 'Coming';
+                        } else {
+                            amount.textContent = `৳ ${fee}${fine > 0 ? ` + ৳ ${fine}` : ''}`;
+                        }
+                        cell.appendChild(amount);
+
+                        const status = document.createElement('span');
+                        status.className = 'all-deposit-status';
+                        if (paid) {
+                            status.textContent = 'Paid';
+                            const star = summary && summary.star !== undefined
+                                ? summary.star
+                                : detail && detail.star !== undefined ? detail.star : row.star;
+                            const starCount = getReceivedStarCount(star);
+                            if (starCount > 0) {
+                                const stars = document.createElement('span');
+                                stars.className = 'all-deposit-stars';
+                                stars.textContent = '★'.repeat(starCount);
+                                stars.setAttribute('aria-label', `${starCount} star${starCount === 1 ? '' : 's'}`);
+                                cell.appendChild(stars);
+                            }
+                        } else if (pending) {
+                            status.textContent = 'Pending';
+                        } else if (coming) {
+                            status.textContent = daysUntil === 0 ? 'Due today' : `${daysUntil}d left`;
+                        } else {
+                            status.textContent = `Unpaid · ${daysLate}d late`;
+                        }
+                        cell.appendChild(status);
+
+                        if (ownAccount && !paid && !pending) {
+                            const payButton = document.createElement('button');
+                            payButton.className = 'all-deposit-pay';
+                            payButton.type = 'button';
+                            payButton.textContent = 'Pay';
+                            payButton.addEventListener('click', event => {
+                                event.stopPropagation();
+                                handleDuePayment(index);
+                            });
+                            cell.appendChild(payButton);
+                        }
+
+                        cell.addEventListener('click', () => showDepositPaymentHistory(index));
+                        cell.addEventListener('keydown', event => {
+                            if (event.target === cell && (event.key === 'Enter' || event.key === ' ')) {
+                                event.preventDefault();
+                                showDepositPaymentHistory(index);
+                            }
+                        });
+                        rowElement.appendChild(cell);
+                    });
+                    body.appendChild(rowElement);
+                });
+            table.appendChild(body);
+            wrapper.appendChild(table);
+            grid.replaceChildren(wrapper);
+        }
+
         function renderTable() {
             const grid = document.getElementById('depositGrid');
             const emptyState = document.getElementById('emptyState');
+            grid.classList.remove('all-accounts-table');
             grid.innerHTML = '';
             const filteredRows = getFilteredRows();
             const isAllAccountsView = selectedProfileEmail === 'all';
+            if (isAllAccountsView) {
+                renderAllAccountsTable(filteredRows);
+                updateSummary(filteredRows);
+                return;
+            }
             const profilesByEmail = isAllAccountsView
                 ? new Map(getProfileAccounts().map(profile => [profile.email, profile]))
                 : null;

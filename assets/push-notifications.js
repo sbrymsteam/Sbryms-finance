@@ -76,7 +76,7 @@
     return photo.startsWith('https://') ? photo.slice(0, 1500) : '';
   }
 
-  async function apiRequest(path, payload, options = {}) {
+  async function apiRequest(path, payload) {
     await nativeReady;
     const user = await getCurrentUser();
     const response = await fetch(`${getApiBase()}${path}`, {
@@ -85,7 +85,6 @@
         'Authorization': `Bearer ${await user.getIdToken()}`,
         'Content-Type': 'application/json'
       },
-      keepalive: options.keepalive === true,
       body: JSON.stringify(payload)
     });
     const result = await response.json();
@@ -413,7 +412,7 @@
       || !notificationPayload.senderPhoto.startsWith('https://')) {
       delete notificationPayload.senderPhoto;
     }
-    return apiRequest('/api/send-push', notificationPayload, { keepalive: true });
+    return apiRequest('/api/send-push', notificationPayload);
   }
 
   function showNotificationOptIn(user) {
