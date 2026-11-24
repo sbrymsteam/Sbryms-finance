@@ -1017,9 +1017,29 @@ ue {
         color: #fff !important;
     }
     html:root:root body :is(#sbryms-theme-specificity-anchor, .all-deposit-table-wrap) {
-        border: 1px solid rgba(148, 163, 184, .2) !important;
-        border-radius: 14px !important;
+        border: 1px solid rgba(148, 163, 184, .08) !important;
+        border-radius: 10px !important;
         background: rgba(15, 23, 42, .62) !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .profile-chip) {
+        border: 1px solid rgba(255, 255, 255, .08) !important;
+        border-radius: 10px !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .profile-chip.active) {
+        border: 1px solid rgba(236, 72, 153, .42) !important;
+        border-radius: 10px !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .profile-star-count) {
+        margin: 1px 0 0 !important;
+        color: #facc15 !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .summary-card),
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .stat-box) {
+        border: 1px solid rgba(148, 163, 184, .10) !important;
+        border-radius: 10px !important;
     }
     html:root:root body :is(#sbryms-theme-specificity-anchor, .all-deposit-table) :is(#sbryms-theme-specificity-anchor, th, td) {
         border-radius: 0 !important;
@@ -1489,17 +1509,35 @@ ue {
             }
 
             const allActive = selectedProfileEmail === 'all' ? 'active' : '';
+            const starTotals = new Map(accounts.map(account => [String(account.email).trim().toLowerCase(), 0]));
+            depositData.forEach(row => {
+                if (!isPeriodPaid(row)) return;
+                const email = String(row.profileEmail || '').trim().toLowerCase();
+                if (!starTotals.has(email)) return;
+                const detail = getPrivatePeriodDetail(row);
+                const summary = getPeriodStatus(row);
+                const star = detail && detail.status === 'Paid'
+                    ? detail.star
+                    : summary && summary.status === 'Paid'
+                        ? summary.star
+                        : row.star;
+                starTotals.set(email, starTotals.get(email) + getReceivedStarCount(star));
+            });
+            const topMember = accounts
+                .map(account => ({ account, stars: starTotals.get(String(account.email).trim().toLowerCase()) || 0 }))
+                .sort((a, b) => b.stars - a.stars || a.account.name.localeCompare(b.account.name))[0];
+
+            const allAvatar = topMember && topMember.account.photo
+                ? `<img src="${topMember.account.photo}" alt="${topMember.account.name}">`
+                : topMember
+                    ? `<span>${topMember.account.name === 'Member' ? 'M' : topMember.account.name.charAt(0).toUpperCase()}</span>`
+                    : '<svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19c.4-3 2.4-4.8 5.5-4.8s5.1 1.8 5.5 4.8"></path><path d="M16 5.5a3 3 0 0 1 0 5.8M16 14c2.8 0 4.4 1.7 4.6 4"></path></svg>';
             const allChip = `
                 <div class="profile-chip all-accounts-chip ${allActive}" onclick="selectProfile('all')">
-                    <div class="profile-avatar" aria-hidden="true">
-                        <svg viewBox="0 0 24 24" fill="none">
-                            <circle cx="9" cy="8" r="3"></circle>
-                            <path d="M3.5 19c.4-3 2.4-4.8 5.5-4.8s5.1 1.8 5.5 4.8"></path>
-                            <path d="M16 5.5a3 3 0 0 1 0 5.8M16 14c2.8 0 4.4 1.7 4.6 4"></path>
-                        </svg>
-                    </div>
+                    <div class="profile-avatar" aria-hidden="true">${allAvatar}</div>
                     <div class="profile-chip-text">
-                        <p class="profile-name">All</p>
+                        <p class="profile-name">${topMember ? topMember.account.name : 'All Members'}</p>
+                        <p class="profile-star-count">★ ${topMember ? topMember.stars : 0} received</p>
                     </div>
                 </div>
             `;
@@ -2204,13 +2242,18 @@ ue {
 
         function updateSummary(filteredRows) {
             const currentEmail = getCurrentAuthEmail();
+            const isAllAccounts = selectedProfileEmail === 'all';
+            const matchesSelectedAccount = item => isAllAccounts
+                ? true
+                : String(item.row.profileEmail || '').trim().toLowerCase() === String(selectedProfileEmail || '').trim().toLowerCase();
+
             const totalAmount = filteredRows.reduce((sum, item) => {
-                if (String(item.row.profileEmail || '').trim().toLowerCase() !== currentEmail) return sum;
+                if (!matchesSelectedAccount(item)) return sum;
                 if (!isPeriodPaid(item.row)) return sum;
                 return sum + getPeriodFee(item.row);
             }, 0);
             const totalFine = filteredRows.reduce((sum, item) => {
-                if (String(item.row.profileEmail || '').trim().toLowerCase() !== currentEmail) return sum;
+                if (!matchesSelectedAccount(item)) return sum;
                 if (!isPeriodPaid(item.row)) return sum;
                 const detail = getPrivatePeriodDetail(item.row);
                 const summary = getPeriodStatus(item.row);
@@ -2222,7 +2265,7 @@ ue {
                 return sum + (Number(fine) || 0);
             }, 0);
             const totalStars = filteredRows.reduce((sum, item) => {
-                if (String(item.row.profileEmail || '').trim().toLowerCase() !== currentEmail) return sum;
+                if (!matchesSelectedAccount(item)) return sum;
                 const detail = getPrivatePeriodDetail(item.row);
                 const summary = getPeriodStatus(item.row);
                 if (!isPeriodPaid(item.row)) return sum;
