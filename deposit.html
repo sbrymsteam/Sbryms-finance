@@ -1029,6 +1029,22 @@ ue {
         border: 1px solid rgba(236, 72, 153, .42) !important;
         border-radius: 10px !important;
     }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .top-star-receiver-value) {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 2px !important;
+    }
+    html:root:root body :is(#sbryms-theme-specificity-anchor, .top-star-receiver-name) {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        color: #cbd5e1 !important;
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        line-height: 1.2 !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
     html:root:root body :is(#sbryms-theme-specificity-anchor, .profile-star-count) {
         margin: 1px 0 0 !important;
         color: #facc15 !important;
@@ -1125,7 +1141,10 @@ ue {
                         </svg>
                         <span id="starSummaryTitle">Top Star Receiver</span>
                     </div>
-                    <div class="stat-value" id="totalStar">0</div>
+                    <div class="stat-value top-star-receiver-value">
+                        <span id="totalStar">0</span>
+                        <span class="top-star-receiver-name" id="topStarReceiverName"></span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1527,17 +1546,12 @@ ue {
                 .map(account => ({ account, stars: starTotals.get(String(account.email).trim().toLowerCase()) || 0 }))
                 .sort((a, b) => b.stars - a.stars || a.account.name.localeCompare(b.account.name))[0];
 
-            const allAvatar = topMember && topMember.account.photo
-                ? `<img src="${topMember.account.photo}" alt="${topMember.account.name}">`
-                : topMember
-                    ? `<span>${topMember.account.name === 'Member' ? 'M' : topMember.account.name.charAt(0).toUpperCase()}</span>`
-                    : '<svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19c.4-3 2.4-4.8 5.5-4.8s5.1 1.8 5.5 4.8"></path><path d="M16 5.5a3 3 0 0 1 0 5.8M16 14c2.8 0 4.4 1.7 4.6 4"></path></svg>';
+            const allAvatar = '<svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3"></circle><path d="M3.5 19c.4-3 2.4-4.8 5.5-4.8s5.1 1.8 5.5 4.8"></path><path d="M16 5.5a3 3 0 0 1 0 5.8M16 14c2.8 0 4.4 1.7 4.6 4"></path></svg>';
             const allChip = `
                 <div class="profile-chip all-accounts-chip ${allActive}" onclick="selectProfile('all')">
                     <div class="profile-avatar" aria-hidden="true">${allAvatar}</div>
                     <div class="profile-chip-text">
-                        <p class="profile-name">${topMember ? topMember.account.name : 'All Members'}</p>
-                        <p class="profile-star-count">★ ${topMember ? topMember.stars : 0} received</p>
+                        <p class="profile-name">All</p>
                     </div>
                 </div>
             `;
@@ -2281,6 +2295,7 @@ ue {
             const totalFineEl = document.getElementById('totalFine');
             const totalStarEl = document.getElementById('totalStar');
             const starSummaryTitle = document.getElementById('starSummaryTitle');
+            const topStarReceiverName = document.getElementById('topStarReceiverName');
             if (totalAmountEl) totalAmountEl.innerText = `৳ ${totalAmount}`;
             if (totalFineEl) totalFineEl.innerText = `৳ ${totalFine}`;
             if (totalStarEl) {
@@ -2305,9 +2320,17 @@ ue {
                         .sort((a, b) => b.starCount - a.starCount || a.account.name.localeCompare(b.account.name))[0];
                     totalStarEl.innerText = topMember ? String(topMember.starCount) : '0';
                     totalStarEl.title = topMember ? topMember.account.name : 'No top star receiver';
+                    if (topStarReceiverName) {
+                        topStarReceiverName.textContent = topMember ? topMember.account.name : '';
+                        topStarReceiverName.style.display = topMember ? 'block' : 'none';
+                    }
                 } else {
                     totalStarEl.innerText = String(totalStars);
                     totalStarEl.removeAttribute('title');
+                    if (topStarReceiverName) {
+                        topStarReceiverName.textContent = '';
+                        topStarReceiverName.style.display = 'none';
+                    }
                 }
             }
             if (starSummaryTitle) {
