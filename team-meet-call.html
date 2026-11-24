@@ -1121,7 +1121,13 @@
       );
       document.getElementById('callResultActions').hidden = false;
       setTimeout(() => {
-        window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
+        const endedChatUrl = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
+        try {
+          window.history.replaceState({ sbrymsCallEnded: true, chatEmail }, '', endedChatUrl);
+        } catch (error) {
+          console.warn('Could not replace ended call history entry:', error);
+        }
+        window.location.replace(endedChatUrl);
       }, 500);
     }
 
@@ -1147,6 +1153,11 @@
           .catch(error => console.error('Failed to end unanswered call:', error));
       }
       await saveCallHistory(outcome);
+      try {
+        window.history.replaceState({ sbrymsCallEnded: true, chatEmail }, '', 'team-meet.html');
+      } catch (error) {
+        console.warn('Could not replace unanswered call history entry:', error);
+      }
       if (directCallUnsubscribe) directCallUnsubscribe();
       if (directCandidateUnsubscribe) directCandidateUnsubscribe();
       if (peerConnection) peerConnection.close();
@@ -1845,8 +1856,22 @@
           .catch(error => console.error('Failed to notify the other member that the call ended:', error));
       }
       await saveCallHistory(callOutcome);
-      window.location.href = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
+      const endedChatUrl = 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail);
+      try {
+        window.history.replaceState({ sbrymsCallEnded: true, chatEmail }, '', endedChatUrl);
+      } catch (error) {
+        console.warn('Could not replace call history entry:', error);
+      }
+      window.location.replace(endedChatUrl);
     }
+
+    window.history.replaceState({ sbrymsCallPage: true, callId: directCallId }, '', window.location.href);
+    window.addEventListener('popstate', event => {
+      if (event.state && event.state.sbrymsCallPage) {
+        window.history.replaceState({ sbrymsCallEnded: true, chatEmail }, '', 'team-meet-chat.html#chat=' + encodeURIComponent(chatEmail));
+        window.location.replace('team-meet-chat.html#chat=' + encodeURIComponent(chatEmail));
+      }
+    });
 
     document.getElementById('callBackButton').addEventListener('click', handleCallBack);
     document.querySelector('[aria-label="End call"]').addEventListener('click', () => endCall());
