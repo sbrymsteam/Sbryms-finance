@@ -1123,7 +1123,7 @@ ue {
                         <svg class="summary-stat-icon" viewBox="0 0 24 24" aria-hidden="true">
                             <path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.4l6.3-.9L12 2.8z"></path>
                         </svg>
-                        <span>Total Star Received</span>
+                        <span id="starSummaryTitle">Top Star Receiver</span>
                     </div>
                     <div class="stat-value" id="totalStar">0</div>
                 </div>
@@ -2280,9 +2280,39 @@ ue {
             const totalAmountEl = document.getElementById('totalAmount');
             const totalFineEl = document.getElementById('totalFine');
             const totalStarEl = document.getElementById('totalStar');
+            const starSummaryTitle = document.getElementById('starSummaryTitle');
             if (totalAmountEl) totalAmountEl.innerText = `৳ ${totalAmount}`;
             if (totalFineEl) totalFineEl.innerText = `৳ ${totalFine}`;
-            if (totalStarEl) totalStarEl.innerText = String(totalStars);
+            if (totalStarEl) {
+                if (isAllAccounts) {
+                    const topMember = getProfileAccounts()
+                        .map(account => {
+                            const accountEmail = String(account.email).trim().toLowerCase();
+                            const starCount = filteredRows.reduce((sum, item) => {
+                                if (String(item.row.profileEmail || '').trim().toLowerCase() !== accountEmail) return sum;
+                                if (!isPeriodPaid(item.row)) return sum;
+                                const detail = getPrivatePeriodDetail(item.row);
+                                const summary = getPeriodStatus(item.row);
+                                const star = detail && detail.status === 'Paid'
+                                    ? detail.star
+                                    : summary && summary.status === 'Paid'
+                                        ? summary.star
+                                        : item.row.star;
+                                return sum + getReceivedStarCount(star);
+                            }, 0);
+                            return { account, starCount };
+                        })
+                        .sort((a, b) => b.starCount - a.starCount || a.account.name.localeCompare(b.account.name))[0];
+                    totalStarEl.innerText = topMember ? String(topMember.starCount) : '0';
+                    totalStarEl.title = topMember ? topMember.account.name : 'No top star receiver';
+                } else {
+                    totalStarEl.innerText = String(totalStars);
+                    totalStarEl.removeAttribute('title');
+                }
+            }
+            if (starSummaryTitle) {
+                starSummaryTitle.textContent = isAllAccounts ? 'Top Star Receiver' : 'Total Star Received';
+            }
         }
 
         // Disable automatic prompting for fee change when true/false. Set to false to avoid unexpected popups.
