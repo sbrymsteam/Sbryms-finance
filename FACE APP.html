@@ -1568,6 +1568,24 @@ body.custom-image-background::before {
         background: transparent !important;
         outline: none !important;
     }
+        html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container > .card {
+            min-height: 72px;
+            padding: 10px 6px !important;
+            border: 1px solid rgba(255, 255, 255, .14) !important;
+            border-radius: 16px !important;
+            background: linear-gradient(145deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .025)) !important;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .13), 0 8px 20px rgba(0, 0, 0, .16) !important;
+            -webkit-backdrop-filter: blur(14px) saturate(140%);
+            backdrop-filter: blur(14px) saturate(140%);
+            transition: border-color .2s ease, background .2s ease, box-shadow .2s ease, transform .2s ease;
+        }
+        @media (hover: hover) {
+            html.face-app-page:root:root body:not(#sbryms-theme-specificity-anchor):not(#sbryms-theme-specificity-anchor-2) .grid-container > .card:hover {
+                border-color: rgba(255, 255, 255, .24) !important;
+                background: linear-gradient(145deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .045)) !important;
+                box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 10px 24px rgba(0, 0, 0, .22) !important;
+            }
+        }
     </style>
 <script src="assets/background-settings.js"></script>
 <script src="assets/push-notifications.js"></script>

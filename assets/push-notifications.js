@@ -434,14 +434,14 @@
     `;
     const style = document.createElement('style');
     style.textContent = `
-      #sbryms-push-opt-in { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; padding: 18px; background: rgba(3, 10, 24, .72); }
-      #sbryms-push-opt-in section { width: min(100%, 420px); padding: 24px; border: 1px solid rgba(255,255,255,.18); border-radius: 18px; color: #eef3ff; background: #101b30; box-shadow: 0 18px 60px rgba(0,0,0,.4); font: 15px/1.5 "Segoe UI", Arial, sans-serif; }
-      #sbryms-push-opt-in h2 { margin: 0 0 8px; font-size: 21px; }
-      #sbryms-push-opt-in p { margin: 0 0 18px; color: #c1ccdf; }
+      #sbryms-push-opt-in { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; padding: 18px; background: rgba(3, 10, 24, .46); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+      #sbryms-push-opt-in section { width: min(100%, 420px); padding: 24px; border: 1px solid rgba(255,255,255,.22); border-radius: 18px; color: #eef3ff; background: linear-gradient(145deg, rgba(255,255,255,.16), rgba(255,255,255,.065)); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 18px 60px rgba(0,0,0,.42); -webkit-backdrop-filter: blur(24px) saturate(145%); backdrop-filter: blur(24px) saturate(145%); font: 15px/1.5 "Segoe UI", Arial, sans-serif; }
+      #sbryms-push-opt-in h2 { margin: 0 0 8px; font-size: 21px; text-shadow: 0 1px 12px rgba(0,0,0,.25); }
+      #sbryms-push-opt-in p { margin: 0 0 18px; color: rgba(232,239,252,.82); }
       #sbryms-push-opt-in #sbryms-push-error:not([hidden]) { margin: -6px 0 14px; color: #ffc2c2; }
       #sbryms-push-opt-in section > div { display: flex; flex-wrap: wrap; gap: 10px; }
-      #sbryms-push-opt-in button { min-height: 42px; padding: 9px 14px; border: 1px solid rgba(255,255,255,.25); border-radius: 10px; color: #eef3ff; background: #263650; font: inherit; cursor: pointer; }
-      #sbryms-push-opt-in [data-push-enable] { border-color: #df146e; background: #df146e; }
+      #sbryms-push-opt-in button { min-height: 42px; padding: 9px 14px; border: 1px solid rgba(255,255,255,.24); border-radius: 12px; color: #eef3ff; background: linear-gradient(145deg, rgba(255,255,255,.16), rgba(255,255,255,.07)); box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 6px 16px rgba(0,0,0,.18); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); font: inherit; cursor: pointer; }
+      #sbryms-push-opt-in [data-push-enable] { border-color: rgba(255,255,255,.32); background: linear-gradient(135deg, rgba(223,20,110,.92), rgba(196,31,126,.88)); }
       #sbryms-push-opt-in button:disabled { opacity: .65; cursor: wait; }
     `;
     document.head.appendChild(style);
